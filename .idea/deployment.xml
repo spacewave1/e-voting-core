@@ -8,9 +8,11 @@
             <mapping deploy="/home/a/p2p_vote/build" local="$PROJECT_DIR$" web="/" />
           </mappings>
           <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
-            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
           </excludedPaths>
         </serverdata>
       </paths>
@@ -22,6 +24,8 @@
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
           </excludedPaths>
         </serverdata>
       </paths>

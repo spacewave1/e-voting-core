@@ -7,6 +7,7 @@ void checkAndReceive(const std::string input){
         std::cout << "Is receiving" << std::endl;
         zmq::context_t ctx(2);
         zmq::socket_t sock(ctx, zmq::socket_type::rep);
+        zmq::version();
         sock.bind("tcp://*:5555");
 
         while(true){
@@ -25,22 +26,22 @@ void checkAndReceive(const std::string input){
 
 void checkAndConnect(const std::string input){
     if (input.find("connect") != -1) {
-
         const std::string delimiter = " ";
         std::cout << "is connecting to " ;
         size_t positionOfWhitespace = input.find(delimiter);
         auto address = input.substr(positionOfWhitespace + delimiter.size(), input.size() - positionOfWhitespace);
 
-        zmq::context_t ctx;
-        zmq::socket_t sock(ctx, zmq::socket_type::push);
+        zmq::version();
+        zmq::context_t ctx(1);
+        zmq::socket_t sock(ctx, zmq::socket_type::req);
 
-        std::string bla = "tcp://" + std::string(address) + ":5555";
+        sock.connect("tcp://" + std::string(address) + ":5555");
+        sock.send(zmq::str_buffer("Hello World"), zmq::send_flags::none);
 
-        sock.bind(bla);
-        sock.send(zmq::str_buffer("Hello World"), zmq::send_flags::dontwait);
+        zmq::message_t reply;
+        sock.recv(reply, zmq::recv_flags::none);
 
-        std::cout << address << std::endl;
-        while(true){}
+        std::cout << "Received World " << std::endl;
     }
 }
 
@@ -50,9 +51,7 @@ int main(int argc, char** argv) {
     std::cout << "Usage:\t enter [connect] <address>, to connect to an address that runs this application as well"
          << std::endl;
 
-
     std::string input;
-
 
     while (input != "quit") {
         if(argc < 2){
@@ -64,5 +63,6 @@ int main(int argc, char** argv) {
         }
         checkAndConnect(input);
         checkAndReceive(input);
+        input = "quit";
     }
 }
