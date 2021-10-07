@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="debianB (29d319c7-2462-4820-98d1-968bcbc4ed70)" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="debianA (b4d9dd56-43ca-4986-a02d-7fe243c3849c)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/a/p2p_vote/build" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="debianB (29d319c7-2462-4820-98d1-968bcbc4ed70)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/a/p2p_vote/build" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>

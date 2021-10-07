@@ -9,3 +9,8 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
+~/*
+/cmake-build-debug-remote/*
+/cmake-build-debug-remote-b/*
+/cmake-build-debug-remote-a/*
+/build/
