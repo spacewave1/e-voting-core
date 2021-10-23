@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CLionExternalBuildManager">
+    <target id="26a59a61-902a-4ae5-8a81-3ed6cd72fbc4" name="Unnamed" defaultType="TOOL">
+      <configuration id="090de40d-3a35-48ba-b0f7-e59fd6fa679f" name="Unnamed">
+        <build type="TOOL">
+          <tool actionId="Tool_External Tools_valgrind" />
+        </build>
+      </configuration>
+    </target>
+  </component>
+</project>

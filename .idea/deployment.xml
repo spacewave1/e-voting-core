@@ -2,6 +2,20 @@
 <project version="4">
   <component name="PublishConfigData" serverName="debianB (29d319c7-2462-4820-98d1-968bcbc4ed70)" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
+      <paths name="Remote GDB Server (2e09a478-850a-4100-a740-e492e932abcc)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="Remote GDB Server (3b771e66-f734-4753-92d7-da92f947475d)">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="debianA (b4d9dd56-43ca-4986-a02d-7fe243c3849c)">
         <serverdata>
           <mappings>
