@@ -18,7 +18,7 @@ public:
     void receive(void *context);
     void connect(std::string& input, void *context);
     void printConnections();
-    void initSyncThread(void* context, networkPlan plan, std::string initial_receiver_address = "");
+    void initSyncThread(void* context, straightLineSyncThread& thread, std::string initial_receiver_address = "");
 private:
     std::string peer_identity;
     std::string peer_address;

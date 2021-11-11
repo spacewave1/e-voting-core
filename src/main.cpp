@@ -78,7 +78,10 @@ int main(int argc, char **argv) {
     zmq::context_t context(1);
     std::string input;
     peer local_peer;
+
     straightLineSyncThread straight_line_sync_thread;
+
+
     auto straight_line_topology = straightLineTopology(straight_line_sync_thread);
     networkPlan plan(straight_line_topology);
 
@@ -118,7 +121,7 @@ int main(int argc, char **argv) {
             local_peer.printConnections();
         }
         if (input.find("forward_sync") != -1) {
-            local_peer.initSyncThread(&context, plan);
+            local_peer.initSyncThread(&context, straight_line_sync_thread);
         }
         if (input.find("exit_sync") != -1) {
             pthread_exit(&syncWorker);
@@ -128,7 +131,10 @@ int main(int argc, char **argv) {
             const std::string delimiter = " ";
             size_t positionOfWhitespace = input.find(delimiter);
             auto address = input.substr(positionOfWhitespace + delimiter.size(), input.size() - positionOfWhitespace);
-            local_peer.initSyncThread(&context, plan, address);
+            local_peer.initSyncThread(&context, straight_line_sync_thread, address);
+        }
+        if(input.find("cancel_sync") != -1) {
+            straight_line_sync_thread.WaitForInternalThreadToExit();
         }
         input.clear();
     }

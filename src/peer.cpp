@@ -141,9 +141,7 @@ peer::peer() {
     peer_address = "";
 }
 
-void peer::initSyncThread(void* context, networkPlan plan, std::string initial_receiver_address){
-    straightLineSyncThread thread = plan.getSyncWorker();
+void peer::initSyncThread(void* context, straightLineSyncThread& thread, std::string initial_receiver_address){
     thread.setParams(context, connection_table, known_peer_addresses, initial_receiver_address);
     thread.StartInternalThread();
-    thread.WaitForInternalThreadToExit();
 }
