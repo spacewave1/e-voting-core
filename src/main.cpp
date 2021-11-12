@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include "peer.h"
 
-std::map<std::string,size_t> current_poll;
+std::map<std::string, size_t> current_poll;
 std::string first_peer;
 
 void createPoll() {
@@ -39,7 +39,7 @@ void createPoll() {
 
 void distributePoll(void *arg) {
     nlohmann::json current_poll_json = nlohmann::ordered_json(current_poll);
-    zmq::context_t *context = (zmq::context_t*)arg;
+    zmq::context_t *context = (zmq::context_t *) arg;
     zmq::message_t request;
     peer peer;
 
@@ -65,7 +65,7 @@ void *receivePoll(void *arg) {
     nlohmann::json current_poll_json = nlohmann::json::parse(request.to_string());
     current_poll = current_poll_json.get<std::map<std::string, size_t>>();
 
-    std::for_each(current_poll.begin(), current_poll.end(), [](std::pair<std::string, size_t> optionVotes){
+    std::for_each(current_poll.begin(), current_poll.end(), [](std::pair<std::string, size_t> optionVotes) {
         std::cout << optionVotes.first << ": " << optionVotes.second << std::endl;
     });
 }
@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
         if (input.find("receive_connection") != -1) {
             local_peer.receive(&context);
         }
-        if (input.find("distribute_poll") != -1){
+        if (input.find("distribute_poll") != -1) {
             distributePoll(&context);
         }
         if (input.find("receive_poll") != -1) {
@@ -126,6 +126,22 @@ int main(int argc, char **argv) {
         if (input.find("exit_sync") != -1) {
             pthread_exit(&syncWorker);
         }
+        if (input.find("import_peer_connections") != -1) {
+            std::cout << "importing peers connections" << std::endl;
+            local_peer.importPeerConnections();
+        }
+        if (input.find("import_peers_list") != -1) {
+            std::cout << "importing peers list" << std::endl;
+            local_peer.importPeersList();
+        }
+        if (input.find("export_peer_connections") != -1) {
+            std::cout << "is export peers connections" << std::endl;
+            local_peer.exportPeerConnections();
+        }
+        if (input.find("export_peers_list") != -1) {
+            std::cout << "is export peers list" << std::endl;
+            local_peer.exportPeersList();
+        }
         if (input.find("init_sync") != -1) {
             std::cout << "is connecting to " << input << std::endl;
             const std::string delimiter = " ";
@@ -133,10 +149,19 @@ int main(int argc, char **argv) {
             auto address = input.substr(positionOfWhitespace + delimiter.size(), input.size() - positionOfWhitespace);
             local_peer.initSyncThread(&context, straight_line_sync_thread, address);
         }
-        if(input.find("cancel_sync") != -1) {
+        if (input.find("update_net") != -1) {
+            std::cout << "update net and joined sync thread" << std::endl;
+            local_peer.setConnectionTable(straight_line_sync_thread.getConnectionTable());
+            local_peer.setKnownPeerAddresses(straight_line_sync_thread.getPeers());
             straight_line_sync_thread.WaitForInternalThreadToExit();
         }
-        input.clear();
+        if (input.find("cancel_sync") != -1) {
+            straight_line_sync_thread.WaitForInternalThreadToExit();
+        }
+        if (input.find("quit") != -1) {
+        } else {
+            input.clear();
+        }
     }
     return EXIT_SUCCESS;
 }

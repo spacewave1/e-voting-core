@@ -19,6 +19,14 @@ public:
     void connect(std::string& input, void *context);
     void printConnections();
     void initSyncThread(void* context, straightLineSyncThread& thread, std::string initial_receiver_address = "");
+    const std::set <std::string> &getKnownPeerAddresses() const;
+    const std::map <std::string, std::string> &getConnectionTable() const;
+    void setKnownPeerAddresses(const std::set <std::string> &known_peer_addresses);
+    void setConnectionTable(const std::map <std::string, std::string> &connection_table);
+    void exportPeerConnections(std::string exportPath = "./");
+    void exportPeersList(std::string exportPath = "./");
+    void importPeerConnections(std::string importPath = "./");
+    void importPeersList(std::string importPath = "./");
 private:
     std::string peer_identity;
     std::string peer_address;

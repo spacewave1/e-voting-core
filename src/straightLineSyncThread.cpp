@@ -176,3 +176,11 @@ void straightLineSyncThread::setParams(void *arg, std::map<std::string, std::str
     this->connection_table = connection_table;
     this->initial_receiver_address = initial_receiver_address;
 }
+
+const std::map <std::string, std::string> &straightLineSyncThread::getConnectionTable() const {
+    return connection_table;
+}
+
+const std::set<std::string> &straightLineSyncThread::getPeers() const {
+    return peers;
+}

@@ -7,8 +7,7 @@
 #include <regex>
 #include <nlohmann/json.hpp>
 #include "peer.h"
-#include "straightLineSyncThread.h"
-#include "networkPlan.h"
+#include <fstream>
 
 
 void peer::printConnections() {
@@ -144,4 +143,98 @@ peer::peer() {
 void peer::initSyncThread(void* context, straightLineSyncThread& thread, std::string initial_receiver_address){
     thread.setParams(context, connection_table, known_peer_addresses, initial_receiver_address);
     thread.StartInternalThread();
+}
+
+const std::set <std::string> &peer::getKnownPeerAddresses() const {
+    return known_peer_addresses;
+}
+
+void peer::setKnownPeerAddresses(const std::set <std::string> &known_peer_addresses) {
+    peer::known_peer_addresses = known_peer_addresses;
+}
+
+const std::map <std::string, std::string> &peer::getConnectionTable() const {
+    return connection_table;
+}
+
+void peer::setConnectionTable(const std::map <std::string, std::string> &connection_table) {
+    peer::connection_table = connection_table;
+}
+
+void peer::exportPeerConnections(std::string exportPath) {
+    std::ofstream exportStream;
+    exportStream.open (exportPath + "connections.json");
+    nlohmann::json connectionsJson = nlohmann::json();
+    connectionsJson["connections"] = nlohmann::ordered_json(connection_table);
+    exportStream << connectionsJson.dump() << "\n";
+    exportStream.close();
+}
+
+void peer::exportPeersList(std::string exportPath) {
+    std::ofstream exportStream;
+    exportStream.open (exportPath + "peers.json");
+    nlohmann::json peersJson = nlohmann::json();
+    peersJson["peers"] = nlohmann::ordered_json(known_peer_addresses);
+    exportStream << peersJson.dump() << "\n";
+    exportStream.close();
+}
+
+void peer::importPeerConnections(std::string importPath) {
+    std::ifstream importStream;
+    std::string line;
+
+    std::cout << "is importing connections file from " << importPath + "connections.json" << std::endl;
+
+    // File Open in the Read Mode
+    importStream.open(importPath + "connections.json");
+
+    if(importStream.is_open())
+    {
+        if(getline(importStream, line)) {
+            std::cout << line << std::endl;
+
+            nlohmann::json connectionsJson = nlohmann::json::parse(line);
+            std::cout << "File contents: " << std::endl;
+            std::cout << connectionsJson.dump() << std::endl;
+            this->connection_table = connectionsJson["connections"].get<std::map<std::string, std::string>>();
+
+        };
+        // File Close
+        importStream.close();
+        std::cout << "Successfully imported connections" << std::endl;
+    }
+    else
+    {
+        std::cout << "Unable to open the file!" << std::endl;
+    }
+}
+
+void peer::importPeersList(std::string importPath) {
+    std::ifstream importStream;
+    std::string line;
+
+    std::cout << "is importing peers file from " << importPath + "peers.json" << std::endl;
+
+    // File Open in the Read Mode
+    importStream.open(importPath + "peers.json");
+
+    if(importStream.is_open())
+    {
+        if(getline(importStream, line)) {
+            std::cout << line << std::endl;
+
+            nlohmann::json peersJson = nlohmann::json::parse(line);
+            std::cout << "File contents: " << std::endl;
+            std::cout << peersJson.dump() << std::endl;
+            this->known_peer_addresses = peersJson["peers"].get<std::set<std::string>>();
+
+        };
+        // File Close
+        importStream.close();
+        std::cout << "Successfully imported peers" << std::endl;
+    }
+    else
+    {
+        std::cout << "Unable to open the file!" << std::endl;
+    }
 }

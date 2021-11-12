@@ -11,6 +11,8 @@ CTestTestfile.cmake
 _deps
 ~/*
 /cmake-build-debug-remote/*
-/cmake-build-debug-remote-b/*
 /cmake-build-debug-remote-a/*
+/cmake-build-debug-remote-b/*
+/cmake-build-debug-remote-c/*
+/cmake-build-debug-remote-d/*
 /build/
