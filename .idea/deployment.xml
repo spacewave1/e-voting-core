@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="debianB (29d319c7-2462-4820-98d1-968bcbc4ed70)" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" serverName="debianA (b4d9dd56-43ca-4986-a02d-7fe243c3849c)" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="Remote GDB Server (2e09a478-850a-4100-a740-e492e932abcc)">
         <serverdata>
@@ -24,6 +24,12 @@
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
           </excludedPaths>
         </serverdata>
       </paths>
@@ -35,6 +41,46 @@
           <excludedPaths>
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
             <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="debianC (603f45c3-d534-4b31-af55-5ba941c2c09a)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/a/p2p_vote/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+      <paths name="debianD (5822f1a8-732a-4a81-8976-142c87f8ed68)">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/a/p2p_vote/" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-c" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-b" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-d" />
+            <excludedPath local="true" path="$PROJECT_DIR$/cmake-build-debug-remote-a" />
           </excludedPaths>
         </serverdata>
       </paths>

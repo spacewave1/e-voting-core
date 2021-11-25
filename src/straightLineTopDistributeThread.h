@@ -1,0 +1,14 @@
+//
+// Created by wnabo on 19.11.2021.
+//
+
+#ifndef VOTE_P2P_STRAIGHTLINETOPDISTRIBUTETHREAD_H
+#define VOTE_P2P_STRAIGHTLINETOPDISTRIBUTETHREAD_H
+
+
+class straightLineTopDistributeThread {
+
+};
+
+
+#endif //VOTE_P2P_STRAIGHTLINETOPDISTRIBUTETHREAD_H

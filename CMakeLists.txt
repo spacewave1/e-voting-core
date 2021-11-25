@@ -13,7 +13,7 @@ find_package(cppzmq REQUIRED)
 
 include_directories(${cppzmq_INCLUDE_DIR})
 
-set(SOURCE_FILES src/main.cpp src/peer.cpp src/peer.h src/abstractTopology.cpp src/abstractTopology.h src/networkPlan.cpp src/networkPlan.h src/straightLineTopology.cpp src/straightLineTopology.h src/abstractThread.h src/straightLineSyncThread.cpp src/straightLineSyncThread.h)
+set(SOURCE_FILES src/main.cpp src/peer.cpp src/peer.h src/abstractTopology.cpp src/abstractTopology.h src/networkPlan.cpp src/networkPlan.h src/straightLineTopology.cpp src/straightLineTopology.h src/abstractThread.h src/straightLineSyncThread.cpp src/straightLineSyncThread.h src/election.h src/straightLineDistributeThread.cpp src/straightLineDistributeThread.h src/straightLineTopDistributeThread.cpp src/straightLineTopDistributeThread.h)
 
 add_executable(vote_p2p ${SOURCE_FILES})
 

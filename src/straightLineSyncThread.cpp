@@ -120,6 +120,8 @@ void straightLineSyncThread::syncForwardProcedure() {
             std::cout << "Response: " << reply.to_string() << std::endl;
 
             received_data = nlohmann::json::parse(reply.to_string());
+
+            // Eigentlich müssten hier daten fehlen
             received_connections = received_data["connections"].get<std::map<std::string, std::string>>();
             received_nodes = received_data["nodes"].get<std::set<std::string>>();
 
@@ -127,8 +129,6 @@ void straightLineSyncThread::syncForwardProcedure() {
             peers = received_nodes;
 
         } else {
-            // Forward to branches
-            // TODO: Work over this piece, it is data access in secondary thread
             connection_table = received_connections;
             peers = received_nodes;
         }

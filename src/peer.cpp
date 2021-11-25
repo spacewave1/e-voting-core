@@ -91,6 +91,8 @@ void peer::connect(std::string& input, void *abstractContext) {
             peer_address = std::string(address);
             known_peer_addresses.insert(std::string(address));
             connection_table[reply.to_string()] = std::string(address);
+        } else {
+            std::cout << "requesting peer already has a bound a peer to the net" << std::endl;
         }
     }
 }
@@ -118,12 +120,14 @@ void peer::receive(void *abstractContext) {
 
                 printMetaData(request);
                 std::cout << "added ip " << request.to_string() << " to list of network" << std::endl;
+                sock.send(zmq::message_t(std::string(request.gets("Peer-Address"))), zmq::send_flags::none);
             } else {
+                sock.send(zmq::message_t(std::string("rejected")), zmq::send_flags::none);
                 std::cout << "not an ip4" << std::endl;
             }
-            sock.send(zmq::message_t(std::string(request.gets("Peer-Address"))), zmq::send_flags::none);
         } else {
-            std::cout << "already contains ip" << std::endl;
+            sock.send(zmq::message_t(std::string("rejected")), zmq::send_flags::none);
+            std::cout << "This peer has already bound an ip to the net" << std::endl;
         }
     }
 }
@@ -237,4 +241,61 @@ void peer::importPeersList(std::string importPath) {
     {
         std::cout << "Unable to open the file!" << std::endl;
     }
+}
+
+void peer::vote() {
+    // Take the first election
+    if(election_box.size() > 0) {
+        std::cout << election_box[0].getJson() << std::endl;
+
+        std::string input;
+        std::getline(std::cin, input);
+        std::size_t chosen_option = std::stoi(input);
+
+        std::cout << "identity: " << peer_identity << std::endl;
+        std::cout << "option:" << chosen_option << std::endl;
+
+        election_box[0].placeVote(peer_identity, chosen_option);
+    }
+};
+
+void peer::createElection() {
+    std::cout << "Enter how many possible Options can be elected" << std::endl;
+    std::string input;
+    std::getline(std::cin, input);
+    std::map<size_t, std::string> election_options;
+
+    std::size_t number_of_options = std::atoi(input.c_str());
+    std::vector<std::string> options(number_of_options);
+    std::cout << options.size() << std::endl;
+
+    size_t index = 0;
+    std::transform(options.begin(), options.end(), options.begin(), [&index, &election_options](const std::string &option) -> std::string {
+        std::cout << "Enter Option #" << index << std::endl;
+        std::string input;
+        std::getline(std::cin, input);
+        election_options[index] = input;
+        index++;
+        return input;
+    });
+
+    nlohmann::json electionJson = nlohmann::ordered_json(election_options);
+    std::cout << electionJson.dump() << std::endl;
+
+    election initialElectionState;
+    initialElectionState.setPollId(0);
+    initialElectionState.setSequenceNumber(0);
+    initialElectionState.setJson(electionJson.dump());
+
+    election_box.push_back(initialElectionState);
+}
+
+void peer::setIdentity(std::string identity) {
+    peer_identity = identity;
+}
+
+void peer::dumpElectionBox() {
+    std::for_each(election_box.begin(), election_box.end(), [](election electionEntry){
+        electionEntry.print();
+    });
 }

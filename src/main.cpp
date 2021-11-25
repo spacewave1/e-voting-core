@@ -6,36 +6,11 @@
 #include <set>
 #include <nlohmann/json.hpp>
 #include <pthread.h>
+#include <fstream>
 #include "peer.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
-
-void createPoll() {
-    std::cout << "Enter how many possible Options can be elected" << std::endl;
-    std::string input;
-    std::getline(std::cin, input);
-
-    std::size_t number_of_options = std::atoi(input.c_str());
-    std::vector<std::string> options(number_of_options);
-    std::cout << options.size() << std::endl;
-
-    size_t index = 0;
-    std::transform(options.begin(), options.end(), options.begin(), [&index](const std::string &option) -> std::string {
-        index++;
-        std::cout << "Enter Option #" << index << std::endl;
-        std::string input;
-        std::getline(std::cin, input);
-        return input;
-    });
-
-    std::for_each(options.begin(), options.end(), [options, &index](const std::string &option) {
-        current_poll[option] = 0;
-    });
-
-    nlohmann::json current_poll_json = nlohmann::ordered_json(current_poll);
-    std::cout << current_poll_json.dump() << std::endl;
-}
 
 void distributePoll(void *arg) {
     nlohmann::json current_poll_json = nlohmann::ordered_json(current_poll);
@@ -70,6 +45,36 @@ void *receivePoll(void *arg) {
     });
 }
 
+std::string importIdentity(const std::string filePath = "./"){
+    std::ifstream importStream;
+    std::string line;
+
+    std::cout << "is importing peers file from " << filePath + "id.dat" << std::endl;
+
+    // File Open in the Read Mode
+    importStream.open(filePath + "id.dat");
+
+    if(importStream.is_open())
+    {
+        if(getline(importStream, line)) {
+            std::cout << line << std::endl;
+
+            std::cout << "File contents: " << std::endl;
+            std::cout << line << std::endl;
+            return line;
+
+        };
+        // File Close
+        importStream.close();
+        std::cout << "Could not return line" << std::endl;
+    }
+    else
+    {
+        std::cout << "Unable to open the file!" << std::endl;
+        return "id1";
+    }
+}
+
 int main(int argc, char **argv) {
     std::cout << std::to_string(argc) << std::endl;
     std::cout << "Usage:\t enter [connect] <address>, to connect to an address that runs this application as well"
@@ -78,6 +83,12 @@ int main(int argc, char **argv) {
     zmq::context_t context(1);
     std::string input;
     peer local_peer;
+
+    if(argc == 2){
+        if(std::string(argv[1]).find("import_id") != -1){
+            local_peer.setIdentity(importIdentity());
+        }
+    }
 
     straightLineSyncThread straight_line_sync_thread;
 
@@ -110,15 +121,21 @@ int main(int argc, char **argv) {
         if (input.find("receive_poll") != -1) {
             receivePoll(&context);
         }
-        if (input.find("poll") != -1) {
-            createPoll();
+        if (input.find("place_vote") != -1) {
+            local_peer.vote();
+        }
+        if (input.find("create_election") != -1) {
+            local_peer.createElection();
         }
         if (input.find("fetch") != -1) {
             pthread_t pollFetchWorker;
             pthread_create(&pollFetchWorker, NULL, receivePoll, (void *) &context);
         }
-        if (input.find("print") != -1) {
+        if (input.find("print_connections") != -1) {
             local_peer.printConnections();
+        }
+        if (input.find("print_elections") != -1) {
+            local_peer.dumpElectionBox();
         }
         if (input.find("forward_sync") != -1) {
             local_peer.initSyncThread(&context, straight_line_sync_thread);
