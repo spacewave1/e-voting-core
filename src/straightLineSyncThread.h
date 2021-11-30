@@ -22,7 +22,6 @@ private:
 public:
     const std::map <std::string, std::string> &getConnectionTable() const;
     const std::set <std::string> &getPeers() const;
-
     void setParams(void* arg, std::map<std::string, std::string> connection_table, std::set<std::string> peers, std::string initial_receiver_address = "");
 };
 

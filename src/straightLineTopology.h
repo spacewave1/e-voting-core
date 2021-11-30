@@ -4,6 +4,7 @@
 
 #include "abstractTopology.h"
 #include "straightLineSyncThread.h"
+#include "straightLineDistributeThread.h"
 #include <set>
 #include <map>
 #include <string>
@@ -17,10 +18,12 @@ class straightLineTopology : public abstractTopology{
 public:
     void addPeer();
     abstractThread& getSyncWorker() override;
-    straightLineTopology(straightLineSyncThread &worker);
+    abstractThread& getDistributeWorker() override;
+    straightLineTopology(straightLineSyncThread &sync_worker, straightLineDistributeThread &distribute_worker);
 
 private:
-    straightLineSyncThread& worker;
+    straightLineSyncThread& sync_worker;
+    straightLineDistributeThread& distribution_worker;
 };
 
 

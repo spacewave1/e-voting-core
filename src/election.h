@@ -6,6 +6,7 @@
 #define VOTE_P2P_ELECTION_H
 
 #include <string>
+#include <iostream>
 
 class election {
 private:
@@ -15,6 +16,12 @@ private:
     std::string json;
 
 public:
+    election(int election_id, size_t sequence_number, const std::map<std::string, int> &votes, const std::string &json)
+            : election_id(election_id), sequence_number(sequence_number), votes(votes), json(json) {}
+
+
+    election() {}
+
     int getPollId() const {
         return election_id;
     }

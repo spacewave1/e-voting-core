@@ -15,10 +15,10 @@ void straightLineDistributeThread::forwardUp() {
     zmq::socket_t publish_socket(*context, zmq::socket_type::pub);
     publish_socket.bind("tcp://*:5151");
 
-    publish_socket.send(zmq::message_t(electionSnapshot.getPollId()));
-    publish_socket.send(zmq::message_t(electionSnapshot.getSequenceNumber() + 1));
-    publish_socket.send(zmq::message_t(electionSnapshot.getJson()));
-    publish_socket.send(zmq::message_t(electionSnapshot.getVotes()));
+    publish_socket.send(zmq::message_t(election_snapshot_to_send.getPollId()));
+    publish_socket.send(zmq::message_t(election_snapshot_to_send.getSequenceNumber() + 1));
+    publish_socket.send(zmq::message_t(election_snapshot_to_send.getJson()));
+    //publish_socket.send(zmq::message_t(electionSnapshot.getVotes().));
 }
 
 void straightLineDistributeThread::receiveFromUp() {
@@ -26,10 +26,10 @@ void straightLineDistributeThread::receiveFromUp() {
     zmq::socket_t publish_socket(*context, zmq::socket_type::pub);
     publish_socket.bind("tcp://*:5151");
 
-    publish_socket.send(zmq::message_t(electionSnapshot.getPollId()));
-    publish_socket.send(zmq::message_t(electionSnapshot.getSequenceNumber() + 1));
-    publish_socket.send(zmq::message_t(electionSnapshot.getJson()));
-    publish_socket.send(zmq::message_t(electionSnapshot.getVotes()));
+    publish_socket.send(zmq::message_t(election_snapshot_to_send.getPollId()));
+    publish_socket.send(zmq::message_t(election_snapshot_to_send.getSequenceNumber() + 1));
+    publish_socket.send(zmq::message_t(election_snapshot_to_send.getJson()));
+    //publish_socket.send(zmq::message_t(electionSnapshot.getVotes()));
 }
 
 void straightLineDistributeThread::receiveFromDownForwardUp() {
@@ -52,21 +52,21 @@ void straightLineDistributeThread::receiveFromDownForwardUp() {
     int sequence_id = std::stoi(message_election_sequence.to_string());
     nlohmann::json electionOptionsJson = message_election_json.to_string();
 
-    if(address_up.length() == 0){
+    if (address_up.length() == 0) {
         // Publish down
         zmq::socket_t publish_socket(*context, zmq::socket_type::pub);
         publish_socket.bind("tcp://*:5152");
 
         publish_socket.send(zmq::message_t(election_id));
         publish_socket.send(zmq::message_t(sequence_id));
-        publish_socket.send(zmq::message_t(electionOptionsJson));
+        publish_socket.send(zmq::message_t(electionOptionsJson.dump()));
     } else {
         zmq::socket_t publish_socket(*context, zmq::socket_type::pub);
         publish_socket.bind("tcp://*:5151");
 
         publish_socket.send(zmq::message_t(election_id));
         publish_socket.send(zmq::message_t(sequence_id));
-        publish_socket.send(zmq::message_t(electionOptionsJson));
+        publish_socket.send(zmq::message_t(electionOptionsJson.dump()));
     }
 }
 
@@ -93,15 +93,15 @@ void straightLineDistributeThread::receiveFromUpForwardDown() {
     nlohmann::json election_options_json = message_election_json.to_string();
     nlohmann::json votes_json = message_votes_json.to_string();
 
-    if(address_down.length() == 0){
+    if (address_down.length() == 0) {
     } else {
         zmq::socket_t publish_socket(*context, zmq::socket_type::pub);
         publish_socket.bind("tcp://*:5152");
 
         publish_socket.send(zmq::message_t(election_id));
         publish_socket.send(zmq::message_t(sequence_id));
-        publish_socket.send(zmq::message_t(election_options_json));
-        publish_socket.send(zmq::message_t(votes_json));
+        publish_socket.send(zmq::message_t(election_options_json.dump()));
+        publish_socket.send(zmq::message_t(votes_json.dump()));
     }
 }
 
@@ -110,5 +110,18 @@ void straightLineDistributeThread::setParams(void *arg, std::string address_up, 
     this->arg = arg;
     this->address_down = address_down;
     this->address_up = address_up;
-    this->electionSnapshot = election_snapshot;
+    this->election_snapshot_to_send = election_snapshot;
+}
+
+election &straightLineDistributeThread::getElectionSnapshot() const {
+    return election_snapshot_to_send;
+}
+
+straightLineDistributeThread::straightLineDistributeThread(election &election_snapshot)
+        : election_snapshot_to_send(election_snapshot) {
+    this->election_snapshot_to_send = election_snapshot;
+}
+
+straightLineDistributeThread::straightLineDistributeThread() {
+
 }

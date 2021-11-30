@@ -16,7 +16,7 @@ public:
     //virtual void addPeer() = 0;
     //virtual void InitSyncronizeTopologyData(void *arg, std::string initial_receiver_address, std::map<std::string, std::string> connection_table, std::set<std::string> peers) = 0;
     //virtual void SyncronizeTopologyData(void* arg, std::map<std::string, std::string> connection_table, std::set<std::string> peers) = 0;
-
+    virtual abstractThread& getDistributeWorker() = 0;
     virtual abstractThread& getSyncWorker() = 0;
 };
 

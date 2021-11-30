@@ -12,20 +12,6 @@
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
 
-void distributePoll(void *arg) {
-    nlohmann::json current_poll_json = nlohmann::ordered_json(current_poll);
-    zmq::context_t *context = (zmq::context_t *) arg;
-    zmq::message_t request;
-    peer peer;
-
-    zmq::socket_t towards_next_peer(*context, ZMQ_REQ);
-    towards_next_peer.connect("tcp://" + first_peer + ":4456");
-    towards_next_peer.send(zmq::message_t(current_poll_json.dump()));
-
-    // Get list of connections
-    // send out to all connections
-}
-
 void *receivePoll(void *arg) {
     // Get list of connections
     // send out to all connections
@@ -91,9 +77,10 @@ int main(int argc, char **argv) {
     }
 
     straightLineSyncThread straight_line_sync_thread;
+    straightLineDistributeThread straight_line_distribute_thread;
 
 
-    auto straight_line_topology = straightLineTopology(straight_line_sync_thread);
+    auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
     networkPlan plan(straight_line_topology);
 
     pthread_t syncWorker;
@@ -115,8 +102,8 @@ int main(int argc, char **argv) {
         if (input.find("receive_connection") != -1) {
             local_peer.receive(&context);
         }
-        if (input.find("distribute_poll") != -1) {
-            distributePoll(&context);
+        if (input.find("distribute_first_election") != -1) {
+            local_peer.distribute_election(&context,straight_line_distribute_thread);
         }
         if (input.find("receive_poll") != -1) {
             receivePoll(&context);

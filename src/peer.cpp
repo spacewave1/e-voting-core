@@ -115,6 +115,7 @@ void peer::receive(void *abstractContext) {
 
                 // Add to connection to topology
                 known_peer_addresses.insert(request.to_string());
+                known_peer_addresses.insert(std::string(request.gets("Peer-Address")));
                 connection_table.insert(
                         std::make_pair(std::string(request.gets("Peer-Address")), std::string(request.to_string())));
 
@@ -298,4 +299,19 @@ void peer::dumpElectionBox() {
     std::for_each(election_box.begin(), election_box.end(), [](election electionEntry){
         electionEntry.print();
     });
+}
+
+// TODO: Test distribute election - check thread behavior
+void peer::distribute_election(void* context, straightLineDistributeThread& thread) {
+
+    std::map<std::string, std::string> reversedConnectionTable;
+    std::for_each(connection_table.begin(), connection_table.end(),[&reversedConnectionTable](std::pair<std::string, std::string> addressToAddress) {
+        reversedConnectionTable.insert(addressToAddress.second, addressToAddress.first);
+    });
+
+    std::string address_up = connection_table[peer_address];
+    std::string address_down = reversedConnectionTable[peer_address];
+
+    thread.setParams(context, address_up, address_down, election_box[0]);
+    thread.StartInternalThread();
 }
