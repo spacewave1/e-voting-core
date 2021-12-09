@@ -9,6 +9,8 @@
 #include "peer.h"
 #include <fstream>
 
+size_t getAndIncrement(std::string self_address, std::string current_address,
+                       std::map<std::string, std::string> &connection_table, size_t current_position);
 
 void peer::printConnections() {
     // Iterate through "receiver" nodes
@@ -66,7 +68,7 @@ void printMetaData(zmq::message_t &msg) {
     std::cout << std::endl;
 }
 
-void peer::connect(std::string& input, void *abstractContext) {
+void peer::connect(std::string &input, void *abstractContext) {
     std::cout << "is connecting to " << input << std::endl;
     const std::string delimiter = " ";
     size_t position_of_whitespace = input.find(delimiter);
@@ -145,30 +147,30 @@ peer::peer() {
     peer_address = "";
 }
 
-void peer::initSyncThread(void* context, straightLineSyncThread& thread, std::string initial_receiver_address){
+void peer::initSyncThread(void *context, straightLineSyncThread &thread, std::string initial_receiver_address) {
     thread.setParams(context, connection_table, known_peer_addresses, initial_receiver_address);
     thread.StartInternalThread();
 }
 
-const std::set <std::string> &peer::getKnownPeerAddresses() const {
+const std::set<std::string> &peer::getKnownPeerAddresses() const {
     return known_peer_addresses;
 }
 
-void peer::setKnownPeerAddresses(const std::set <std::string> &known_peer_addresses) {
+void peer::setKnownPeerAddresses(const std::set<std::string> &known_peer_addresses) {
     peer::known_peer_addresses = known_peer_addresses;
 }
 
-const std::map <std::string, std::string> &peer::getConnectionTable() const {
+const std::map<std::string, std::string> &peer::getConnectionTable() const {
     return connection_table;
 }
 
-void peer::setConnectionTable(const std::map <std::string, std::string> &connection_table) {
+void peer::setConnectionTable(const std::map<std::string, std::string> &connection_table) {
     peer::connection_table = connection_table;
 }
 
 void peer::exportPeerConnections(std::string exportPath) {
     std::ofstream exportStream;
-    exportStream.open (exportPath + "connections.json");
+    exportStream.open(exportPath + "connections.json");
     nlohmann::json connectionsJson = nlohmann::json();
     connectionsJson["connections"] = nlohmann::ordered_json(connection_table);
     exportStream << connectionsJson.dump() << "\n";
@@ -177,7 +179,7 @@ void peer::exportPeerConnections(std::string exportPath) {
 
 void peer::exportPeersList(std::string exportPath) {
     std::ofstream exportStream;
-    exportStream.open (exportPath + "peers.json");
+    exportStream.open(exportPath + "peers.json");
     nlohmann::json peersJson = nlohmann::json();
     peersJson["peers"] = nlohmann::ordered_json(known_peer_addresses);
     exportStream << peersJson.dump() << "\n";
@@ -193,9 +195,8 @@ void peer::importPeerConnections(std::string importPath) {
     // File Open in the Read Mode
     importStream.open(importPath + "connections.json");
 
-    if(importStream.is_open())
-    {
-        if(getline(importStream, line)) {
+    if (importStream.is_open()) {
+        if (getline(importStream, line)) {
             std::cout << line << std::endl;
 
             nlohmann::json connectionsJson = nlohmann::json::parse(line);
@@ -207,9 +208,7 @@ void peer::importPeerConnections(std::string importPath) {
         // File Close
         importStream.close();
         std::cout << "Successfully imported connections" << std::endl;
-    }
-    else
-    {
+    } else {
         std::cout << "Unable to open the file!" << std::endl;
     }
 }
@@ -223,9 +222,8 @@ void peer::importPeersList(std::string importPath) {
     // File Open in the Read Mode
     importStream.open(importPath + "peers.json");
 
-    if(importStream.is_open())
-    {
-        if(getline(importStream, line)) {
+    if (importStream.is_open()) {
+        if (getline(importStream, line)) {
             std::cout << line << std::endl;
 
             nlohmann::json peersJson = nlohmann::json::parse(line);
@@ -237,16 +235,14 @@ void peer::importPeersList(std::string importPath) {
         // File Close
         importStream.close();
         std::cout << "Successfully imported peers" << std::endl;
-    }
-    else
-    {
+    } else {
         std::cout << "Unable to open the file!" << std::endl;
     }
 }
 
 void peer::vote() {
     // Take the first election
-    if(election_box.size() > 0) {
+    if (election_box.size() > 0) {
         std::cout << election_box[0].getJson() << std::endl;
 
         std::string input;
@@ -260,7 +256,7 @@ void peer::vote() {
     }
 };
 
-void peer::createElection() {
+void peer::createElection(size_t election_id) {
     std::cout << "Enter how many possible Options can be elected" << std::endl;
     std::string input;
     std::getline(std::cin, input);
@@ -271,20 +267,21 @@ void peer::createElection() {
     std::cout << options.size() << std::endl;
 
     size_t index = 0;
-    std::transform(options.begin(), options.end(), options.begin(), [&index, &election_options](const std::string &option) -> std::string {
-        std::cout << "Enter Option #" << index << std::endl;
-        std::string input;
-        std::getline(std::cin, input);
-        election_options[index] = input;
-        index++;
-        return input;
-    });
+    std::transform(options.begin(), options.end(), options.begin(),
+                   [&index, &election_options](const std::string &option) -> std::string {
+                       std::cout << "Enter Option #" << index << std::endl;
+                       std::string input;
+                       std::getline(std::cin, input);
+                       election_options[index] = input;
+                       index++;
+                       return input;
+                   });
 
     nlohmann::json electionJson = nlohmann::ordered_json(election_options);
     std::cout << electionJson.dump() << std::endl;
 
     election initialElectionState;
-    initialElectionState.setPollId(0);
+    initialElectionState.setPollId(election_id);
     initialElectionState.setSequenceNumber(0);
     initialElectionState.setJson(electionJson.dump());
 
@@ -293,25 +290,95 @@ void peer::createElection() {
 
 void peer::setIdentity(std::string identity) {
     peer_identity = identity;
+    peer_address = identity;
 }
 
 void peer::dumpElectionBox() {
-    std::for_each(election_box.begin(), election_box.end(), [](election electionEntry){
+    std::for_each(election_box.begin(), election_box.end(), [](election electionEntry) {
         electionEntry.print();
     });
 }
 
-// TODO: Test distribute election - check thread behavior
-void peer::distribute_election(void* context, straightLineDistributeThread& thread) {
+void peer::passiveDistribution(void *context, straightLineDistributeThread &thread) {
 
     std::map<std::string, std::string> reversedConnectionTable;
-    std::for_each(connection_table.begin(), connection_table.end(),[&reversedConnectionTable](std::pair<std::string, std::string> addressToAddress) {
-        reversedConnectionTable.insert(addressToAddress.second, addressToAddress.first);
-    });
+    std::for_each(connection_table.begin(), connection_table.end(),
+                  [&reversedConnectionTable](std::pair<std::string, std::string> addressToAddress) {
+                      reversedConnectionTable[addressToAddress.second] = addressToAddress.first;
+                  });
+
+    std::string address_up;
+    if (connection_table.contains(peer_address)) {
+        address_up = connection_table[peer_address];
+    }
+
+    std::string address_down;
+    if (reversedConnectionTable.contains(peer_address)) {
+        address_down = reversedConnectionTable[peer_address];
+    }
+
+    calculatePositionFromTable();
+
+    thread.setInitialDistributer(false);
+    thread.setParams(context, address_up, address_down, position);
+    thread.StartInternalThread();
+}
+
+// TODO: Test distribute election - check thread behavior
+void peer::distributeElection(void *context, straightLineDistributeThread &thread) {
+
+    std::map<std::string, std::string> reversedConnectionTable;
+    std::for_each(connection_table.begin(), connection_table.end(),
+                  [&reversedConnectionTable](std::pair<std::string, std::string> addressToAddress) {
+                      reversedConnectionTable[addressToAddress.second] = addressToAddress.first;
+                  });
 
     std::string address_up = connection_table[peer_address];
     std::string address_down = reversedConnectionTable[peer_address];
 
-    thread.setParams(context, address_up, address_down, election_box[0]);
+    calculatePositionFromTable();
+
+    thread.setInitialDistributer(true);
+    thread.setParams(context, address_up, address_down, position, election_box[0]);
     thread.StartInternalThread();
+}
+
+void peer::calculatePositionFromTable() {
+    std::map<std::string, std::string> reversed_connection_table;
+    auto connection_table_temp = connection_table;
+
+    std::for_each(connection_table.begin(), connection_table.end(),
+                  [&reversed_connection_table](std::pair<std::string, std::string> pair) {
+                      reversed_connection_table[pair.second] = pair.first;
+                  });
+
+    std::string root_address;
+
+    std::for_each(reversed_connection_table.begin(), reversed_connection_table.end(),
+                  [&connection_table_temp, &root_address](std::pair<std::string, std::string> pair) {
+                      if (!connection_table_temp.contains(pair.first)) {
+                          root_address = pair.first;
+                      }
+                  });
+
+    std::cout << "test" << std::endl;
+    std::cout << root_address << std::endl;
+    std::cout << peer_address << std::endl;
+
+    size_t pos = getAndIncrement(peer_address, root_address, reversed_connection_table, 0);
+
+    this->position = pos;
+    std::cout << "Calculated position for " << peer_address << " is " << pos << std::endl;
+}
+
+size_t getAndIncrement(std::string self_address, std::string current_address,
+                       std::map<std::string, std::string> &connection_table, size_t current_position) {
+
+    std::cout << std::endl;
+    if (current_address == self_address || !connection_table.contains(current_address)) {
+        return current_position;
+    } else {
+        current_position++;
+        return getAndIncrement(self_address, connection_table[current_address], connection_table, current_position);
+    }
 }

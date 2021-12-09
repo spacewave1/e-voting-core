@@ -17,7 +17,7 @@ public:
     peer();
     virtual ~peer();
     void receive(void *context);
-    void createElection();
+    void createElection(size_t election_id);
     void vote();
     void connect(std::string& input, void *context);
     void printConnections();
@@ -31,11 +31,14 @@ public:
     void exportPeersList(std::string exportPath = "./");
     void importPeerConnections(std::string importPath = "./");
     void importPeersList(std::string importPath = "./");
-    void distribute_election(void* context, straightLineDistributeThread& thread);
+    void distributeElection(void* context, straightLineDistributeThread& thread);
+    void passiveDistribution(void* context, straightLineDistributeThread& thread);
     void dumpElectionBox();
 private:
+    void calculatePositionFromTable();
     std::string peer_identity;
     std::string peer_address;
+    size_t position;
     std::vector<election> election_box;
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;

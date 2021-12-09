@@ -5,6 +5,7 @@
 #ifndef VOTE_P2P_ELECTION_H
 #define VOTE_P2P_ELECTION_H
 
+#include <nlohmann/json.hpp>
 #include <string>
 #include <iostream>
 
@@ -56,7 +57,7 @@ public:
 
     void placeVote(const std::string identity, int chosen_option){
         if(!votes.contains(identity)) {
-            std::cout << "Has placed vote on " << chosen_option << std::endl;
+           // std::cout << "Has placed vote on " << chosen_option << std::endl;
             votes[identity] = chosen_option;
         } else {
             std::cout << "" << std::endl;

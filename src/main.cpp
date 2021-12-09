@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
 
     auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
     networkPlan plan(straight_line_topology);
+    size_t election_id = 0;
 
     pthread_t syncWorker;
     if (argc < 2) {
@@ -102,8 +103,11 @@ int main(int argc, char **argv) {
         if (input.find("receive_connection") != -1) {
             local_peer.receive(&context);
         }
-        if (input.find("distribute_first_election") != -1) {
-            local_peer.distribute_election(&context,straight_line_distribute_thread);
+        if (input.find("passive_distribution") != -1) {
+            local_peer.passiveDistribution(&context, straight_line_distribute_thread);
+        }
+        if (input.find("active_distribution") != -1) {
+            local_peer.distributeElection(&context, straight_line_distribute_thread);
         }
         if (input.find("receive_poll") != -1) {
             receivePoll(&context);
@@ -112,7 +116,9 @@ int main(int argc, char **argv) {
             local_peer.vote();
         }
         if (input.find("create_election") != -1) {
-            local_peer.createElection();
+            // nextElectionId = networkBuffer.getId()
+            local_peer.createElection(election_id);
+            election_id += 1; // networkBuffer.incrementElectionId
         }
         if (input.find("fetch") != -1) {
             pthread_t pollFetchWorker;
