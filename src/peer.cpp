@@ -320,7 +320,7 @@ void peer::passiveDistribution(void *context, straightLineDistributeThread &thre
     calculatePositionFromTable();
 
     thread.setInitialDistributer(false);
-    thread.setParams(context, address_up, address_down, position);
+    thread.setParams(context, address_up, address_down, position, known_peer_addresses.size());
     thread.StartInternalThread();
 }
 
@@ -333,13 +333,20 @@ void peer::distributeElection(void *context, straightLineDistributeThread &threa
                       reversedConnectionTable[addressToAddress.second] = addressToAddress.first;
                   });
 
-    std::string address_up = connection_table[peer_address];
-    std::string address_down = reversedConnectionTable[peer_address];
+    std::string address_up;
+    if (connection_table.contains(peer_address)) {
+        address_up = connection_table[peer_address];
+    }
+
+    std::string address_down;
+    if (reversedConnectionTable.contains(peer_address)) {
+        address_down = reversedConnectionTable[peer_address];
+    }
 
     calculatePositionFromTable();
 
     thread.setInitialDistributer(true);
-    thread.setParams(context, address_up, address_down, position, election_box[0]);
+    thread.setParams(context, address_up, address_down, position, known_peer_addresses.size(), election_box[0]);
     thread.StartInternalThread();
 }
 
