@@ -3,7 +3,6 @@
 #include <sstream>
 #include <zmq.hpp>
 #include <regex>
-#include <set>
 #include <nlohmann/json.hpp>
 #include <pthread.h>
 #include <fstream>

@@ -4,8 +4,6 @@
 
 #include "straightLineTopology.h"
 
-#include <utility>
-
 void straightLineTopology::addPeer() {
 
 }

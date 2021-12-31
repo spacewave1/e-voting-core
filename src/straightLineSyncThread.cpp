@@ -5,7 +5,7 @@
 #include "straightLineSyncThread.h"
 #include <iostream>
 #include "zmq.hpp"
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include <regex>
 #include <set>
 #include <map>

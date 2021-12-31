@@ -7,6 +7,7 @@
 
 #include "abstractThread.h"
 #include "election.h"
+#include <nlohmann/json.hpp>
 #include <zmq.hpp>
 #include <string>
 
