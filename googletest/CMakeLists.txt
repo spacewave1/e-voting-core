@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 include(FetchContent)
+
 FetchContent_Declare(
         googletest
         # Specify the commit you depend on and update it regularly.

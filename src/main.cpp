@@ -3,6 +3,7 @@
 #include <sstream>
 #include <zmq.hpp>
 #include <regex>
+#include "zmqSocketAdapter.h"
 #include <nlohmann/json.hpp>
 #include <pthread.h>
 #include <fstream>
@@ -75,8 +76,14 @@ int main(int argc, char **argv) {
         }
     }
 
+    zmq::socket_t pub_socket;
+    zmq::socket_t sub_socket;
+
+    zmqSocketAdapter pub_socket_adapter(pub_socket);
+    zmqSocketAdapter sub_socket_adapter(sub_socket);
+
     straightLineSyncThread straight_line_sync_thread;
-    straightLineDistributeThread straight_line_distribute_thread;
+    straightLineDistributeThread straight_line_distribute_thread(pub_socket_adapter, sub_socket_adapter);
 
 
     auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);

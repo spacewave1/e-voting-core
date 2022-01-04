@@ -3,6 +3,7 @@
 //
 
 #include "straightLineDistributeThread.h"
+#include "zmqSocketAdapter.h"
 #include "peer.h"
 
 void straightLineDistributeThread::InternalThreadEntry() {
@@ -72,6 +73,8 @@ void straightLineDistributeThread::sendInitialRequest() {
 
     nlohmann::json sendJson;
     sendJson["originPosition"] = node_position;
+
+    // TODO: Fall nicht abgedeckt bei der sich der initial request in der Mitte befindet
 
     if (!address_up.empty()) {
         request_socket.connect("tcp://" + address_up + ":5049");
@@ -147,9 +150,9 @@ void straightLineDistributeThread::sendDistributionRequest(std::string direction
 void straightLineDistributeThread::receiveData(std::string direction) {
     log("localhost", "Receive data");
     if (direction == "down") {
-        receiveFromDown();
+        election_snapshot_to_send = receiveFromDown();
     } else {
-        receiveFromUp();
+        election_snapshot_to_send = receiveFromUp();
     }
 }
 
@@ -205,6 +208,11 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
             log(address_down, reply.to_string());
             forward_request.disconnect("tcp://" + address_down + ":5049");
             forward_request.close();
+
+
+            zmq::socket_t socket = zmq::socket_t(*context, zmq::socket_type::sub);
+            socket.set(zmq::sockopt::subscribe, "");
+            //((zmqSocketAdapter &) subscribe_socket).setSocket(socket);
         }
     } else if (originPosition > node_position) {
         log("localhost", "Set subscribe socket for downwards");
@@ -213,6 +221,8 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
             log("localhost", "Forward port number to subscribers");
             zmq::socket_t forward_request(*context, zmq::socket_type::req);
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
+
+
             sendJson["origin_publish_port"] = publish_port;
             forward_request.connect("tcp://" + address_up + ":5049");
             forward_request.send(zmq::buffer(sendJson.dump()));
@@ -222,30 +232,32 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
             log(address_up, reply.to_string());
             forward_request.disconnect("tcp://" + address_up + ":5049");
             forward_request.close();
+
+            zmq::socket_t socket = zmq::socket_t(*context, zmq::socket_type::sub);
+            socket.set(zmq::sockopt::subscribe, "");
+
+            //((zmqSocketAdapter &) subscribe_socket).setSocket(socket);
         }
     }
 }
 
 void straightLineDistributeThread::forwardUp() {
     log("localhost", "forward up");
-    auto *context = (zmq::context_t *) arg;
-    publish_socket.bind("tcp://*:" + std::to_string(publish_port));
 
-    publish_socket.send(zmq::message_t(std::to_string(election_snapshot_to_send.getPollId())));
-    publish_socket.send(zmq::message_t(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1)));
-    publish_socket.send(zmq::message_t(election_snapshot_to_send.getJson()));
+    publish_socket.bind("*", publish_port);
+
+    publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
+    publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
+    publish_socket.send(election_snapshot_to_send.getJson());
 
     log("localhost", "finished broadcasting");
     //publish_socket.send(zmq::message_t(electionSnapshot.getVotes().));
 }
 
-void straightLineDistributeThread::receiveFromUp() {
+election straightLineDistributeThread::receiveFromUp() {
     log("localhost", "receive from up");
-    auto *context = (zmq::context_t *) arg;
-    subscribe_socket = zmq::socket_t(*context, zmq::socket_type::sub);
-    subscribe_socket.set(zmq::sockopt::subscribe, "");
-    subscribe_socket.connect("tcp://" + address_up + ":" + std::to_string(subscribe_port));
 
+    subscribe_socket.connect(address_up, subscribe_port);
 
     log("localhost", "subscribe to " + address_up + ":" + std::to_string(subscribe_port));
 
@@ -253,70 +265,72 @@ void straightLineDistributeThread::receiveFromUp() {
     zmq::message_t message_election_sequence;
     zmq::message_t message_election_json;
 
-    subscribe_socket.recv(message_election_id, zmq::recv_flags::none);
-    subscribe_socket.recv(message_election_sequence, zmq::recv_flags::none);
-    subscribe_socket.recv(message_election_json, zmq::recv_flags::none);
+
+    const std::string &election_id_string = subscribe_socket.recv();
+    int election_id = std::stoi(election_id_string);
+
+    const std::string &sequence_id_string = subscribe_socket.recv();
+    int sequence_id = std::stoi(sequence_id_string);
+
+    const std::string &json = subscribe_socket.recv();
+    nlohmann::json electionOptionsJson = json;
 
     //publish_socket.send(zmq::message_t(electionSnapshot.getVotes()));
 
-    log("localhost", "received " + message_election_id.to_string());
-    log("localhost", "received " + message_election_sequence.to_string());
-    log("localhost", "received " + message_election_json.to_string());
+    log("localhost", "received " + std::to_string(election_id));
+    log("localhost", "received " + std::to_string(sequence_id));
+    log("localhost", "received " + electionOptionsJson.dump());
 
-    int election_id = std::stoi(message_election_id.to_string());
-    int sequence_id = std::stoi(message_election_sequence.to_string());
-    nlohmann::json electionOptionsJson = message_election_json.to_string();
+    election receivedElection;
 
-    election_snapshot_to_send.setPollId(election_id);
-    election_snapshot_to_send.setSequenceNumber(sequence_id);
-    election_snapshot_to_send.setJson(electionOptionsJson);
+    receivedElection.setPollId(election_id);
+    receivedElection.setSequenceNumber(sequence_id);
+    receivedElection.setJson(electionOptionsJson);
+
+    return receivedElection;
 }
 
-void straightLineDistributeThread::receiveFromDown() {
+election straightLineDistributeThread::receiveFromDown() {
     log("localhost", "receive from down");
-    auto *context = (zmq::context_t *) arg;
 
-    subscribe_socket = zmq::socket_t(*context, zmq::socket_type::sub);
-    subscribe_socket.connect("tcp://" + address_down + ":" + std::to_string(subscribe_port));
+    subscribe_socket.connect(address_down, subscribe_port);
 
     log("localhost", "subscribed to " + address_down + ":" + std::to_string(subscribe_port));
 
-    zmq::message_t message_election_id;
-    zmq::message_t message_election_sequence;
-    zmq::message_t message_election_json;
+    const std::string &election_id_string = subscribe_socket.recv();
+    int election_id = std::stoi(election_id_string);
 
-    subscribe_socket.recv(message_election_id);
-    subscribe_socket.recv(message_election_sequence);
-    subscribe_socket.recv(message_election_json);
+    const std::string &sequence_id_string = subscribe_socket.recv();
+    int sequence_id = std::stoi(sequence_id_string);
 
-    int election_id = std::stoi(message_election_id.to_string());
-    int sequence_id = std::stoi(message_election_sequence.to_string());
-    nlohmann::json electionOptionsJson = message_election_json.to_string();
+    const std::string &json = subscribe_socket.recv();
+    nlohmann::json electionOptionsJson = json;
 
-    election_snapshot_to_send.setPollId(election_id);
-    election_snapshot_to_send.setSequenceNumber(sequence_id);
-    election_snapshot_to_send.setJson(electionOptionsJson);
+    election receivedElection;
 
-    log(message_election_id.gets("Peer-Address"), message_election_id.to_string());
-    log(message_election_sequence.gets("Peer-Address"), message_election_sequence.to_string());
-    log(message_election_json.gets("Peer-Address"), message_election_json.to_string());
+    receivedElection.setPollId(election_id);
+    receivedElection.setSequenceNumber(sequence_id);
+    receivedElection.setJson(electionOptionsJson);
 
+    log("localhost", "received " + std::to_string(election_id));
+    log("localhost", "received " + std::to_string(sequence_id));
+    log("localhost", "received " + electionOptionsJson.dump());
+
+    return receivedElection;
     // Set variables
 }
 
 void straightLineDistributeThread::forwardDown() {
     log("localhost", "forward down");
-    auto *context = (zmq::context_t *) arg;
-    zmq::socket_t publish_socket(*context, zmq::socket_type::pub);
-    publish_socket.bind(("tcp://*:" + std::to_string(publish_port)));
+    publish_socket.bind("*:", publish_port);
 
     zmq_sleep(1);
 
     log("localhost", "send on port: " + std::to_string(publish_port));
 
-    publish_socket.send(zmq::message_t(std::to_string(election_snapshot_to_send.getPollId())));
-    publish_socket.send(zmq::message_t(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1)));
-    publish_socket.send(zmq::message_t(election_snapshot_to_send.getJson()));
+    publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
+    publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
+    publish_socket.send(election_snapshot_to_send.getJson());
 
     log("localhost", "finished broadcasting");
 
@@ -341,15 +355,7 @@ election straightLineDistributeThread::getElectionSnapshot() const {
     return election_snapshot_to_send;
 }
 
-straightLineDistributeThread::straightLineDistributeThread(election &election_snapshot)
-        : election_snapshot_to_send(election_snapshot) {
-    this->election_snapshot_to_send = election_snapshot;
-}
-
-straightLineDistributeThread::straightLineDistributeThread() {
-}
-
-void straightLineDistributeThread::setInitialDistributer(const bool _is_initial_requester) {
+void straightLineDistributeThread::setInitialDistributer(bool _is_initial_requester) {
     this->is_initial_requester = _is_initial_requester;
 }
 
@@ -372,4 +378,24 @@ void straightLineDistributeThread::forwardData(std::string direction) {
 
 void straightLineDistributeThread::log(std::string address, std::string content) {
     std::cout << "[" << address << "]" << (address.length() < 11 ? "\t\t" : "\t") << content << std::endl;
+}
+
+void straightLineDistributeThread::setSubscribeSocket(abstractSocket &socket) {
+    this->subscribe_socket = std::move(socket);
+}
+
+void straightLineDistributeThread::setPublishSocket(abstractSocket &socket) {
+    this->publish_socket = std::move(socket);
+}
+
+straightLineDistributeThread::straightLineDistributeThread(abstractSocket &publish_socket,
+                                                           abstractSocket &subscribe_socket)
+        : publish_socket(publish_socket), subscribe_socket(subscribe_socket) {}
+
+void straightLineDistributeThread::setPublishPort(size_t port_number) {
+    this->publish_port = port_number;
+}
+
+void straightLineDistributeThread::setSubscribePort(size_t port_number){
+    this->subscribe_port = port_number;
 }

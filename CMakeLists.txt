@@ -18,7 +18,7 @@ set(SOURCE_FILES src/main.cpp src/peer.cpp src/peer.h src/abstractTopology.cpp s
 
 enable_testing()
 
-add_executable(vote_p2p ${SOURCE_FILES})
+add_executable(vote_p2p ${SOURCE_FILES} src/zmqSocketAdapter.h src/zmqSocketAdapter.cpp src/zmqSocketAdapter.h src/abstractSocket.h)
 add_library(vote_p2p_lib STATIC ${SOURCE_FILES})
 
 add_subdirectory(test)
