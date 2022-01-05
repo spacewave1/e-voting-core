@@ -23,7 +23,6 @@ public:
     void connect(std::string address, size_t port) override;
     void bind(std::string address, size_t port) override;
     void log(std::string address, std::string content);
-
     zmqSocketAdapter(zmq::socket_t &socket);
 };
 

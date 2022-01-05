@@ -233,16 +233,13 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
             forward_request.disconnect("tcp://" + address_up + ":5049");
             forward_request.close();
 
-            zmq::socket_t socket = zmq::socket_t(*context, zmq::socket_type::sub);
-            socket.set(zmq::sockopt::subscribe, "");
-
-            //((zmqSocketAdapter &) subscribe_socket).setSocket(socket);
         }
     }
 }
 
 void straightLineDistributeThread::forwardUp() {
     log("localhost", "forward up");
+
 
     publish_socket.bind("*", publish_port);
 
@@ -322,7 +319,7 @@ election straightLineDistributeThread::receiveFromDown() {
 
 void straightLineDistributeThread::forwardDown() {
     log("localhost", "forward down");
-    publish_socket.bind("*:", publish_port);
+    publish_socket.bind("*", publish_port);
 
     zmq_sleep(1);
 
