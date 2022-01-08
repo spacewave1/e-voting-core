@@ -9,9 +9,6 @@
 #include "peer.h"
 #include <fstream>
 
-size_t getAndIncrement(std::string self_address, std::string current_address,
-                       std::map<std::string, std::string> &connection_table, size_t current_position);
-
 void peer::printConnections() {
     // Iterate through "receiver" nodes
     size_t index = 0;
@@ -243,16 +240,18 @@ void peer::importPeersList(std::string importPath) {
 void peer::vote() {
     // Take the first election
     if (election_box.size() > 0) {
-        std::cout << election_box[0].getJson() << std::endl;
+        election chosen_election = selectElection();
 
+        std::cout << "Choose Option" << std::endl << chosen_election.getElectionOptionsJson() << std::endl;
         std::string input;
+
         std::getline(std::cin, input);
         std::size_t chosen_option = std::stoi(input);
 
         std::cout << "identity: " << peer_identity << std::endl;
         std::cout << "option:" << chosen_option << std::endl;
 
-        election_box[0].placeVote(peer_identity, chosen_option);
+        chosen_election.placeVote(peer_identity, chosen_option);
     }
 };
 
@@ -324,8 +323,28 @@ void peer::passiveDistribution(void *context, straightLineDistributeThread &thre
     thread.StartInternalThread();
 }
 
+election& peer::selectElection() {
+    std::cout << "Select which election to distribute by id" << std::endl;
+    std::for_each(election_box.begin(), election_box.end(), [](election current_election){
+        std::cout << "[" << current_election.getPollId() << "]: " << current_election.getElectionOptionsJson() << std::endl;
+    });
+    std::string input_string;
+    size_t selected_election_id = std::stoi(input_string);
+
+    while(true && input_string != "exit") {
+        std::getline(std::cin, input_string);
+        std::cout << std::endl;
+        if(isNumber(input_string) && selected_election_id < election_box.size()) {
+            return election_box[selected_election_id];
+        }
+    }
+    std::exit(10);
+}
+
 // TODO: Test distribute election - check thread behavior
 void peer::distributeElection(void *context, straightLineDistributeThread &thread) {
+
+    election& selected_election = selectElection();
 
     std::map<std::string, std::string> reversedConnectionTable;
     std::for_each(connection_table.begin(), connection_table.end(),
@@ -378,7 +397,7 @@ void peer::calculatePositionFromTable() {
     std::cout << "Calculated position for " << peer_address << " is " << pos << std::endl;
 }
 
-size_t getAndIncrement(std::string self_address, std::string current_address,
+size_t peer::getAndIncrement(std::string self_address, std::string current_address,
                        std::map<std::string, std::string> &connection_table, size_t current_position) {
 
     std::cout << std::endl;
@@ -388,4 +407,13 @@ size_t getAndIncrement(std::string self_address, std::string current_address,
         current_position++;
         return getAndIncrement(self_address, connection_table[current_address], connection_table, current_position);
     }
+}
+
+bool peer::isNumber(const std::string s)
+{
+    for (char const &ch : s) {
+        if (std::isdigit(ch) == 0)
+            return false;
+    }
+    return true;
 }

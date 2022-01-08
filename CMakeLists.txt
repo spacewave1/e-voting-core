@@ -14,11 +14,36 @@ include_directories(${cppzmq_INCLUDE_DIR})
 
 add_subdirectory(googletest)
 
-set(SOURCE_FILES src/main.cpp src/peer.cpp src/peer.h src/abstractTopology.cpp src/abstractTopology.h src/networkPlan.cpp src/networkPlan.h src/straightLineTopology.cpp src/straightLineTopology.h src/abstractThread.h src/straightLineSyncThread.cpp src/straightLineSyncThread.h src/election.h src/straightLineDistributeThread.cpp src/straightLineDistributeThread.h src/straightLineTopDistributeThread.cpp src/straightLineTopDistributeThread.h)
+set(SOURCE_FILES
+        src/main.cpp
+        src/peer.cpp
+        src/peer.h
+        src/abstractTopology.cpp
+        src/abstractTopology.h
+        src/networkPlan.cpp
+        src/networkPlan.h
+        src/straightLineTopology.cpp
+        src/straightLineTopology.h
+        src/abstractThread.h
+        src/straightLineSyncThread.cpp
+        src/straightLineSyncThread.h
+        src/election.h
+        src/election.cpp
+        src/straightLineDistributeThread.cpp
+        src/straightLineDistributeThread.h
+        src/straightLineTopDistributeThread.cpp
+        src/straightLineTopDistributeThread.h
+        src/zmqSocketAdapter.h
+        src/zmqSocketAdapter.cpp
+        src/zmqSocketAdapter.h
+        src/abstractSocket.h
+        src/electionBuilder.cpp
+        src/electionBuilder.h
+        src/electionPrototype.h)
 
 enable_testing()
 
-add_executable(vote_p2p ${SOURCE_FILES} src/zmqSocketAdapter.h src/zmqSocketAdapter.cpp src/zmqSocketAdapter.h src/abstractSocket.h)
+add_executable(vote_p2p ${SOURCE_FILES})
 add_library(vote_p2p_lib STATIC ${SOURCE_FILES})
 
 add_subdirectory(test)

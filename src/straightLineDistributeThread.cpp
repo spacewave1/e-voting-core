@@ -245,7 +245,7 @@ void straightLineDistributeThread::forwardUp() {
 
     publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
     publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    publish_socket.send(election_snapshot_to_send.getJson());
+    publish_socket.send(election_snapshot_to_send.getElectionOptionsJson());
 
     log("localhost", "finished broadcasting");
     //publish_socket.send(zmq::message_t(electionSnapshot.getVotes().));
@@ -327,13 +327,13 @@ void straightLineDistributeThread::forwardDown() {
 
     publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
     publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    publish_socket.send(election_snapshot_to_send.getJson());
+    publish_socket.send(election_snapshot_to_send.getElectionOptionsJson());
 
     log("localhost", "finished broadcasting");
 
     log("localhost", "send: " + std::to_string(election_snapshot_to_send.getPollId()));
     log("localhost", "send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    log("localhost", "send: " + election_snapshot_to_send.getJson());
+    log("localhost", "send: " + election_snapshot_to_send.getElectionOptionsJson());
     //publish_socket.send(zmq::message_t(electionSnapshot.getVotes().));
 }
 

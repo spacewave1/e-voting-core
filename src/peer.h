@@ -42,6 +42,13 @@ private:
     std::vector<election> election_box;
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;
+
+    election& selectElection();
+
+    bool isNumber(const std::string s);
+
+    size_t getAndIncrement(std::string self_address, std::string current_address,
+                           std::map<std::string, std::string> &connection_table, size_t current_position);
 };
 
 

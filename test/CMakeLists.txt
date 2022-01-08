@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.17)
 
-set(SOURCE_FILES testStraightLine.cpp MockSocket.h)
+set(SOURCE_FILES testStraightLine.cpp MockSocket.h testElectionLogic.cpp testStraightLine.h testElectionLogic.h)
 set(name test_p2p_vote)
 
 add_executable(${name} ${SOURCE_FILES})
-target_link_libraries(test_p2p_vote PUBLIC
+target_link_libraries(${name} PUBLIC
+        gtest
         gtest_main
+        gmock
         gmock_main
         vote_p2p_lib
         cppzmq

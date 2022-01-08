@@ -7,76 +7,47 @@
 
 #include <nlohmann/json.hpp>
 #include <string>
+#include <set>
 #include <iostream>
+#include <chrono>
+#include <utility>
+#include "electionPrototype.h"
+
+class electionBuilder;
 
 class election {
+    election(int id) : prototype(id,0,"") {}
+
 private:
-    int election_id;
-    size_t sequence_number;
-    std::map<std::string, int> votes;
-    std::string json;
+    electionPrototype prototype;
+    std::time_t setupDate;
+    std::set<std::string> participants;
+    std::map<std::string, int> participants_votes;
+    election(int id, size_t sequence_id, nlohmann::json options);
 
 public:
-    election(int election_id, size_t sequence_number, const std::map<std::string, int> &votes, const std::string &json)
-            : election_id(election_id), sequence_number(sequence_number), votes(votes), json(json) {}
+    friend class electionBuilder;
+    static electionBuilder create(int id);
 
+    election(int election_id, size_t sequence_number, const std::map<std::string, int> &votes,
+             const std::set<std::string> &participants, const std::string &election_options_json);
+    election();
 
-    election() {}
+    const std::map<std::string, int> &getParticipantsVotes() const;
+    int getPollId() const;
+    void setPollId(int poll_id);
 
-    int getPollId() const {
-        return election_id;
-    }
-
-    void setPollId(int poll_id) {
-        election::election_id = poll_id;
-    }
-
-    size_t getSequenceNumber() const {
-        return sequence_number;
-    }
-
-    void setSequenceNumber(size_t sequence_number) {
-        election::sequence_number = sequence_number;
-    }
-
-    const std::string &getJson() const {
-        return json;
-    }
-
-    void setJson(const std::string &json) {
-        election::json = json;
-    }
-
-    const std::map<std::string, int> &getVotes() const {
-        return votes;
-    }
-
-    void setVotes(const std::map<std::string, int> &votes) {
-        election::votes = votes;
-    }
-
-    void placeVote(const std::string identity, int chosen_option){
-        if(!votes.contains(identity)) {
-           // std::cout << "Has placed vote on " << chosen_option << std::endl;
-            votes[identity] = chosen_option;
-        } else {
-            std::cout << "" << std::endl;
-        }
-
-        nlohmann::json js = nlohmann::json::parse(json);
-        std::for_each(votes.begin(), votes.end(), [&js](const std::pair<std::string, int> &id_option_pair) {
-            std::cout << id_option_pair.first << ": " << id_option_pair.second << js[id_option_pair.second] << std::endl;
-        });
-    }
-
-    void print() {
-        std::cout << "id: " << election_id << std::endl;
-        std::cout << "sequence: " << sequence_number << std::endl;
-        std::cout << json << std::endl;
-        std::for_each(votes.begin(), votes.end(), [](std::pair<std::string, int> id_choice_pair){
-            std::cout << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
-        });
-    }
+    time_t getSetupDate() const;
+    size_t getSequenceNumber() const;
+    void setSequenceNumber(size_t sequence_number);
+    const std::string &getElectionOptionsJson() const;
+    void setJson(const std::string &json);
+    const std::map<std::string, int> &getVotes() const;
+    void setVotes(const std::map<std::string, int> &votes);
+    bool placeVote(const std::string identity, int chosen_option);
+    nlohmann::json participantVotesAsJson();
+    void prepareForDistribtion(std::set<std::string> peer_identities);
+    void print();
 };
 
 

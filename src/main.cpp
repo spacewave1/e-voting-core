@@ -76,7 +76,6 @@ int main(int argc, char **argv) {
         }
     }
 
-
     zmq::socket_t sub_socket = zmq::socket_t(context, zmq::socket_type::sub);
     sub_socket.set(zmq::sockopt::subscribe, "");
     zmq::socket_t pub_socket = zmq::socket_t(context, zmq::socket_type::pub);
