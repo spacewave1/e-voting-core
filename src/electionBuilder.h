@@ -8,14 +8,19 @@
 #pragma once
 
 #include "election.h"
+#include <nlohmann/json.hpp>
 
 class electionBuilder {
 private:
     election el;
 public:
     electionBuilder(int id) : el(id) {}
-    electionBuilder &withParticipants(std::set<std::string> participants);
-    electionBuilder &withParticipantsVotes(std::map<std::string, int> participants_votes);
+    electionBuilder &withParticipants(std::set<std::string>& participants);
+    electionBuilder &withParticipantsVotes(std::map<std::string, int>& participants_votes);
+    electionBuilder &withVoteOptions(std::map<size_t, std::string> options);
+    electionBuilder &withSequenceNumber(int sequence_number);
+    virtual ~electionBuilder();
+
     operator election() const { return std::move(el); }
 };
 

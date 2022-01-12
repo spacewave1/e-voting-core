@@ -5,18 +5,13 @@
 #include "election.h"
 #include "electionBuilder.h"
 
-election::election(int election_id, size_t sequence_number, const std::map<std::string, int> &votes,
-                   const std::set<std::string> &participants, const std::string &election_options_json)
-        : prototype(electionPrototype(election_id, sequence_number, election_options_json)),
-          participants_votes(votes), participants(participants) {}
-
-election::election(int id, size_t sequence_id, nlohmann::json options) : prototype(
-        electionPrototype(id, sequence_id, options)) {
-
+election::election(const int id) : prototype(
+        electionPrototype(id)) {
+    //std::cout << "Constructor with int called" << std::endl;
 }
 
 election::election() {
-
+    //std::cout << "Empty constructor called" << std::endl;
 }
 
 electionBuilder election::create(int id) {
@@ -28,7 +23,7 @@ const std::map<std::string, int> &election::getParticipantsVotes() const {
 }
 
 bool election::placeVote(const std::string identity, int chosen_option) {
-    if (participants_votes.contains(identity)) {
+    if (participants_votes.contains(identity) && participants_votes[identity] != -1) {
         std::cout << "Vote for the identity (" << identity << ") has already been placed." << std::endl;
         return false;
     } else if (!participants.contains(identity)) {
@@ -41,24 +36,47 @@ bool election::placeVote(const std::string identity, int chosen_option) {
     }
 }
 
+nlohmann::json election::getCurrentElectionStatisticAsJson() {
+    nlohmann::json js;
+    std::map<size_t, size_t> optionIdToVoteCounts;
 
-nlohmann::json election::participantVotesAsJson() {
-    nlohmann::json js = nlohmann::json::parse(prototype.election_options_json);
-    std::for_each(participants_votes.begin(), participants_votes.end(),
-                  [&js](const std::pair<std::string, int> &id_option_pair) {
-                      std::cout << id_option_pair.first << ": " << id_option_pair.second
-                                << js[id_option_pair.second] << std::endl;
+    std::for_each(prototype.options.begin(), prototype.options.end(),
+                  [&optionIdToVoteCounts](const std::pair<size_t, std::string> &idToOptionName) {
+                      optionIdToVoteCounts[idToOptionName.first] = 0;
                   });
 
+    std::for_each(participants_votes.begin(), participants_votes.end(),
+                  [&optionIdToVoteCounts](const std::pair<std::string, int> &identityToVoteOptionId) {
+                      if (identityToVoteOptionId.second != -1) {
+                          optionIdToVoteCounts[identityToVoteOptionId.second] += 1;
+                      }
+                  });
+    std::map<size_t, std::string> &p = prototype.options;
+
+    std::for_each(optionIdToVoteCounts.begin(), optionIdToVoteCounts.end(),
+                  [&js, &p](const std::pair<size_t, size_t> &idToCount) {
+                      js[idToCount.first]["name"] = p[idToCount.first];
+                      js[idToCount.first]["count"] = idToCount.second;
+                  });
+
+    return js;
+}
+
+
+nlohmann::json election::participantVotesAsJson() {
+    nlohmann::json js = nlohmann::ordered_json(participants_votes);
     return js;
 }
 
 void election::print() {
     std::cout << "id: " << prototype.election_id << std::endl;
     std::cout << "sequence: " << prototype.sequence_number << std::endl;
-    std::cout << prototype.election_options_json << std::endl;
+    std::for_each(prototype.options.begin(), prototype.options.end(),
+                  [](std::pair<size_t, std::string> id_option_pair) {
+                      std::cout << id_option_pair.first << ": " << id_option_pair.second << std::endl;
+                  });
     std::for_each(participants_votes.begin(), participants_votes.end(),
-                  [](std::pair<std::string, int> id_choice_pair) {
+                  [](std::pair<std::string, size_t> id_choice_pair) {
                       std::cout << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
                   });
     std::cout << std::endl;
@@ -67,22 +85,37 @@ void election::print() {
 void election::prepareForDistribtion(std::set<std::string> peer_identities) {
     this->participants = peer_identities;
     std::for_each(peer_identities.begin(), peer_identities.end(), [this](std::string peer_identity) {
-        this->participants_votes[peer_identity] = 0;
+        this->participants_votes[peer_identity] = -1;
     });
     time_t timer = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     this->setupDate = timer;
 }
 
 void election::setVotes(const std::map<std::string, int> &votes) {
-    election::participants_votes = votes;
+    participants_votes = votes;
 }
 
 const std::map<std::string, int> &election::getVotes() const {
     return participants_votes;
 }
 
-const std::string &election::getElectionOptionsJson() const {
-    return prototype.election_options_json;
+nlohmann::json election::getVotesAsJson() const {
+    nlohmann::json json = nlohmann::json();
+    size_t index = 0;
+    std::for_each(participants_votes.begin(), participants_votes.end(), [&json, &index](std::pair<std::string, int> identityToVote){
+        json[index] = {identityToVote.first, identityToVote.second};
+        index++;
+    });
+    return json;
+}
+
+nlohmann::json election::getElectionOptionsJson() const {
+    nlohmann::json json = nlohmann::json::array();
+    std::for_each(prototype.options.begin(), prototype.options.end(), [&json](std::pair<size_t, std::string> idToOption){
+        json[idToOption.first] = idToOption.second;
+    });
+    // TODO: Do something about this
+    return json;
 }
 
 void election::setSequenceNumber(size_t sequence_number) {
@@ -101,11 +134,36 @@ int election::getPollId() const {
     return prototype.election_id;
 }
 
-void election::setJson(const std::string &json) {
-    election::prototype.election_options_json = json;
+void election::setOptions(const std::map<size_t, std::string> &options) {
+    election::prototype.options = options;
 }
 
 time_t election::getSetupDate() const {
     return setupDate;
 }
 
+void election::setJsonOptionsToOptions(nlohmann::json json) {
+    std::map<size_t, std::string> options;
+
+    size_t index = 0;
+    if (json.is_array()) {
+        std::for_each(json.begin(), json.end(), [&options, &index](const nlohmann::json& option) {
+            options[index] = option;
+            index++;
+        });
+    }
+    prototype.options = options;
+}
+
+void election::setJsonVotesToVotes(nlohmann::json json) {
+    std::map<std::string, int> votes;
+    if (json.is_array()) {
+        std::for_each(json.begin(), json.end(), [&votes](nlohmann::json option) {
+            votes[option[0]] = option[1].get<int>();
+        });
+    }
+    participants_votes = votes;
+}
+
+election::election(const election& el) : prototype(el.prototype), setupDate(el.setupDate), participants(el.participants), participants_votes(el.participants_votes){
+}

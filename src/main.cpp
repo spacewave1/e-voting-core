@@ -113,6 +113,12 @@ int main(int argc, char **argv) {
         if (input.find("passive_distribution") != -1) {
             local_peer.passiveDistribution(&context, straight_line_distribute_thread);
         }
+        if (input.find("update_election_box") != -1) {
+            // TODO: Needs to check id and sequence number
+            local_peer.pushBackElection(straight_line_distribute_thread.getElectionSnapshot());
+            straight_line_distribute_thread.WaitForInternalThreadToExit();
+            std::cout << "added election to distribution box" << std::endl;
+        }
         if (input.find("active_distribution") != -1) {
             local_peer.distributeElection(&context, straight_line_distribute_thread);
         }
@@ -124,7 +130,9 @@ int main(int argc, char **argv) {
         }
         if (input.find("create_election") != -1) {
             // nextElectionId = networkBuffer.getId()
-            local_peer.createElection(election_id);
+            const election &election = local_peer.createElection(election_id);
+            std::cout << election.getPollId() << ":"  << election.getElectionOptionsJson() << std::endl;
+            local_peer.pushBackElection(election);
             election_id += 1; // networkBuffer.incrementElectionId
         }
         if (input.find("fetch") != -1) {

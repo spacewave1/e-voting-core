@@ -270,19 +270,24 @@ election straightLineDistributeThread::receiveFromUp() {
     int sequence_id = std::stoi(sequence_id_string);
 
     const std::string &json = subscribe_socket.recv();
-    nlohmann::json electionOptionsJson = json;
+    nlohmann::json electionOptionsJson = nlohmann::json::parse(json);
+
+    const std::string &jsonVotes = subscribe_socket.recv();
+    nlohmann::json election_votes_json = nlohmann::json::parse(jsonVotes);
 
     //publish_socket.send(zmq::message_t(electionSnapshot.getVotes()));
 
     log("localhost", "received " + std::to_string(election_id));
     log("localhost", "received " + std::to_string(sequence_id));
     log("localhost", "received " + electionOptionsJson.dump());
+    log("localhost", "received " + election_votes_json.dump());
 
     election receivedElection;
 
     receivedElection.setPollId(election_id);
     receivedElection.setSequenceNumber(sequence_id);
-    receivedElection.setJson(electionOptionsJson);
+    receivedElection.setJsonOptionsToOptions(electionOptionsJson);
+    receivedElection.setJsonVotesToVotes(election_votes_json);
 
     return receivedElection;
 }
@@ -301,17 +306,22 @@ election straightLineDistributeThread::receiveFromDown() {
     int sequence_id = std::stoi(sequence_id_string);
 
     const std::string &json = subscribe_socket.recv();
-    nlohmann::json electionOptionsJson = json;
+    nlohmann::json election_options_json = nlohmann::json::parse(json);
+
+    const std::string &election_votes_json_string = subscribe_socket.recv();
+    nlohmann::json election_votes_json = nlohmann::json::parse(election_votes_json_string);
 
     election receivedElection;
 
     receivedElection.setPollId(election_id);
     receivedElection.setSequenceNumber(sequence_id);
-    receivedElection.setJson(electionOptionsJson);
+    receivedElection.setJsonOptionsToOptions(election_options_json);
+    receivedElection.setJsonVotesToVotes(election_votes_json);
 
     log("localhost", "received " + std::to_string(election_id));
     log("localhost", "received " + std::to_string(sequence_id));
-    log("localhost", "received " + electionOptionsJson.dump());
+    log("localhost", "received " + election_options_json.dump());
+    log("localhost","received " + election_votes_json.dump());
 
     return receivedElection;
     // Set variables
@@ -328,12 +338,14 @@ void straightLineDistributeThread::forwardDown() {
     publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
     publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
     publish_socket.send(election_snapshot_to_send.getElectionOptionsJson());
+    publish_socket.send(election_snapshot_to_send.participantVotesAsJson().dump());
 
     log("localhost", "finished broadcasting");
 
     log("localhost", "send: " + std::to_string(election_snapshot_to_send.getPollId()));
     log("localhost", "send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    log("localhost", "send: " + election_snapshot_to_send.getElectionOptionsJson());
+    log("localhost", "send: " + election_snapshot_to_send.getElectionOptionsJson().dump());
+    log("localhost", "send: " + election_snapshot_to_send.getVotesAsJson().dump());
     //publish_socket.send(zmq::message_t(electionSnapshot.getVotes().));
 }
 

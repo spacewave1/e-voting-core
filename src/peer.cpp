@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 #include "peer.h"
 #include <fstream>
+#include "electionBuilder.h"
 
 void peer::printConnections() {
     // Iterate through "receiver" nodes
@@ -240,7 +241,8 @@ void peer::importPeersList(std::string importPath) {
 void peer::vote() {
     // Take the first election
     if (election_box.size() > 0) {
-        election chosen_election = selectElection();
+        size_t chosen_id = selectElection();
+        election chosen_election = election_box.at(chosen_id);
 
         std::cout << "Choose Option" << std::endl << chosen_election.getElectionOptionsJson() << std::endl;
         std::string input;
@@ -255,11 +257,10 @@ void peer::vote() {
     }
 };
 
-void peer::createElection(size_t election_id) {
+election peer::createElection(size_t election_id) {
     std::cout << "Enter how many possible Options can be elected" << std::endl;
     std::string input;
     std::getline(std::cin, input);
-    std::map<size_t, std::string> election_options;
 
     std::size_t number_of_options = std::atoi(input.c_str());
     std::vector<std::string> options(number_of_options);
@@ -267,24 +268,36 @@ void peer::createElection(size_t election_id) {
 
     size_t index = 0;
     std::transform(options.begin(), options.end(), options.begin(),
-                   [&index, &election_options](const std::string &option) -> std::string {
+                   [&index, &options](const std::string &option) -> std::string {
                        std::cout << "Enter Option #" << index << std::endl;
                        std::string input;
                        std::getline(std::cin, input);
-                       election_options[index] = input;
                        index++;
                        return input;
                    });
 
-    nlohmann::json electionJson = nlohmann::ordered_json(election_options);
+    nlohmann::json electionJson = nlohmann::json(options);
     std::cout << electionJson.dump() << std::endl;
 
-    election initialElectionState;
-    initialElectionState.setPollId(election_id);
-    initialElectionState.setSequenceNumber(0);
-    initialElectionState.setJson(electionJson.dump());
+    std::map<size_t, std::string> map_options = std::map<size_t, std::string>();
 
-    election_box.push_back(initialElectionState);
+    index = 0;
+    if (electionJson.is_array()) {
+        std::for_each(electionJson.begin(), electionJson.end(), [&map_options, &index](const nlohmann::json& option) {
+            map_options[index] = option.dump();
+            index++;
+            std::cout << option.dump() << std::endl;
+        });
+    }
+
+    election initialElectionState = election::create(election_id)
+            .withSequenceNumber(0)
+            .withVoteOptions(map_options);
+
+    std::cout << election_id << std::endl;
+    std::cout << initialElectionState.getPollId() << std::endl;
+
+    return initialElectionState;
 }
 
 void peer::setIdentity(std::string identity) {
@@ -323,7 +336,7 @@ void peer::passiveDistribution(void *context, straightLineDistributeThread &thre
     thread.StartInternalThread();
 }
 
-election& peer::selectElection() {
+size_t peer::selectElection() {
     std::cout << "Select which election to distribute by id" << std::endl;
     std::for_each(election_box.begin(), election_box.end(), [](election current_election){
         std::cout << "[" << current_election.getPollId() << "]: " << current_election.getElectionOptionsJson() << std::endl;
@@ -335,16 +348,17 @@ election& peer::selectElection() {
         std::getline(std::cin, input_string);
         std::cout << std::endl;
         if(isNumber(input_string) && selected_election_id < election_box.size()) {
-            return election_box[selected_election_id];
+            return selected_election_id;
         }
     }
+    std::cout << "Exit executable during election selection" << std::endl;
     std::exit(10);
 }
 
-// TODO: Test distribute election - check thread behavior
 void peer::distributeElection(void *context, straightLineDistributeThread &thread) {
 
-    election& selected_election = selectElection();
+    size_t selected_election_index = selectElection();
+    election& chosen_election = election_box[selected_election_index];
 
     std::map<std::string, std::string> reversedConnectionTable;
     std::for_each(connection_table.begin(), connection_table.end(),
@@ -365,7 +379,7 @@ void peer::distributeElection(void *context, straightLineDistributeThread &threa
     calculatePositionFromTable();
 
     thread.setInitialDistributer(true);
-    thread.setParams(context, address_up, address_down, position, known_peer_addresses.size(), election_box[0]);
+    thread.setParams(context, address_up, address_down, position, known_peer_addresses.size(), chosen_election);
     thread.StartInternalThread();
 }
 
@@ -416,4 +430,8 @@ bool peer::isNumber(const std::string s)
             return false;
     }
     return true;
+}
+
+void peer::pushBackElection(election election) {
+    election_box.push_back(election);
 }

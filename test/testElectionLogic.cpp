@@ -39,7 +39,7 @@ TEST(electionTest, prepare_for_distribtion) {
 
     std::map<std::string, int> participant_votes;
     std::for_each(participants.begin(), participants.end(), [&participant_votes](std::string participant_identity) {
-        participant_votes[participant_identity] = 0;
+        participant_votes[participant_identity] = -1;
     });
 
     election testee = election::create(0).withParticipants(participants);
@@ -47,4 +47,32 @@ TEST(electionTest, prepare_for_distribtion) {
 
     EXPECT_EQ(testee.getParticipantsVotes(), participant_votes);
     EXPECT_EQ(testee.getSetupDate(), std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+}
+
+TEST(electionTest, getJsonVotesAfterPlacingTwoVotes) {
+    std::set<std::string> participants = {"yxc", "abc", "dfg"};
+    const electionPrototype &prototype = electionPrototype();
+
+    std::map<std::string, size_t> participant_votes;
+    std::for_each(participants.begin(), participants.end(), [&participant_votes](std::string participant_identity) {
+        participant_votes[participant_identity] = 0;
+    });
+
+    nlohmann::json json_election_options;
+    std::map<size_t, std::string> election_options;
+    election_options[0] = "A";
+    election_options[1] = "B";
+    election_options[2] = "C";
+
+    election testee = election::create(0)
+            .withParticipants(participants)
+            .withVoteOptions(election_options);
+    testee.prepareForDistribtion(participants);
+
+    testee.placeVote("yxc", 0);
+    testee.placeVote("abc", 0);
+    testee.placeVote("dfg", 1);
+
+    std::string string = testee.getCurrentElectionStatisticAsJson().dump();
+    EXPECT_EQ(string, "[{\"count\":2,\"name\":\"A\"},{\"count\":1,\"name\":\"B\"},{\"count\":0,\"name\":\"C\"}]");
 }

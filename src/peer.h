@@ -17,7 +17,7 @@ public:
     peer();
     virtual ~peer();
     void receive(void *context);
-    void createElection(size_t election_id);
+    election createElection(size_t election_id);
     void vote();
     void connect(std::string& input, void *context);
     void printConnections();
@@ -34,6 +34,9 @@ public:
     void distributeElection(void* context, straightLineDistributeThread& thread);
     void passiveDistribution(void* context, straightLineDistributeThread& thread);
     void dumpElectionBox();
+
+    void pushBackElection(election election);
+
 private:
     void calculatePositionFromTable();
     std::string peer_identity;
@@ -43,7 +46,7 @@ private:
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;
 
-    election& selectElection();
+    size_t selectElection();
 
     bool isNumber(const std::string s);
 
