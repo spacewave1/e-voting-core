@@ -74,5 +74,34 @@ TEST(electionTest, getJsonVotesAfterPlacingTwoVotes) {
     testee.placeVote("dfg", 1);
 
     std::string string = testee.getCurrentElectionStatisticAsJson().dump();
-    EXPECT_EQ(string, "[{\"count\":2,\"name\":\"A\"},{\"count\":1,\"name\":\"B\"},{\"count\":0,\"name\":\"C\"}]");
+    EXPECT_EQ(string, "{\"count\":2,\"name\":\"A\"},{\"count\":1,\"name\":\"B\"},{\"count\":0,\"name\":\"C\"}");
+}
+
+TEST(electionTest, setVotesFromJson) {
+    std::set<std::string> participants = {"yxc", "abc", "dfg"};
+    std::map<size_t, std::string> election_options;
+    election_options[0] = "A";
+    election_options[1] = "B";
+    election_options[2] = "C";
+
+    nlohmann::json jsonVotes = nlohmann::json::parse("{\"192.168.0.174\":2,\"192.168.0.19\":-1,\"192.168.0.3\":0,\"192.168.0.88\":-1}");
+
+    election testee = election::create(0)
+            .withParticipants(participants)
+            .withVoteOptions(election_options);
+    
+    testee.prepareForDistribtion(participants);
+    
+    testee.setJsonVotesToVotes(jsonVotes);
+
+    const std::map<std::string, int> &result = testee.getVotes();
+
+    EXPECT_TRUE(result.contains("192.168.0.174"));
+    EXPECT_TRUE(result.contains("192.168.0.19"));
+    EXPECT_TRUE(result.contains("192.168.0.3"));
+    EXPECT_TRUE(result.contains("192.168.0.88"));
+    EXPECT_EQ(result.at("192.168.0.174"), 2);
+    EXPECT_EQ(result.at("192.168.0.19"), -1);
+    EXPECT_EQ(result.at("192.168.0.3"), 0);
+    EXPECT_EQ(result.at("192.168.0.88"), -1);
 }

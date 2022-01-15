@@ -43,7 +43,7 @@ set(SOURCE_FILES
 
 enable_testing()
 
-add_executable(vote_p2p ${SOURCE_FILES})
+add_executable(vote_p2p ${SOURCE_FILES} src/vote.h)
 add_library(vote_p2p_lib STATIC ${SOURCE_FILES})
 
 add_subdirectory(test)

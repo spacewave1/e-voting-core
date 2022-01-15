@@ -19,7 +19,7 @@ private:
     void receiveData(std::string direction);
     void forwardData(std::string direction);
     void sendDistributionRequest(std::string direction);
-    void log(std::string address, std::string content);
+    void log(std::string content, std::string address = "localhost");
     std::string address_up;
     std::string address_down;
     election election_snapshot_to_send;
@@ -30,6 +30,7 @@ private:
     size_t publish_port;
     size_t subscribe_port;
     bool is_initial_requester;
+    size_t current_number_of_hops = 0;
     void* arg;
 public:
     election getElectionSnapshot() const;

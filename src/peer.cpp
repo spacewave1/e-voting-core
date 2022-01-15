@@ -342,10 +342,11 @@ size_t peer::selectElection() {
         std::cout << "[" << current_election.getPollId() << "]: " << current_election.getElectionOptionsJson() << std::endl;
     });
     std::string input_string;
-    size_t selected_election_id = std::stoi(input_string);
+    size_t selected_election_id;
 
     while(true && input_string != "exit") {
         std::getline(std::cin, input_string);
+        selected_election_id = std::stoi(input_string);
         std::cout << std::endl;
         if(isNumber(input_string) && selected_election_id < election_box.size()) {
             return selected_election_id;
@@ -359,6 +360,7 @@ void peer::distributeElection(void *context, straightLineDistributeThread &threa
 
     size_t selected_election_index = selectElection();
     election& chosen_election = election_box[selected_election_index];
+    chosen_election.prepareForDistribtion(known_peer_addresses);
 
     std::map<std::string, std::string> reversedConnectionTable;
     std::for_each(connection_table.begin(), connection_table.end(),

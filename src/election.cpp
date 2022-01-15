@@ -76,7 +76,7 @@ void election::print() {
                       std::cout << id_option_pair.first << ": " << id_option_pair.second << std::endl;
                   });
     std::for_each(participants_votes.begin(), participants_votes.end(),
-                  [](std::pair<std::string, size_t> id_choice_pair) {
+                  [](std::pair<std::string, int> id_choice_pair) {
                       std::cout << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
                   });
     std::cout << std::endl;
@@ -144,13 +144,17 @@ time_t election::getSetupDate() const {
 
 void election::setJsonOptionsToOptions(nlohmann::json json) {
     std::map<size_t, std::string> options;
-
     size_t index = 0;
+
     if (json.is_array()) {
         std::for_each(json.begin(), json.end(), [&options, &index](const nlohmann::json& option) {
             options[index] = option;
             index++;
         });
+    } else if(json.is_object()) {
+        for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {
+            std::cout << it.key() << " : " << it.value() << "\n";
+        }
     }
     prototype.options = options;
 }
@@ -161,6 +165,12 @@ void election::setJsonVotesToVotes(nlohmann::json json) {
         std::for_each(json.begin(), json.end(), [&votes](nlohmann::json option) {
             votes[option[0]] = option[1].get<int>();
         });
+    } else if(json.is_object()) {
+        std::cout << "print object" << std::endl;
+        for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {
+            std::cout << it.key() << " : " << it.value() << "\n";
+            votes[it.key()] = it.value();
+        }
     }
     participants_votes = votes;
 }

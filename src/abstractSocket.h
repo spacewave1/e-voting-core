@@ -12,7 +12,9 @@ public:
     virtual void send(std::string payload) = 0;
     virtual std::string recv() = 0;
     virtual void bind(std::string address, size_t port) = 0;
+    virtual void unbind(std::string address, size_t port) = 0;
     virtual void connect(std::string address, size_t port) = 0;
+    virtual bool isBound() = 0;
 };
 
 

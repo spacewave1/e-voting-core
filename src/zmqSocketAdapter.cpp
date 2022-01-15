@@ -33,13 +33,22 @@ void zmqSocketAdapter::setSocketAddress(std::string socketAddress) {
 }
 
 void zmqSocketAdapter::connect(std::string address, size_t port) {
-    this->socket.connect("tcp://" + address + ":" + std::to_string(port));
+    socket.connect("tcp://" + address + ":" + std::to_string(port));
 }
 
 void zmqSocketAdapter::bind(std::string address, size_t port) {
-    this->socket.bind("tcp://" + address + ":" + std::to_string(port));
+    socket.bind("tcp://" + address + ":" + std::to_string(port));
+    is_bound = true;
 }
 
 zmqSocketAdapter::zmqSocketAdapter(zmq::socket_t &socket) : socket(socket) {
 
+}
+
+void zmqSocketAdapter::unbind(std::string adddress, size_t port) {
+    socket.unbind("tcp://" + adddress + ":" + std::to_string(port));
+}
+
+bool zmqSocketAdapter::isBound() {
+    return is_bound;
 }

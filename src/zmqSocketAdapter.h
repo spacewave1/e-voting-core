@@ -11,6 +11,7 @@
 class zmqSocketAdapter : public abstractSocket {
 private:
     zmq::socket_t& socket;
+    bool is_bound = false;
 public:
     void setSocketPort(size_t socketPort);
     void setSocketAddress(std::string socketAddress);
@@ -22,7 +23,11 @@ public:
     std::string recv() override;
     void connect(std::string address, size_t port) override;
     void bind(std::string address, size_t port) override;
+    void unbind(std::string adddress, size_t port) override;
     void log(std::string address, std::string content);
+
+    bool isBound() override;
+
     zmqSocketAdapter(zmq::socket_t &socket);
 };
 
