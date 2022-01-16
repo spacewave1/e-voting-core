@@ -11,15 +11,16 @@
 #include <nlohmann/json.hpp>
 #include <zmq.hpp>
 #include <string>
+#include "logger.h"
 
 class straightLineDistributeThread : public abstractThread {
 private:
+    logger _logger = logger::Instance();
     void InternalThreadEntry() override;
     std::string receiveDistributionRequest();
     void receiveData(std::string direction);
     void forwardData(std::string direction);
     void sendDistributionRequest(std::string direction);
-    void log(std::string content, std::string address = "localhost");
     std::string address_up;
     std::string address_down;
     election election_snapshot_to_send;
@@ -53,6 +54,8 @@ public:
 
     straightLineDistributeThread(abstractSocket &publish_socket,
                                  abstractSocket &subscribe_socket);
+
+    void updateElectionBox();
 };
 
 

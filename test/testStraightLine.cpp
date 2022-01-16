@@ -35,7 +35,7 @@ TEST(straightLineDistributeTest, receive_from_up) {
     mockSocket pub_mock_socket;
 
 
-    EXPECT_CALL(sub_mock_socket, connect("127.0.0.1", 5001));
+    EXPECT_CALL(sub_mock_socket, connect("tcp", "127.0.0.1", 5001));
     EXPECT_CALL(sub_mock_socket, recv())
             .Times(4)
             .WillOnce(Return("1"))
@@ -60,7 +60,7 @@ TEST(straightLineDistributeTest, receive_from_down) {
     mockSocket sub_mock_socket;
     mockSocket pub_mock_socket;
 
-    EXPECT_CALL(sub_mock_socket, connect("127.0.0.1", 5001));
+    EXPECT_CALL(sub_mock_socket, connect("tcp", "127.0.0.1", 5001));
     EXPECT_CALL(sub_mock_socket, recv())
             .Times(4)
             .WillOnce(Return("1"))

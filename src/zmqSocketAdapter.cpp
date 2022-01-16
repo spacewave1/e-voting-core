@@ -12,7 +12,7 @@ void zmqSocketAdapter::send(std::string payload) {
 std::string zmqSocketAdapter::recv() {
     zmq::message_t message;
     socket.recv(message);
-    log(message.gets("Peer-Address"), message.to_string());
+    //log(message.gets("Peer-Address"), message.to_string());
     return message.to_string();
 }
 
@@ -32,21 +32,45 @@ void zmqSocketAdapter::setSocketAddress(std::string socketAddress) {
     this->socket_address = std::move(socketAddress);
 }
 
-void zmqSocketAdapter::connect(std::string address, size_t port) {
-    socket.connect("tcp://" + address + ":" + std::to_string(port));
+void zmqSocketAdapter::connect(std::string protocol, std::string address, size_t port) {
+    if(protocol == "tcp"){
+        if(port == 0) {
+            throw std::invalid_argument("port number can't be 0 when using the tcp protocol");
+        }
+        socket.connect(protocol + "://" + address + ":" + std::to_string(port));
+    } else if(protocol == "inproc") {
+        socket.connect(protocol + "://" + address);
+    }
 }
 
-void zmqSocketAdapter::bind(std::string address, size_t port) {
-    socket.bind("tcp://" + address + ":" + std::to_string(port));
-    is_bound = true;
+void zmqSocketAdapter::bind(std::string protocol, std::string address, size_t port) {
+    if(protocol == "tcp"){
+        if(port == 0) {
+            throw std::invalid_argument("port number can't be 0 when using the tcp protocol");
+        }
+        socket.bind(protocol + "://" + address + ":" + std::to_string(port));
+        is_bound = true;
+    } else if(protocol == "inproc") {
+        socket.bind(protocol + "://" + address);
+        is_bound = true;
+    }
 }
 
 zmqSocketAdapter::zmqSocketAdapter(zmq::socket_t &socket) : socket(socket) {
 
 }
 
-void zmqSocketAdapter::unbind(std::string adddress, size_t port) {
-    socket.unbind("tcp://" + adddress + ":" + std::to_string(port));
+void zmqSocketAdapter::unbind(std::string protocol, std::string address, size_t port) {
+    if(protocol == "tcp"){
+        if(port == 0) {
+            throw std::invalid_argument("port number can't be 0 when using the tcp protocol");
+        }
+        socket.unbind(protocol + "://" + address + ":" + std::to_string(port));
+        is_bound = true;
+    } else if(protocol == "inproc") {
+        socket.unbind(protocol + "://" + address);
+        is_bound = true;
+    }
 }
 
 bool zmqSocketAdapter::isBound() {

@@ -19,6 +19,16 @@ electionBuilder &electionBuilder::withVoteOptions(std::map<size_t, std::string> 
     return *this;
 }
 
+electionBuilder &electionBuilder::withVoteOptionsFromJson(nlohmann::json jsonOptions) {
+    el.setJsonOptionsToOptions(jsonOptions);
+    return *this;
+}
+
+electionBuilder &electionBuilder::withParticipantsVotesFromJson(nlohmann::json jsonVotes) {
+    el.setJsonVotesToVotes(jsonVotes);
+    return *this;
+}
+
 electionBuilder &electionBuilder::withSequenceNumber(int sequence_number) {
     el.prototype.sequence_number = sequence_number;
     return *this;
@@ -26,5 +36,14 @@ electionBuilder &electionBuilder::withSequenceNumber(int sequence_number) {
 
 electionBuilder::~electionBuilder() {
     std::cout << "Calling destructor" << std::endl;
+}
+
+electionBuilder &electionBuilder::withParticipantsFromParticipantVotesKeySet() {
+    std::set<std::string> keys;
+    std::for_each(el.participants_votes.begin(), el.participants_votes.end(),[&keys](std::pair<std::string, int> idToVoteOptions){
+        keys.insert(idToVoteOptions.first);
+    });
+    el.participants = keys;
+    return *this;
 }
 

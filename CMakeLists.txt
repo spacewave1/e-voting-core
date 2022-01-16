@@ -39,11 +39,15 @@ set(SOURCE_FILES
         src/abstractSocket.h
         src/electionBuilder.cpp
         src/electionBuilder.h
-        src/electionPrototype.h)
+        src/electionPrototype.h
+        src/inprocElectionboxThread.cpp
+        src/inprocElectionboxThread.h
+        src/logger.h
+        )
 
 enable_testing()
 
-add_executable(vote_p2p ${SOURCE_FILES} src/vote.h)
+add_executable(vote_p2p ${SOURCE_FILES})
 add_library(vote_p2p_lib STATIC ${SOURCE_FILES})
 
 add_subdirectory(test)

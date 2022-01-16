@@ -80,11 +80,17 @@ int main(int argc, char **argv) {
     sub_socket.set(zmq::sockopt::subscribe, "");
     zmq::socket_t pub_socket = zmq::socket_t(context, zmq::socket_type::pub);
 
+    zmq::socket_t inproc_socket = zmq::socket_t(context, zmq::socket_type::sub);
+    inproc_socket.set(zmq::sockopt::subscribe, "");
+
     zmqSocketAdapter pub_socket_adapter(pub_socket);
     zmqSocketAdapter sub_socket_adapter(sub_socket);
+    zmqSocketAdapter inproc_socket_adapter(inproc_socket);
 
     straightLineSyncThread straight_line_sync_thread;
     straightLineDistributeThread straight_line_distribute_thread(pub_socket_adapter, sub_socket_adapter);
+
+    inprocElectionboxThread inproc_electionbox_thread(local_peer.getElectionBox(), inproc_socket_adapter);
 
 
     auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
@@ -112,6 +118,7 @@ int main(int argc, char **argv) {
         }
         if (input.find("passive_distribution") != -1) {
             local_peer.passiveDistribution(&context, straight_line_distribute_thread);
+            local_peer.startInprocElectionSyncThread(&context, inproc_electionbox_thread);
         }
         if (input.find("update_election_box") != -1) {
             // TODO: Needs to check id and sequence number

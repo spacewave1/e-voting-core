@@ -21,9 +21,9 @@ public:
     zmq::context_t context;
     void send(std::string payload) override;
     std::string recv() override;
-    void connect(std::string address, size_t port) override;
-    void bind(std::string address, size_t port) override;
-    void unbind(std::string adddress, size_t port) override;
+    void connect(std::string protocol, std::string address, size_t port = 0) override;
+    void bind(std::string protocol, std::string address, size_t port = 0) override;
+    void unbind(std::string protocol, std::string address, size_t port = 0) override;
     void log(std::string address, std::string content);
 
     bool isBound() override;

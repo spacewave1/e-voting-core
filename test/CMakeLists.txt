@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 
-set(SOURCE_FILES testStraightLine.cpp MockSocket.h testElectionLogic.cpp testStraightLine.h testElectionLogic.h)
+set(SOURCE_FILES testStraightLine.cpp MockSocket.h testElectionLogic.cpp testStraightLine.h testElectionLogic.h testInprocElectionBox.cpp)
 set(name test_p2p_vote)
 
 add_executable(${name} ${SOURCE_FILES})

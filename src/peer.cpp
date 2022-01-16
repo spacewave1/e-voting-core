@@ -437,3 +437,12 @@ bool peer::isNumber(const std::string s)
 void peer::pushBackElection(election election) {
     election_box.push_back(election);
 }
+
+void peer::startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread) {
+    _logger.log("starting election inproc");
+    thread.StartInternalThread();
+}
+
+std::vector<election> &peer::getElectionBox() {
+    return election_box;
+}

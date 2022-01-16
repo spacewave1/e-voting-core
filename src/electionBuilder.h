@@ -19,6 +19,11 @@ public:
     electionBuilder &withParticipantsVotes(std::map<std::string, int>& participants_votes);
     electionBuilder &withVoteOptions(std::map<size_t, std::string> options);
     electionBuilder &withSequenceNumber(int sequence_number);
+    electionBuilder &withParticipantsVotesFromJson(nlohmann::json jsonVotes);
+    electionBuilder &withVoteOptionsFromJson(nlohmann::json jsonOptions);
+    electionBuilder &withParticipantsFromParticipantVotesKeySet();
+
+
     virtual ~electionBuilder();
 
     operator election() const { return std::move(el); }

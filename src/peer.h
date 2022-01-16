@@ -7,6 +7,7 @@
 #include <map>
 #include "networkPlan.h"
 #include "election.h"
+#include "inprocElectionboxThread.h"
 
 #ifndef VOTE_P2P_PEER_H
 #define VOTE_P2P_PEER_H
@@ -37,6 +38,10 @@ public:
 
     void pushBackElection(election election);
 
+    void startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread);
+
+    std::vector<election> &getElectionBox();
+
 private:
     void calculatePositionFromTable();
     std::string peer_identity;
@@ -45,6 +50,8 @@ private:
     std::vector<election> election_box;
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;
+
+    logger _logger = logger::Instance();
 
     size_t selectElection();
 
