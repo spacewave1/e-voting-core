@@ -37,10 +37,11 @@ public:
     void dumpElectionBox();
 
     void pushBackElection(election election);
-
     void startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread);
 
     std::vector<election> &getElectionBox();
+
+    void updateDistributionThread(straightLineDistributeThread *p_thread);
 
 private:
     void calculatePositionFromTable();

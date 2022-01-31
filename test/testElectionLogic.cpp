@@ -7,11 +7,25 @@
 #include "../src/electionBuilder.h"
 
 TEST(electionTest, place_first_vote) {
-    std::set<std::string> participants = {"asd"};
-    const electionPrototype &prototype = electionPrototype();
+    std::set<std::string> participants = {"asd", "qwe", "yxc"};
+    electionPrototype prototype = electionPrototype();
+    std::map<size_t, std::string> election_options;
+    election_options[0] = "A";
+    election_options[1] = "B";
+    election_options[2] = "C";
 
-    election testee = election::create(0).withParticipants(participants);
+    std::map<std::string, int> votes;
+    votes["asd"] = -1;
+    votes["qwe"] = -1;
+    votes["yxc"] = -1;
+
+    election testee = election::create(0).withSequenceNumber(0).withVoteOptions(election_options).withParticipants(
+            participants).withParticipantsVotes(votes);
+
     EXPECT_TRUE(testee.placeVote("asd", 1));
+    EXPECT_EQ(testee.getVotes().at("asd"),1);
+    EXPECT_EQ(testee.getVotes().at("qwe"),-1);
+    EXPECT_EQ(testee.getVotes().at("yxc"),-1);
 }
 
 TEST(electionTest, place_vote_existing) {
@@ -84,14 +98,15 @@ TEST(electionTest, setVotesFromJson) {
     election_options[1] = "B";
     election_options[2] = "C";
 
-    nlohmann::json jsonVotes = nlohmann::json::parse("{\"192.168.0.174\":2,\"192.168.0.19\":-1,\"192.168.0.3\":0,\"192.168.0.88\":-1}");
+    nlohmann::json jsonVotes = nlohmann::json::parse(
+            "{\"192.168.0.174\":2,\"192.168.0.19\":-1,\"192.168.0.3\":0,\"192.168.0.88\":-1}");
 
     election testee = election::create(0)
             .withParticipants(participants)
             .withVoteOptions(election_options);
-    
+
     testee.prepareForDistribtion(participants);
-    
+
     testee.setJsonVotesToVotes(jsonVotes);
 
     const std::map<std::string, int> &result = testee.getVotes();

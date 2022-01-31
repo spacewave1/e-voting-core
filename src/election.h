@@ -9,7 +9,6 @@
 #include <string>
 #include <set>
 #include <iostream>
-#include <chrono>
 #include "electionPrototype.h"
 
 class electionBuilder;
@@ -18,9 +17,10 @@ class election {
 
 private:
     electionPrototype prototype;
-    std::time_t setupDate;
+    std::time_t setup_date;
     std::set<std::string> participants;
     std::map<std::string, int> participants_votes;
+    bool is_prepared_for_distribution = false;
     election(const int id);
 
 public:
@@ -31,9 +31,10 @@ public:
     election();
 
     const std::map<std::string, int> &getParticipantsVotes() const;
+    const std::map<size_t, std::string> &getOptions() const;
     int getPollId() const;
-    void setPollId(int poll_id);
 
+    void setPollId(int poll_id);
     time_t getSetupDate() const;
     size_t getSequenceNumber() const;
     void setSequenceNumber(size_t sequence_number);
@@ -52,7 +53,11 @@ public:
 
     nlohmann::json getCurrentElectionStatisticAsJson();
 
+    bool isPreparedForDistribution() const;
+
     nlohmann::json getVotesAsJson() const;
+
+    void setSetupDate(time_t setupDate);
 };
 
 

@@ -71,6 +71,7 @@ nlohmann::json election::participantVotesAsJson() {
 void election::print() {
     std::cout << "id: " << prototype.election_id << std::endl;
     std::cout << "sequence: " << prototype.sequence_number << std::endl;
+    std::cout << "setup_date: " << setup_date << std::endl;
     std::for_each(prototype.options.begin(), prototype.options.end(),
                   [](std::pair<size_t, std::string> id_option_pair) {
                       std::cout << id_option_pair.first << ": " << id_option_pair.second << std::endl;
@@ -87,8 +88,8 @@ void election::prepareForDistribtion(std::set<std::string> peer_identities) {
     std::for_each(peer_identities.begin(), peer_identities.end(), [this](std::string peer_identity) {
         this->participants_votes[peer_identity] = -1;
     });
-    time_t timer = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    this->setupDate = timer;
+    this->setup_date = time(NULL);
+    this->is_prepared_for_distribution = true;
 }
 
 void election::setVotes(const std::map<std::string, int> &votes) {
@@ -139,7 +140,7 @@ void election::setOptions(const std::map<size_t, std::string> &options) {
 }
 
 time_t election::getSetupDate() const {
-    return setupDate;
+    return setup_date;
 }
 
 void election::setJsonOptionsToOptions(nlohmann::json json) {
@@ -153,7 +154,6 @@ void election::setJsonOptionsToOptions(nlohmann::json json) {
         });
     } else if(json.is_object()) {
         for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {
-            std::cout << it.key() << " : " << it.value() << "\n";
         }
     }
     prototype.options = options;
@@ -166,14 +166,24 @@ void election::setJsonVotesToVotes(nlohmann::json json) {
             votes[option[0]] = option[1].get<int>();
         });
     } else if(json.is_object()) {
-        std::cout << "print object" << std::endl;
         for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {
-            std::cout << it.key() << " : " << it.value() << "\n";
             votes[it.key()] = it.value();
         }
     }
     participants_votes = votes;
 }
 
-election::election(const election& el) : prototype(el.prototype), setupDate(el.setupDate), participants(el.participants), participants_votes(el.participants_votes){
+election::election(const election& el) : prototype(el.prototype), setup_date(el.setup_date), participants(el.participants), participants_votes(el.participants_votes), is_prepared_for_distribution(el.is_prepared_for_distribution){
+}
+
+const std::map<size_t, std::string> &election::getOptions() const {
+    return prototype.options;
+}
+
+bool election::isPreparedForDistribution() const {
+    return is_prepared_for_distribution;
+}
+
+void election::setSetupDate(time_t setupDate) {
+    setup_date = setupDate;
 }

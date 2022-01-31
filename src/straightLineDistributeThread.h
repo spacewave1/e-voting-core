@@ -32,6 +32,8 @@ private:
     size_t subscribe_port;
     bool is_initial_requester;
     size_t current_number_of_hops = 0;
+    bool is_interrupted = false;
+    bool is_running = false;
     void* arg;
 public:
     election getElectionSnapshot() const;
@@ -41,11 +43,16 @@ public:
     void setSubscribeSocket(abstractSocket& socket);
     void setPublishSocket(abstractSocket& socket);
     void setPublishPort(size_t port_number);
+    void setAddressUp(std::string addressUp);
+    void setAddressDown(std::string addressDown);
+    void setPosition(size_t position);
     void setSubscribePort(size_t port_number);
+    void setNetworkSize(size_t networkSize);
     void forwardUp();
     void forwardDown();
     election receiveFromUp();
     election receiveFromDown();
+    void interruptReceiveRequest();
 
     void receiveInitialSetupRequest();
     void sendInitialRequest();
@@ -56,6 +63,12 @@ public:
                                  abstractSocket &subscribe_socket);
 
     void updateElectionBox();
+
+    void setContext(void *p_void);
+
+    bool isRunning();
+
+    void setIsRunning(bool b);
 };
 
 

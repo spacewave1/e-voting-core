@@ -22,11 +22,14 @@ public:
     electionBuilder &withParticipantsVotesFromJson(nlohmann::json jsonVotes);
     electionBuilder &withVoteOptionsFromJson(nlohmann::json jsonOptions);
     electionBuilder &withParticipantsFromParticipantVotesKeySet();
+    electionBuilder &withSetupDate(time_t setupDate);
+    electionBuilder &withPreparedForDistribution(bool isPrepared);
 
 
     virtual ~electionBuilder();
 
     operator election() const { return std::move(el); }
+
 };
 
 #endif //VOTE_P2P_ELECTIONBUILDER_H

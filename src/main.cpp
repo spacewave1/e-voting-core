@@ -71,8 +71,10 @@ int main(int argc, char **argv) {
     peer local_peer;
 
     if(argc == 2){
-        if(std::string(argv[1]).find("import_id") != -1){
+        if(std::string(argv[1]).find("import") != -1){
             local_peer.setIdentity(importIdentity());
+            local_peer.importPeerConnections();
+            local_peer.importPeersList();
         }
     }
 
@@ -89,8 +91,11 @@ int main(int argc, char **argv) {
 
     straightLineSyncThread straight_line_sync_thread;
     straightLineDistributeThread straight_line_distribute_thread(pub_socket_adapter, sub_socket_adapter);
+    local_peer.updateDistributionThread(&straight_line_distribute_thread);
+
 
     inprocElectionboxThread inproc_electionbox_thread(local_peer.getElectionBox(), inproc_socket_adapter);
+    local_peer.startInprocElectionSyncThread(&context, inproc_electionbox_thread);
 
 
     auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
@@ -107,6 +112,9 @@ int main(int argc, char **argv) {
     }
 
     while (input != "quit") {
+        if(!straight_line_distribute_thread.isRunning()){
+            local_peer.passiveDistribution(&context, straight_line_distribute_thread);
+        }
         if (input.size() == 0) {
             std::getline(std::cin, input);
         }
@@ -118,7 +126,6 @@ int main(int argc, char **argv) {
         }
         if (input.find("passive_distribution") != -1) {
             local_peer.passiveDistribution(&context, straight_line_distribute_thread);
-            local_peer.startInprocElectionSyncThread(&context, inproc_electionbox_thread);
         }
         if (input.find("update_election_box") != -1) {
             // TODO: Needs to check id and sequence number
@@ -127,6 +134,7 @@ int main(int argc, char **argv) {
             std::cout << "added election to distribution box" << std::endl;
         }
         if (input.find("active_distribution") != -1) {
+            straight_line_distribute_thread.interruptReceiveRequest();
             local_peer.distributeElection(&context, straight_line_distribute_thread);
         }
         if (input.find("receive_poll") != -1) {
@@ -158,13 +166,10 @@ int main(int argc, char **argv) {
         if (input.find("exit_sync") != -1) {
             pthread_exit(&syncWorker);
         }
-        if (input.find("import_peer_connections") != -1) {
-            std::cout << "importing peers connections" << std::endl;
+        if (input.find("import") != -1) {
             local_peer.importPeerConnections();
-        }
-        if (input.find("import_peers_list") != -1) {
-            std::cout << "importing peers list" << std::endl;
             local_peer.importPeersList();
+            local_peer.updateDistributionThread(&straight_line_distribute_thread);
         }
         if (input.find("export_peer_connections") != -1) {
             std::cout << "is export peers connections" << std::endl;

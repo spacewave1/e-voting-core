@@ -242,9 +242,14 @@ void peer::vote() {
     // Take the first election
     if (election_box.size() > 0) {
         size_t chosen_id = selectElection();
-        election chosen_election = election_box.at(chosen_id);
+        election& chosen_election = election_box.at(chosen_id);
 
-        std::cout << "Choose Option" << std::endl << chosen_election.getElectionOptionsJson() << std::endl;
+        const std::map<size_t, std::string> &map = chosen_election.getOptions();
+
+        std::for_each(map.begin(),map.end(),[](std::pair<size_t, std::string> idToOption){
+           std::cout << idToOption.first << ": " << idToOption.second << std::endl;
+        });
+
         std::string input;
 
         std::getline(std::cin, input);
@@ -252,6 +257,7 @@ void peer::vote() {
 
         std::cout << "identity: " << peer_identity << std::endl;
         std::cout << "option:" << chosen_option << std::endl;
+        std::cout << "option:" << map.at(chosen_option) << std::endl;
 
         chosen_election.placeVote(peer_identity, chosen_option);
     }
@@ -312,34 +318,19 @@ void peer::dumpElectionBox() {
 }
 
 void peer::passiveDistribution(void *context, straightLineDistributeThread &thread) {
-
-    std::map<std::string, std::string> reversedConnectionTable;
-    std::for_each(connection_table.begin(), connection_table.end(),
-                  [&reversedConnectionTable](std::pair<std::string, std::string> addressToAddress) {
-                      reversedConnectionTable[addressToAddress.second] = addressToAddress.first;
-                  });
-
-    std::string address_up;
-    if (connection_table.contains(peer_address)) {
-        address_up = connection_table[peer_address];
-    }
-
-    std::string address_down;
-    if (reversedConnectionTable.contains(peer_address)) {
-        address_down = reversedConnectionTable[peer_address];
-    }
-
-    calculatePositionFromTable();
-
     thread.setInitialDistributer(false);
-    thread.setParams(context, address_up, address_down, position, known_peer_addresses.size());
+    thread.setContext(context);
+    updateDistributionThread(&thread);
+    thread.setIsRunning(true);
     thread.StartInternalThread();
 }
 
 size_t peer::selectElection() {
     std::cout << "Select which election to distribute by id" << std::endl;
-    std::for_each(election_box.begin(), election_box.end(), [](election current_election){
-        std::cout << "[" << current_election.getPollId() << "]: " << current_election.getElectionOptionsJson() << std::endl;
+    size_t idx = 0;
+    std::for_each(election_box.begin(), election_box.end(), [&idx](const election& current_election){
+        std::cout << "[" << idx << "]: " << current_election.getElectionOptionsJson() << ", with election_id=" << current_election.getPollId() << std::endl;
+        idx++;
     });
     std::string input_string;
     size_t selected_election_id;
@@ -360,7 +351,9 @@ void peer::distributeElection(void *context, straightLineDistributeThread &threa
 
     size_t selected_election_index = selectElection();
     election& chosen_election = election_box[selected_election_index];
-    chosen_election.prepareForDistribtion(known_peer_addresses);
+    if(!chosen_election.isPreparedForDistribution()){
+        chosen_election.prepareForDistribtion(known_peer_addresses);
+    }
 
     std::map<std::string, std::string> reversedConnectionTable;
     std::for_each(connection_table.begin(), connection_table.end(),
@@ -383,6 +376,8 @@ void peer::distributeElection(void *context, straightLineDistributeThread &threa
     thread.setInitialDistributer(true);
     thread.setParams(context, address_up, address_down, position, known_peer_addresses.size(), chosen_election);
     thread.StartInternalThread();
+    _logger.log("localhost", "Distributing Election, wait for thread to exist");
+    thread.WaitForInternalThreadToExit();
 }
 
 void peer::calculatePositionFromTable() {
@@ -445,4 +440,28 @@ void peer::startInprocElectionSyncThread(void *context, inprocElectionboxThread&
 
 std::vector<election> &peer::getElectionBox() {
     return election_box;
+}
+
+void peer::updateDistributionThread(straightLineDistributeThread *p_thread) {
+    calculatePositionFromTable();
+    std::map<std::string, std::string> reversedConnectionTable;
+    std::for_each(connection_table.begin(), connection_table.end(),
+                  [&reversedConnectionTable](std::pair<std::string, std::string> addressToAddress) {
+                      reversedConnectionTable[addressToAddress.second] = addressToAddress.first;
+                  });
+
+    std::string address_up;
+    if (connection_table.contains(peer_address)) {
+        address_up = connection_table[peer_address];
+    }
+
+    std::string address_down;
+    if (reversedConnectionTable.contains(peer_address)) {
+        address_down = reversedConnectionTable[peer_address];
+    }
+
+    p_thread->setAddressDown(address_down);
+    p_thread->setAddressUp(address_up);
+    p_thread->setPosition(position);
+    p_thread->setNetworkSize(known_peer_addresses.size());
 }

@@ -47,3 +47,13 @@ electionBuilder &electionBuilder::withParticipantsFromParticipantVotesKeySet() {
     return *this;
 }
 
+electionBuilder &electionBuilder::withPreparedForDistribution(bool isPrepared) {
+    el.is_prepared_for_distribution = isPrepared;
+    return *this;
+}
+
+electionBuilder &electionBuilder::withSetupDate(time_t setupDate) {
+    el.setup_date = setupDate;
+    return *this;
+}
+
