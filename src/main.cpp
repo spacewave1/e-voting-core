@@ -22,7 +22,6 @@ void *receivePoll(void *arg) {
     from_peer.bind("tcp://*:4456");
     from_peer.recv(request);
 
-    std::cout << request.to_string() << std::endl;
     nlohmann::json current_poll_json = nlohmann::json::parse(request.to_string());
     current_poll = current_poll_json.get<std::map<std::string, size_t>>();
 
@@ -43,12 +42,9 @@ std::string importIdentity(const std::string filePath = "./"){
     if(importStream.is_open())
     {
         if(getline(importStream, line)) {
-            std::cout << line << std::endl;
-
             std::cout << "File contents: " << std::endl;
-            std::cout << line << std::endl;
+            std::cout << std::endl << line << std::endl << std::endl;
             return line;
-
         };
         // File Close
         importStream.close();
@@ -72,7 +68,7 @@ int main(int argc, char **argv) {
 
     if(argc == 2){
         if(std::string(argv[1]).find("import") != -1){
-            local_peer.setIdentity(importIdentity());
+            local_peer.importPeerIdentity();
             local_peer.importPeerConnections();
             local_peer.importPeersList();
         }
@@ -124,21 +120,15 @@ int main(int argc, char **argv) {
         if (input.find("receive_connection") != -1) {
             local_peer.receive(&context);
         }
-        if (input.find("passive_distribution") != -1) {
-            local_peer.passiveDistribution(&context, straight_line_distribute_thread);
-        }
         if (input.find("update_election_box") != -1) {
             // TODO: Needs to check id and sequence number
             local_peer.pushBackElection(straight_line_distribute_thread.getElectionSnapshot());
             straight_line_distribute_thread.WaitForInternalThreadToExit();
             std::cout << "added election to distribution box" << std::endl;
         }
-        if (input.find("active_distribution") != -1) {
+        if (input.find("distribute") != -1) {
             straight_line_distribute_thread.interruptReceiveRequest();
             local_peer.distributeElection(&context, straight_line_distribute_thread);
-        }
-        if (input.find("receive_poll") != -1) {
-            receivePoll(&context);
         }
         if (input.find("place_vote") != -1) {
             local_peer.vote();

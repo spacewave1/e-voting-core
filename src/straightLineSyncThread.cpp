@@ -12,8 +12,7 @@
 
 
 void straightLineSyncThread::InternalThreadEntry() {
-    std::cout << "check initial receiver address" << std::endl;
-    std::cout << initial_receiver_address << std::endl;
+    _logger.log("start straight line sync thread");
 
     if (!initial_receiver_address.empty()) {
         initSyncProcedure();
@@ -23,7 +22,7 @@ void straightLineSyncThread::InternalThreadEntry() {
 }
 
 void straightLineSyncThread::initSyncProcedure() {
-    std::cout << "init sync to" << initial_receiver_address << std::endl;
+    _logger.log("init sync to " + initial_receiver_address);
 
     zmq::context_t *context = (zmq::context_t *) arg;
     zmq::socket_t sock(*context, ZMQ_REQ);
@@ -36,11 +35,13 @@ void straightLineSyncThread::initSyncProcedure() {
     send_json["connections"] = nlohmann::ordered_json(connection_table);
 
     sock.send(zmq::message_t(nlohmann::to_string(send_json)), zmq::send_flags::none);
-    std::cout << "Has send json" << std::endl;
+
+    _logger.log("Has send json");
 
     zmq::message_t json_data;
     sock.recv(json_data, zmq::recv_flags::none);
-    std::cout << "Received Json" << std::endl;
+
+    _logger.log("received json");
 
     nlohmann::json receive_data = nlohmann::json::parse(json_data.to_string());
     std::map<std::string, std::string> received_connections = receive_data["connections"].get<std::map<std::string, std::string>>();
@@ -50,11 +51,11 @@ void straightLineSyncThread::initSyncProcedure() {
     connection_table = received_connections;
 
     sock.send(zmq::str_buffer("accepted"));
-    std::cout << "Sync complete" << std::endl;
+    _logger.log("Sync complete");
 }
 
 void straightLineSyncThread::syncForwardProcedure() {
-    std::cout << "Forward Data to sync" << std::endl;
+    _logger.log("Forward Data to sync");
     zmq::context_t *context = (zmq::context_t *) arg;
     zmq::message_t request;
 
@@ -65,22 +66,19 @@ void straightLineSyncThread::syncForwardProcedure() {
 
 
     toward_branch_end_socket.recv(request, zmq::recv_flags::none);
-    std::cout << "Received: " << request.to_string() << std::endl;
-    std::cout << "Parse JSON from edge" << request.to_string() << std::endl;
+
+    _logger.log("received " + request.to_string());
+
     nlohmann::json received_data = nlohmann::json::parse(request.to_string());
     std::string from_address = std::string(received_data["receiverAddress"]);
 
+    _logger.log("has send sync request: " + request.to_string(), request.gets("Peer-Address"));
 
-    std::cout << "Received sync request: [" << request.to_string() << "]" << std::endl;
-    std::cout << "Parsed Json: [" << received_data.dump() << "]" << std::endl;
 
     if (std::regex_match(from_address, std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
-
         // Merge data here
         std::map<std::string, std::string> received_connections = received_data["connections"].get<std::map<std::string, std::string>>();
         std::set<std::string> received_nodes = received_data["nodes"].get<std::set<std::string>>();
-
-        std::cout << "Placed received json into variables" << std::endl;
 
         std::for_each(connection_table.begin(), connection_table.end(),
                       [&received_connections](const std::pair<std::string, std::string> pair) {
@@ -90,15 +88,15 @@ void straightLineSyncThread::syncForwardProcedure() {
                       });
         received_nodes.insert(peers.begin(), peers.end());
 
-        std::cout << "Merged Data here" << std::endl;
+        _logger.log("Merged Data");
 
-        std::cout << "Check if from address contained in connection table" << std::endl;
         if (connection_table.contains(from_address)) {
             // Forward Data in root direction
 
             std::string next_receiver = connection_table[from_address];
 
-            std::cout << "Connect towards the next node in root direction" << std::endl;
+            _logger.log("connects to " + std::string(next_receiver));
+
             toward_root_socket.connect("tcp://" + std::string(next_receiver) + ":5556");
 
             nlohmann::json send_json;
@@ -106,18 +104,19 @@ void straightLineSyncThread::syncForwardProcedure() {
             send_json["connections"] = nlohmann::ordered_json(received_connections);
             send_json["receiverAddress"] = next_receiver;
 
-            std::cout << "Send the following json: " << std::endl;
-            std::cout << send_json.dump() << std::endl;
+            _logger.log("send: " + send_json.dump());
 
             // Send the next receiver the updated nodes
             toward_root_socket.send(zmq::message_t(send_json.dump()), zmq::send_flags::none);
 
             // Receive the data from root direction
             zmq::message_t reply;
-            std::cout << "Wait for json answer from next node in root direction: " << std::endl;
+
+            _logger.log("Wait for json answer from next node in root direction");
+
             toward_root_socket.recv(reply);
 
-            std::cout << "Response: " << reply.to_string() << std::endl;
+            _logger.log("has send response: " + reply.to_string(), reply.gets("Peer-Address"));
 
             received_data = nlohmann::json::parse(reply.to_string());
 
@@ -143,22 +142,22 @@ void straightLineSyncThread::syncForwardProcedure() {
         send_json["nodes"] = nlohmann::ordered_json(peers);
         send_json["connections"] = nlohmann::ordered_json(connection_table);
 
-        std::cout << "send json: " << send_json.dump() << std::endl;
+        _logger.log("sending json: " + send_json.dump());
 
-        std::for_each(reversed_connection_table[from_address].begin(),
-                      reversed_connection_table[from_address].end(),
-                      [&toward_branch_end_socket, &send_json](const std::string peer_address) {
-                          std::cout << "send data to " << peer_address << std::endl;
+
+        std::for_each(reversed_connection_table[from_address].begin(), reversed_connection_table[from_address].end(),
+                      [&toward_branch_end_socket, &send_json, this](const std::string peer_address) {
+                          this->_logger.log("send data to " + peer_address);
                           toward_branch_end_socket.connect("tcp://" + peer_address + ":5556");
                           toward_branch_end_socket.send(zmq::message_t(send_json.dump()), zmq::send_flags::none);
                           zmq::message_t reply;
                           toward_branch_end_socket.recv(reply, zmq::recv_flags::none);
-                          std::cout << reply.to_string() << std::endl;
+                          this->_logger.log("has replied: " + reply.to_string(), reply.gets("Peer-Address"));
 
                           toward_branch_end_socket.close();
                       });
 
-        if(connection_table.contains(from_address)) {
+        if (connection_table.contains(from_address)) {
             toward_root_socket.send(zmq::message_t("accepted"), zmq::send_flags::none);
         }
 
@@ -177,7 +176,7 @@ void straightLineSyncThread::setParams(void *arg, std::map<std::string, std::str
     this->initial_receiver_address = initial_receiver_address;
 }
 
-const std::map <std::string, std::string> &straightLineSyncThread::getConnectionTable() const {
+const std::map<std::string, std::string> &straightLineSyncThread::getConnectionTable() const {
     return connection_table;
 }
 

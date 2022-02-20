@@ -6,12 +6,14 @@
 #define VOTE_P2P_STRAIGHTLINESYNCTHREAD_H
 
 #include "abstractThread.h"
+#include "logger.h"
 #include <set>
 #include <map>
 #include <string>
 
 class straightLineSyncThread : public abstractThread {
 private:
+    logger _logger = _logger.Instance();
     void InternalThreadEntry() override;
     void initSyncProcedure();
     void syncForwardProcedure();

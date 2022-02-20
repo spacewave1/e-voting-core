@@ -25,15 +25,13 @@ private:
 
 public:
     friend class electionBuilder;
-    static electionBuilder create(int id);
 
+    static electionBuilder create(int id);
     election(const election& el);
     election();
-
     const std::map<std::string, int> &getParticipantsVotes() const;
     const std::map<size_t, std::string> &getOptions() const;
     int getPollId() const;
-
     void setPollId(int poll_id);
     time_t getSetupDate() const;
     size_t getSequenceNumber() const;
@@ -46,17 +44,11 @@ public:
     nlohmann::json participantVotesAsJson();
     void prepareForDistribtion(std::set<std::string> peer_identities);
     void print();
-
     void setJsonOptionsToOptions(nlohmann::json json);
-
     void setJsonVotesToVotes(nlohmann::json json);
-
     nlohmann::json getCurrentElectionStatisticAsJson();
-
     bool isPreparedForDistribution() const;
-
     nlohmann::json getVotesAsJson() const;
-
     void setSetupDate(time_t setupDate);
 };
 

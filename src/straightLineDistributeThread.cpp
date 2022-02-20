@@ -11,22 +11,23 @@ void straightLineDistributeThread::InternalThreadEntry() {
     is_interrupted = false;
     is_running = true;
 
-    while(!is_interrupted && is_running) {
-        _logger.log("Execute thread");
+    while (!is_interrupted && is_running) {
+        resetHops();
+        _logger.log("Execute thread", "localhost", "distribute");
         if (is_initial_requester) {
             sendInitialRequest();
         } else {
             receiveInitialSetupRequest();
         }
 
-        if(is_interrupted) {
-            _logger.log("interrupted thread");
+        if (is_interrupted) {
+            _logger.log("interrupted thread", "localhost", "distribute");
             break;
         } else {
             if (this->address_down.empty() && !this->address_up.empty()) {
                 if (is_initial_requester) {
                     sendDistributionRequest("up");
-                    forwardData("up");
+                    forward();
                 } else {
                     //rec req
                     std::string directionFrom = receiveDistributionRequest();
@@ -34,7 +35,7 @@ void straightLineDistributeThread::InternalThreadEntry() {
 
                     if (current_number_of_hops < network_size - 1) {
                         sendDistributionRequest("up");
-                        forwardData("up");
+                        forward();
                     }
 
                     // if is not last requester continue to distribute
@@ -42,7 +43,7 @@ void straightLineDistributeThread::InternalThreadEntry() {
             } else if (!this->address_down.empty() && this->address_up.empty()) {
                 if (is_initial_requester) {
                     sendDistributionRequest("down");
-                    forwardData("down");
+                    forward();
                 } else {
                     //rec req
                     std::string directionFrom = receiveDistributionRequest();
@@ -50,7 +51,7 @@ void straightLineDistributeThread::InternalThreadEntry() {
 
                     if (current_number_of_hops < network_size - 1) {
                         sendDistributionRequest("down");
-                        forwardData("down");
+                        forward();
                     }
                 }
             } else if (!this->address_down.empty() && !this->address_up.empty()) {
@@ -58,39 +59,39 @@ void straightLineDistributeThread::InternalThreadEntry() {
                     // Send to the closest extreme
                     if (node_position < network_size / 2) {
                         sendDistributionRequest("up");
-                        forwardData("up");
+                        forward();
                         receiveDistributionRequest();
                         receiveData("up");
                         sendDistributionRequest("down");
-                        forwardData("down");
+                        forward();
                     } else {
                         sendDistributionRequest("down");
-                        forwardData("down");
+                        forward();
                         receiveDistributionRequest();
                         receiveData("down");
                         sendDistributionRequest("up");
-                        forwardData("up");
+                        forward();
                     }
                 } else {
                     std::string directionFrom = receiveDistributionRequest();
                     receiveData(invertDirection(directionFrom));
                     sendDistributionRequest(directionFrom);
-                    forwardData(directionFrom);
+                    forward();
                 }
                 // Position check case
                 // if initial request in 1 ... n/2 -> receive from down -> forward up -> receive from up -> forward down
                 // else if initial request in n/2 ... n -> receive from up -> forward down -> receive from down -> forward up
             }
             _logger.log("finished distribution process for this host");
-            if(!is_initial_requester){
+            if (!is_initial_requester) {
                 updateElectionBox();
             }
-            if(is_initial_requester) {
+            if (is_initial_requester) {
                 is_running = false;
             }
         }
     }
-    _logger.log("Thread now stops running");
+    _logger.log("Thread now stops running", "localhost", "distribute");
 }
 
 //If Distribute -> close current receive and
@@ -108,8 +109,6 @@ void straightLineDistributeThread::sendInitialRequest() {
     sendJson["originPosition"] = node_position;
     sendJson["origin_publish_port"] = publish_port;
 
-    // TODO: Fall nicht abgedeckt bei der sich der initial request in der Mitte befindet
-
     if (!address_up.empty()) {
         request_socket.connect("tcp://" + address_up + ":5049");
         request_socket.send(zmq::buffer(sendJson.dump()));
@@ -117,7 +116,7 @@ void straightLineDistributeThread::sendInitialRequest() {
         zmq::message_t reply;
         request_socket.recv(reply);
 
-        _logger.log(reply.to_string(), reply.gets("Peer-Address"));
+        _logger.log(reply.to_string(), reply.gets("Peer-Address"), "distribute");
         request_socket.disconnect("tcp://" + address_up + ":5049");
     }
 
@@ -129,7 +128,7 @@ void straightLineDistributeThread::sendInitialRequest() {
         zmq::message_t reply;
         request_socket.recv(reply);
 
-        _logger.log(reply.to_string(), reply.gets("Peer-Address"));
+        _logger.log(reply.to_string(), reply.gets("Peer-Address"), "distribute");
         request_socket.disconnect("tcp://" + address_down + ":5049");
     }
 
@@ -146,20 +145,19 @@ void straightLineDistributeThread::receiveInitialSetupRequest() {
     receive_request_socket.bind("tcp://*:5049");
 
 
-
-    while(!is_interrupted) {
+    while (!is_interrupted) {
         receive_request_socket.recv(request, zmq::recv_flags::dontwait);
 
-        if(!request.empty()) {
+        if (!request.empty()) {
             receiveJson = nlohmann::json::parse(request.to_string());
-            _logger.log(receiveJson.dump(), request.gets("Peer-Address"));
+            _logger.log(receiveJson.dump(), request.gets("Peer-Address"), "distribute");
 
             receive_request_socket.send(zmq::buffer("accept"));
             receive_request_socket.close();
 
             setupDistribution((zmq::message_t &) request, receiveJson);
 
-            _logger.log("Has setup from passive distribution");
+            _logger.log("Has setup from passive distribution", "distribute");
             break;
         }
     }
@@ -180,19 +178,19 @@ void straightLineDistributeThread::sendDistributionRequest(std::string direction
     zmq::message_t reply;
     send_request_socket.send(zmq::buffer(direction));
     send_request_socket.recv(reply);
-    _logger.log(reply.to_string(), reply.gets("Peer-Address"));
+    _logger.log(reply.to_string(), reply.gets("Peer-Address"), "distribute");
     send_request_socket.send(zmq::buffer(std::to_string(current_number_of_hops)));
 
     send_request_socket.recv(reply);
 
     //nlohmann::json receiveJson = nlohmann::json::parse(request.to_string());
-    _logger.log(reply.to_string(), reply.gets("Peer-Address"));
+    _logger.log(reply.to_string(), reply.gets("Peer-Address"), "distribute");
 
     send_request_socket.close();
 }
 
 std::string straightLineDistributeThread::receiveDistributionRequest() {
-    _logger.log("Wait for distribution request");
+    _logger.log("Wait for distribution request", "localhost", "distribute");
     auto *context = (zmq::context_t *) arg;
     zmq::socket_t receive_request_socket(*context, zmq::socket_type::rep);
 
@@ -204,7 +202,7 @@ std::string straightLineDistributeThread::receiveDistributionRequest() {
             isSocketBind = true;
         }
         catch (zmq::error_t &e) {
-            _logger.log(("couldn't bind to socket: " + std::string(e.what())));
+            _logger.log(("couldn't bind to socket: " + std::string(e.what())), "localhost", "distribute");
             zmq_sleep(1);
         }
     }
@@ -221,19 +219,19 @@ std::string straightLineDistributeThread::receiveDistributionRequest() {
     receive_request_socket.send(zmq::buffer("accepted"));
     receive_request_socket.close();
 
-    _logger.log(request_direction.to_string(), std::string(request_direction.gets("Peer-Address")));
+    _logger.log(request_direction.to_string(), std::string(request_direction.gets("Peer-Address")), "distribute");
     _logger.log("received hop number = " + message_number_of_hops.to_string(),
-                std::string(request_direction.gets("Peer-Address")));
-    _logger.log("current hop number = " + std::to_string(current_number_of_hops));
+                std::string(request_direction.gets("Peer-Address")), "distribute");
+    _logger.log("current hop number = " + std::to_string(current_number_of_hops), "distribute");
     return request_direction.to_string();
 }
 
 void straightLineDistributeThread::receiveData(std::string direction) {
-    _logger.log("Receive data");
+    _logger.log("Receive data", "localhost", "distribute");
     if (direction == "down") {
-        election_snapshot_to_send = receiveFromDown();
+        election_snapshot_to_send = receiveFrom(address_down);
     } else {
-        election_snapshot_to_send = receiveFromUp();
+        election_snapshot_to_send = receiveFrom(address_up);
     }
 }
 
@@ -246,10 +244,10 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
     sendJson["originPosition"] = node_position;
 
     if (originPosition < node_position) {
-        _logger.log("Set subscribe socket for upwards");
+        _logger.log("Set subscribe socket for upwards", "localhost", "distribute");
 
         if (!address_down.empty()) {
-            _logger.log("Forward port number to subscribers");
+            _logger.log("Forward port number to subscribers", "localhost", "distribute");
             zmq::socket_t forward_request(*context, zmq::socket_type::req);
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
 
@@ -259,7 +257,7 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
 
             zmq::message_t reply;
             forward_request.recv(reply);
-            _logger.log(reply.to_string(), address_down);
+            _logger.log(reply.to_string(), address_down, "distribute");
             forward_request.disconnect("tcp://" + address_down + ":5049");
             forward_request.close();
 
@@ -270,10 +268,10 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
         }
     } else if (originPosition > node_position) {
-        _logger.log("Set subscribe socket for downwards");
+        _logger.log("Set subscribe socket for downwards", "localhost", "distribute");
 
         if (!address_up.empty()) {
-            _logger.log("Forward port number to subscribers");
+            _logger.log("Forward port number to subscribers", "localhost", "distribute");
             zmq::socket_t forward_request(*context, zmq::socket_type::req);
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
 
@@ -284,7 +282,7 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
 
             zmq::message_t reply;
             forward_request.recv(reply);
-            _logger.log(reply.to_string(), address_up);
+            _logger.log(reply.to_string(), address_up, "distribute");
             forward_request.disconnect("tcp://" + address_up + ":5049");
             forward_request.close();
         } else {
@@ -293,32 +291,33 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
     }
 }
 
-election straightLineDistributeThread::receiveFromUp() {
-    _logger.log("receive from up");
+election straightLineDistributeThread::receiveFrom(std::string address) {
+    _logger.log("receive from up", "localhost", "distribute");
 
-    subscribe_socket.connect("tcp", address_up, subscribe_port);
+    subscribe_socket.connect("tcp", address, subscribe_port);
 
-    _logger.log("subscribe to " + address_up + ":" + std::to_string(subscribe_port));
+    _logger.log("subscribe to " + address + ":" + std::to_string(subscribe_port), "localhost", "distribute");
 
     const std::string &election_id_string = subscribe_socket.recv();
     int election_id = std::stoi(election_id_string);
+    _logger.log("received " + std::to_string(election_id), "localhost", "distribute");
+
 
     const std::string &sequence_id_string = subscribe_socket.recv();
     int sequence_id = std::stoi(sequence_id_string);
+    _logger.log("received " + std::to_string(sequence_id), "localhost", "distribute");
 
     const std::string &setup_date_string = subscribe_socket.recv();
     time_t setup_date = (unsigned int) std::stoul(setup_date_string);
+    _logger.log("received " + std::to_string(setup_date), "localhost", "distribute");
 
     const std::string &json = subscribe_socket.recv();
     nlohmann::json electionOptionsJson = nlohmann::json::parse(json);
+    _logger.log("received " + electionOptionsJson.dump(), "localhost", "distribute");
 
     const std::string &jsonVotes = subscribe_socket.recv();
     nlohmann::json election_votes_json = nlohmann::json::parse(jsonVotes);
-
-    _logger.log("received " + std::to_string(election_id));
-    _logger.log("received " + std::to_string(sequence_id));
-    _logger.log("received " + electionOptionsJson.dump());
-    _logger.log("received " + election_votes_json.dump());
+    _logger.log("received " + election_votes_json.dump(), "localhost", "distribute");
 
     election receivedElection;
 
@@ -328,99 +327,36 @@ election straightLineDistributeThread::receiveFromUp() {
     receivedElection.setJsonOptionsToOptions(electionOptionsJson);
     receivedElection.setJsonVotesToVotes(election_votes_json);
 
+    subscribe_socket.disconnect("tcp", address, subscribe_port);
+
     return receivedElection;
 }
 
-election straightLineDistributeThread::receiveFromDown() {
-    _logger.log("receive from down");
+void straightLineDistributeThread::forward() {
+    _logger.log("is Bound: " + std::to_string(publish_socket.isBound()),"localhost","distribute");
+    publish_socket.bind("tcp", "*", publish_port);
 
-    subscribe_socket.connect("tcp", address_down, subscribe_port);
-
-    _logger.log("subscribed to " + address_down + ":" + std::to_string(subscribe_port));
-
-    const std::string &election_id_string = subscribe_socket.recv();
-    int election_id = std::stoi(election_id_string);
-
-    const std::string &sequence_id_string = subscribe_socket.recv();
-    int sequence_id = std::stoi(sequence_id_string);
-
-    const std::string &setup_date_string = subscribe_socket.recv();
-    time_t setup_date = (unsigned int) std::stoul(setup_date_string);
-
-    const std::string &json = subscribe_socket.recv();
-    nlohmann::json election_options_json = nlohmann::json::parse(json);
-
-    const std::string &election_votes_json_string = subscribe_socket.recv();
-    nlohmann::json election_votes_json = nlohmann::json::parse(election_votes_json_string);
-
-    election receivedElection;
-
-    receivedElection.setPollId(election_id);
-    receivedElection.setSequenceNumber(sequence_id);
-    receivedElection.setSetupDate(setup_date);
-    receivedElection.setJsonOptionsToOptions(election_options_json);
-    receivedElection.setJsonVotesToVotes(election_votes_json);
-
-    _logger.log("received " + std::to_string(election_id));
-    _logger.log("received " + std::to_string(sequence_id));
-    _logger.log("received " + election_options_json.dump());
-    _logger.log("received " + election_votes_json.dump());
-
-    return receivedElection;
-    // Set variables
-}
-
-void straightLineDistributeThread::forwardUp() {
-    _logger.log("forward up");
-
-    if (!publish_socket.isBound()) {
-        publish_socket.bind("tcp", "*", publish_port);
-    }
-
-    zmq_sleep(1);
+    zmq_sleep(2);
 
     _logger.log("send on port: " + std::to_string(publish_port));
 
     publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()));
     publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
     publish_socket.send(std::to_string(election_snapshot_to_send.getSetupDate()));
+    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()));
     publish_socket.send(election_snapshot_to_send.getElectionOptionsJson().dump());
+    _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()));
     publish_socket.send(election_snapshot_to_send.participantVotesAsJson().dump());
+    _logger.log("send: " + std::string(election_snapshot_to_send.participantVotesAsJson().dump()));
 
     _logger.log("finished broadcasting");
-
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()));
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()));
-    _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()));
-
-
 }
 
-void straightLineDistributeThread::forwardDown() {
-    _logger.log("forward down");
-    zmq_sleep(1);
-
-    if (!publish_socket.isBound()) {
-        publish_socket.bind("tcp", "*", publish_port);
-    }
-
-    zmq_sleep(1);
-
-    _logger.log("send on port: " + std::to_string(publish_port));
-
-    publish_socket.send(std::to_string(election_snapshot_to_send.getPollId()));
-    publish_socket.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    publish_socket.send(std::to_string(election_snapshot_to_send.getSetupDate()));
-    publish_socket.send(election_snapshot_to_send.getElectionOptionsJson().dump());
-    publish_socket.send(election_snapshot_to_send.participantVotesAsJson().dump());
-
-    _logger.log("finished broadcasting");
-
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()));
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
-    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()));
-    _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()));
+void straightLineDistributeThread::cleanUp() {
+    publish_socket.close();
+    subscribe_socket.close();
 }
 
 void straightLineDistributeThread::setParams(void *arg, std::string address_up, std::string address_down,
@@ -452,14 +388,6 @@ std::string straightLineDistributeThread::invertDirection(std::string direction)
     }
 }
 
-void straightLineDistributeThread::forwardData(std::string direction) {
-    if (direction == "up") {
-        forwardUp();
-    } else {
-        forwardDown();
-    }
-}
-
 void straightLineDistributeThread::setSubscribeSocket(abstractSocket &socket) {
     this->subscribe_socket = std::move(socket);
 }
@@ -487,19 +415,24 @@ void straightLineDistributeThread::updateElectionBox() {
     zmqSocketAdapter inproc_socket_adapter = zmqSocketAdapter(inproc_socket);
     inproc_socket_adapter.bind("inproc", "update_elections");
 
-    zmq_sleep(1);
-
     inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getPollId()));
     inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getSequenceNumber()));
     inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getSetupDate()));
     inproc_socket_adapter.send(election_snapshot_to_send.getElectionOptionsJson().dump());
     inproc_socket_adapter.send(election_snapshot_to_send.participantVotesAsJson().dump());
 
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()), "update_election");
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber()), "update_election");
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSetupDate()), "update_election");
-    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()), "update_election");
-    _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()), "update_election");
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()) + " to inproc thread", "localhost",
+                "distribute");
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber()) + " to inproc thread",
+                "localhost", "distribute");
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getSetupDate()) + " to inproc thread", "localhost",
+                "distribute");
+    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()) + " to inproc thread",
+                "localhost", "distribute");
+    _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()) + " to inproc thread",
+                "localhost", "distribute");
+
+    inproc_socket_adapter.unbind("inproc", "update_elections");
 }
 
 void straightLineDistributeThread::setAddressUp(std::string addressUp) {
@@ -532,4 +465,8 @@ bool straightLineDistributeThread::isRunning() {
 
 void straightLineDistributeThread::setIsRunning(bool b) {
     is_running = b;
+}
+
+void straightLineDistributeThread::resetHops() {
+    current_number_of_hops = 0;
 }

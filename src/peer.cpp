@@ -13,7 +13,12 @@
 void peer::printConnections() {
     // Iterate through "receiver" nodes
     size_t index = 0;
-    std::cout << "Host Ip Addresses" << std::endl;
+
+    _logger.log("print connections");
+    std::cout << std::endl;
+
+    std::cout << "Host Ip Addresses:" << std::endl;
+
     std::for_each(known_peer_addresses.begin(), known_peer_addresses.end(), [&index](const std::string ip_address) {
         std::cout << "[" << index << "] " << ip_address << std::endl;
         index++;
@@ -21,7 +26,8 @@ void peer::printConnections() {
 
     // Iterate through connections
     index = 0;
-    std::cout << "Connections" << std::endl;
+    std::cout << std::endl << "Connections:" << std::endl;
+
     std::for_each(connection_table.begin(), connection_table.end(),
                   [&index](const std::pair<std::string, std::string> connection) {
                       std::cout << "[" << index << "] " << connection.first << "->" << connection.second << std::endl;
@@ -31,7 +37,8 @@ void peer::printConnections() {
     nlohmann::json send_json = nlohmann::json();
     send_json["nodes"] = nlohmann::ordered_json(known_peer_addresses);
     send_json["connections"] = nlohmann::ordered_json(connection_table);
-    std::cout << "As Json:" << std::endl << nlohmann::to_string(send_json) << std::endl;
+
+    std::cout << std::endl << "As Json:" << std::endl << nlohmann::to_string(send_json) << std::endl;
 }
 
 void printMetaData(zmq::message_t &msg) {
@@ -67,7 +74,7 @@ void printMetaData(zmq::message_t &msg) {
 }
 
 void peer::connect(std::string &input, void *abstractContext) {
-    std::cout << "is connecting to " << input << std::endl;
+    _logger.log("is connecting to " + input);
     const std::string delimiter = " ";
     size_t position_of_whitespace = input.find(delimiter);
     auto address = input.substr(position_of_whitespace + delimiter.size(), input.size() - position_of_whitespace);
@@ -82,23 +89,26 @@ void peer::connect(std::string &input, void *abstractContext) {
     zmq::message_t reply;
     sock.recv(reply, zmq::recv_flags::none);
     if (!reply.empty()) {
-        std::cout << reply.to_string() << std::endl;
+        _logger.log("has replied" + reply.to_string(), reply.gets("Peer-Address"));
         if (std::regex_match(reply.to_string(),
                              std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
+            _logger.log("print message metadata\n\n");
             printMetaData(reply);
-            std::cout << "added ip" << std::endl;
+
+            _logger.log("added ip");
 
             peer_address = std::string(address);
             known_peer_addresses.insert(std::string(address));
             connection_table[reply.to_string()] = std::string(address);
         } else {
-            std::cout << "requesting peer already has a bound a peer to the net" << std::endl;
+            _logger.warn("requesting peer already has a bound a peer to the net");
         }
     }
 }
 
 void peer::receive(void *abstractContext) {
-    std::cout << "Wait for connection" << std::endl;
+    _logger.log("Wait for connection");
+
     zmq::context_t *zmq_context = (zmq::context_t *) abstractContext;
     zmq::socket_t sock(*zmq_context, zmq::socket_type::rep);
 
@@ -120,15 +130,16 @@ void peer::receive(void *abstractContext) {
                         std::make_pair(std::string(request.gets("Peer-Address")), std::string(request.to_string())));
 
                 printMetaData(request);
-                std::cout << "added ip " << request.to_string() << " to list of network" << std::endl;
+                _logger.log("added: " + request.to_string() + " to network");
+
                 sock.send(zmq::message_t(std::string(request.gets("Peer-Address"))), zmq::send_flags::none);
             } else {
                 sock.send(zmq::message_t(std::string("rejected")), zmq::send_flags::none);
-                std::cout << "not an ip4" << std::endl;
+                _logger.log("the requested peer address is rejected, an ip4 is required");
             }
         } else {
             sock.send(zmq::message_t(std::string("rejected")), zmq::send_flags::none);
-            std::cout << "This peer has already bound an ip to the net" << std::endl;
+            _logger.log("Peer rejected, already ip address already belongs to a known peer");
         }
     }
 }
@@ -188,26 +199,25 @@ void peer::importPeerConnections(std::string importPath) {
     std::ifstream importStream;
     std::string line;
 
-    std::cout << "is importing connections file from " << importPath + "connections.json" << std::endl;
+    _logger.log("is importing connections file from " + importPath + "connections.json");
 
     // File Open in the Read Mode
     importStream.open(importPath + "connections.json");
 
     if (importStream.is_open()) {
         if (getline(importStream, line)) {
-            std::cout << line << std::endl;
 
             nlohmann::json connectionsJson = nlohmann::json::parse(line);
-            std::cout << "File contents: " << std::endl;
-            std::cout << connectionsJson.dump() << std::endl;
+            _logger.log("File contents: ");
+            _logger.displayData(connectionsJson.dump());
             this->connection_table = connectionsJson["connections"].get<std::map<std::string, std::string>>();
 
         };
         // File Close
         importStream.close();
-        std::cout << "Successfully imported connections" << std::endl;
+        _logger.log("Successfully imported connections");
     } else {
-        std::cout << "Unable to open the file!" << std::endl;
+        _logger.error("Unable to open the file!");
     }
 }
 
@@ -215,26 +225,25 @@ void peer::importPeersList(std::string importPath) {
     std::ifstream importStream;
     std::string line;
 
-    std::cout << "is importing peers file from " << importPath + "peers.json" << std::endl;
+    _logger.log("is importing peers file from " + importPath + "peers.json");
 
     // File Open in the Read Mode
     importStream.open(importPath + "peers.json");
 
     if (importStream.is_open()) {
         if (getline(importStream, line)) {
-            std::cout << line << std::endl;
 
             nlohmann::json peersJson = nlohmann::json::parse(line);
-            std::cout << "File contents: " << std::endl;
-            std::cout << peersJson.dump() << std::endl;
+            _logger.log("File contents as json: ");
+            _logger.displayData(peersJson.dump());
             this->known_peer_addresses = peersJson["peers"].get<std::set<std::string>>();
 
         };
         // File Close
         importStream.close();
-        std::cout << "Successfully imported peers" << std::endl;
+        _logger.log("Successfully imported connections");
     } else {
-        std::cout << "Unable to open the file!" << std::endl;
+        _logger.error("Unable to open the file!");
     }
 }
 
@@ -242,12 +251,12 @@ void peer::vote() {
     // Take the first election
     if (election_box.size() > 0) {
         size_t chosen_id = selectElection();
-        election& chosen_election = election_box.at(chosen_id);
+        election &chosen_election = election_box.at(chosen_id);
 
         const std::map<size_t, std::string> &map = chosen_election.getOptions();
 
-        std::for_each(map.begin(),map.end(),[](std::pair<size_t, std::string> idToOption){
-           std::cout << idToOption.first << ": " << idToOption.second << std::endl;
+        std::for_each(map.begin(), map.end(), [](std::pair<size_t, std::string> idToOption) {
+            std::cout << idToOption.first << ": " << idToOption.second << std::endl;
         });
 
         std::string input;
@@ -264,7 +273,8 @@ void peer::vote() {
 };
 
 election peer::createElection(size_t election_id) {
-    std::cout << "Enter how many possible Options can be elected" << std::endl;
+    _logger.promptUserInput("Enter how many possible Options can be elected");
+
     std::string input;
     std::getline(std::cin, input);
 
@@ -274,8 +284,8 @@ election peer::createElection(size_t election_id) {
 
     size_t index = 0;
     std::transform(options.begin(), options.end(), options.begin(),
-                   [&index, &options](const std::string &option) -> std::string {
-                       std::cout << "Enter Option #" << index << std::endl;
+                   [&index, this](const std::string &option) -> std::string {
+                       this->_logger.promptUserInput("Enter Option #" + std::to_string(index));
                        std::string input;
                        std::getline(std::cin, input);
                        index++;
@@ -289,7 +299,7 @@ election peer::createElection(size_t election_id) {
 
     index = 0;
     if (electionJson.is_array()) {
-        std::for_each(electionJson.begin(), electionJson.end(), [&map_options, &index](const nlohmann::json& option) {
+        std::for_each(electionJson.begin(), electionJson.end(), [&map_options, &index](const nlohmann::json &option) {
             map_options[index] = option.dump();
             index++;
             std::cout << option.dump() << std::endl;
@@ -300,16 +310,38 @@ election peer::createElection(size_t election_id) {
             .withSequenceNumber(0)
             .withVoteOptions(map_options);
 
-    std::cout << election_id << std::endl;
-    std::cout << initialElectionState.getPollId() << std::endl;
+    _logger.log("show election");
+    initialElectionState.print();
 
     return initialElectionState;
 }
 
-void peer::setIdentity(std::string identity) {
-    peer_identity = identity;
-    peer_address = identity;
+void peer::importPeerIdentity(std::string importPath) {
+    std::ifstream importStream;
+    std::string line;
+
+    _logger.log("is importing peers file from " + importPath + "id.dat");
+
+    // File Open in the Read Mode
+    importStream.open(importPath + "id.dat");
+
+    if (importStream.is_open()) {
+        if (getline(importStream, line)) {
+            _logger.log("Display File Content:");
+            _logger.displayData(line);
+
+            peer_identity = line;
+            peer_address = line;
+
+        };
+        // File Close
+        importStream.close();
+        _logger.error("Could not return line");
+    } else {
+        _logger.error("Unable to open the file!");
+    }
 }
+
 
 void peer::dumpElectionBox() {
     std::for_each(election_box.begin(), election_box.end(), [](election electionEntry) {
@@ -326,32 +358,35 @@ void peer::passiveDistribution(void *context, straightLineDistributeThread &thre
 }
 
 size_t peer::selectElection() {
-    std::cout << "Select which election to distribute by id" << std::endl;
+    _logger.promptUserInput("Select which election to distribute by id");
+    std::cout << std::endl;
     size_t idx = 0;
-    std::for_each(election_box.begin(), election_box.end(), [&idx](const election& current_election){
-        std::cout << "[" << idx << "]: " << current_election.getElectionOptionsJson() << ", with election_id=" << current_election.getPollId() << std::endl;
+    std::for_each(election_box.begin(), election_box.end(), [&idx, this](const election &current_election) {
+        this->_logger.displayData("[" + std::to_string(idx) + "]: " + current_election.getElectionOptionsJson().dump() +
+                                  ", with election_id="
+                                  + std::to_string(current_election.getPollId()));
         idx++;
     });
     std::string input_string;
     size_t selected_election_id;
 
-    while(true && input_string != "exit") {
+    while (true && input_string != "exit") {
         std::getline(std::cin, input_string);
         selected_election_id = std::stoi(input_string);
         std::cout << std::endl;
-        if(isNumber(input_string) && selected_election_id < election_box.size()) {
+        if (isNumber(input_string) && selected_election_id < election_box.size()) {
             return selected_election_id;
         }
     }
-    std::cout << "Exit executable during election selection" << std::endl;
+    _logger.log("Exit executable during election selection");
     std::exit(10);
 }
 
 void peer::distributeElection(void *context, straightLineDistributeThread &thread) {
 
     size_t selected_election_index = selectElection();
-    election& chosen_election = election_box[selected_election_index];
-    if(!chosen_election.isPreparedForDistribution()){
+    election &chosen_election = election_box[selected_election_index];
+    if (!chosen_election.isPreparedForDistribution()) {
         chosen_election.prepareForDistribtion(known_peer_addresses);
     }
 
@@ -376,7 +411,7 @@ void peer::distributeElection(void *context, straightLineDistributeThread &threa
     thread.setInitialDistributer(true);
     thread.setParams(context, address_up, address_down, position, known_peer_addresses.size(), chosen_election);
     thread.StartInternalThread();
-    _logger.log("localhost", "Distributing Election, wait for thread to exist");
+    _logger.log("Distributing Election, wait for thread to exist", "localhost", "main");
     thread.WaitForInternalThreadToExit();
 }
 
@@ -398,20 +433,15 @@ void peer::calculatePositionFromTable() {
                       }
                   });
 
-    std::cout << "test" << std::endl;
-    std::cout << root_address << std::endl;
-    std::cout << peer_address << std::endl;
-
     size_t pos = getAndIncrement(peer_address, root_address, reversed_connection_table, 0);
 
     this->position = pos;
-    std::cout << "Calculated position for " << peer_address << " is " << pos << std::endl;
+    _logger.log("Calculated position for " + peer_address + " is " + std::to_string(pos));
 }
 
 size_t peer::getAndIncrement(std::string self_address, std::string current_address,
-                       std::map<std::string, std::string> &connection_table, size_t current_position) {
+                             std::map<std::string, std::string> &connection_table, size_t current_position) {
 
-    std::cout << std::endl;
     if (current_address == self_address || !connection_table.contains(current_address)) {
         return current_position;
     } else {
@@ -420,9 +450,8 @@ size_t peer::getAndIncrement(std::string self_address, std::string current_addre
     }
 }
 
-bool peer::isNumber(const std::string s)
-{
-    for (char const &ch : s) {
+bool peer::isNumber(const std::string s) {
+    for (char const &ch: s) {
         if (std::isdigit(ch) == 0)
             return false;
     }
@@ -433,7 +462,7 @@ void peer::pushBackElection(election election) {
     election_box.push_back(election);
 }
 
-void peer::startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread) {
+void peer::startInprocElectionSyncThread(void *context, inprocElectionboxThread &thread) {
     _logger.log("starting election inproc");
     thread.StartInternalThread();
 }

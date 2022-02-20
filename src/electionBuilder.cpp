@@ -35,7 +35,6 @@ electionBuilder &electionBuilder::withSequenceNumber(int sequence_number) {
 }
 
 electionBuilder::~electionBuilder() {
-    std::cout << "Calling destructor" << std::endl;
 }
 
 electionBuilder &electionBuilder::withParticipantsFromParticipantVotesKeySet() {

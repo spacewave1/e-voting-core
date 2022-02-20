@@ -19,7 +19,6 @@ private:
     void InternalThreadEntry() override;
     std::string receiveDistributionRequest();
     void receiveData(std::string direction);
-    void forwardData(std::string direction);
     void sendDistributionRequest(std::string direction);
     std::string address_up;
     std::string address_down;
@@ -35,6 +34,7 @@ private:
     bool is_interrupted = false;
     bool is_running = false;
     void* arg;
+    void cleanUp();
 public:
     election getElectionSnapshot() const;
     void setupDistribution(zmq::message_t &request, nlohmann::json receiveJson);
@@ -48,10 +48,8 @@ public:
     void setPosition(size_t position);
     void setSubscribePort(size_t port_number);
     void setNetworkSize(size_t networkSize);
-    void forwardUp();
-    void forwardDown();
-    election receiveFromUp();
-    election receiveFromDown();
+    void forward();
+    election receiveFrom(std::string address);
     void interruptReceiveRequest();
 
     void receiveInitialSetupRequest();
@@ -69,6 +67,8 @@ public:
     bool isRunning();
 
     void setIsRunning(bool b);
+
+    void resetHops();
 };
 
 

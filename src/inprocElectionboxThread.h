@@ -12,17 +12,16 @@
 
 class inprocElectionboxThread : public abstractThread  {
     void InternalThreadEntry() override;
-
 public:
-    virtual ~inprocElectionboxThread();
-
-public:
+    ~inprocElectionboxThread() override;
     void runElectionUpdate();
     inprocElectionboxThread(std::vector<election> &election_box, abstractSocket &abstract_socket);
+    void interrupt();
 private:
     std::vector<election>& election_box;
     abstractSocket& abstract_socket;
     logger _logger = _logger.Instance();
+    bool is_interrupted = false;
 };
 
 

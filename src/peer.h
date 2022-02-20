@@ -32,6 +32,7 @@ public:
     void exportPeersList(std::string exportPath = "./");
     void importPeerConnections(std::string importPath = "./");
     void importPeersList(std::string importPath = "./");
+    void importPeerIdentity(std::string importPath = "./");
     void distributeElection(void* context, straightLineDistributeThread& thread);
     void passiveDistribution(void* context, straightLineDistributeThread& thread);
     void dumpElectionBox();

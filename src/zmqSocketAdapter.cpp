@@ -76,3 +76,15 @@ void zmqSocketAdapter::unbind(std::string protocol, std::string address, size_t 
 bool zmqSocketAdapter::isBound() {
     return is_bound;
 }
+
+void zmqSocketAdapter::disconnect(std::string protocol, std::string address, size_t port) {
+    if(protocol == "tcp") {
+        socket.disconnect(protocol + "://" + address + ":" + std::to_string(port));
+    } else if(protocol == "inproc") {
+        socket.disconnect(protocol + "://" + address);
+    }
+}
+
+void zmqSocketAdapter::close() {
+    socket.close();
+}

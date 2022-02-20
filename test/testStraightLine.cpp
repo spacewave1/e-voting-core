@@ -49,7 +49,7 @@ TEST(straightLineDistributeTest, receive_from_up) {
     const election &snapshot = election::create(0).withSetupDate(time(NULL));
     testee.setParams(nullptr, "127.0.0.1", "<toIp>", 0, 3, snapshot);
     testee.setSubscribePort(((size_t) 5001));
-    election result = testee.receiveFromUp();
+    election result = testee.receiveFrom("127.0.0.1");
 
     EXPECT_EQ(1, result.getPollId());
     EXPECT_EQ(4, result.getSequenceNumber());
@@ -76,7 +76,7 @@ TEST(straightLineDistributeTest, receive_from_down) {
     const election &snapshot = election::create(1).withSetupDate(time(NULL));
     testee.setParams(nullptr, "irrelevant", "127.0.0.1", 0, 3, snapshot);
     testee.setSubscribePort(((size_t) 5001));
-    election result = testee.receiveFromDown();
+    election result = testee.receiveFrom("127.0.0.1");
 
     EXPECT_EQ(1, result.getPollId());
     EXPECT_EQ(4, result.getSequenceNumber());

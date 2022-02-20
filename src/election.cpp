@@ -69,16 +69,17 @@ nlohmann::json election::participantVotesAsJson() {
 }
 
 void election::print() {
-    std::cout << "id: " << prototype.election_id << std::endl;
-    std::cout << "sequence: " << prototype.sequence_number << std::endl;
-    std::cout << "setup_date: " << setup_date << std::endl;
+    std::cout << std::endl;
+    std::cout << "\tid: " << prototype.election_id << std::endl;
+    std::cout << "\tsequence: " << prototype.sequence_number << std::endl;
+    std::cout << "\tsetup_date: " << setup_date << std::endl;
     std::for_each(prototype.options.begin(), prototype.options.end(),
                   [](std::pair<size_t, std::string> id_option_pair) {
-                      std::cout << id_option_pair.first << ": " << id_option_pair.second << std::endl;
+                      std::cout << "\t" << id_option_pair.first << ": " << id_option_pair.second << std::endl;
                   });
     std::for_each(participants_votes.begin(), participants_votes.end(),
                   [](std::pair<std::string, int> id_choice_pair) {
-                      std::cout << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
+                      std::cout << "\t" << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
                   });
     std::cout << std::endl;
 }
