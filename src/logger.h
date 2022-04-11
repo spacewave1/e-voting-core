@@ -19,10 +19,10 @@ public:
     };
 
     void displayData(std::string content) {
-        std::cout << std::endl << "\t" << content << std::endl << std::endl;
+        std::cout << "\t" << content << std::endl;
     }
 
-    void log(std::string content, std::string address = "localhost", std::string thread_name = "main") {
+    void log(std::string_view content, std::string address = "localhost", std::string thread_name = "main") {
         std::cout << "[" << time(NULL) << "]" << "[" << address << "]" << "[" << thread_name << "]" <<
                   (address.length() + thread_name.length() < 32 ? "\t" : "") <<
                   (address.length() + thread_name.length() < 28 ? "\t" : "") <<

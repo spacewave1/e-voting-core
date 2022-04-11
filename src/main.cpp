@@ -30,7 +30,7 @@ void *receivePoll(void *arg) {
     });
 }
 
-std::string importIdentity(const std::string filePath = "./"){
+std::string importIdentity(const std::string filePath = "./") {
     std::ifstream importStream;
     std::string line;
 
@@ -39,9 +39,8 @@ std::string importIdentity(const std::string filePath = "./"){
     // File Open in the Read Mode
     importStream.open(filePath + "id.dat");
 
-    if(importStream.is_open())
-    {
-        if(getline(importStream, line)) {
+    if (importStream.is_open()) {
+        if (getline(importStream, line)) {
             std::cout << "File contents: " << std::endl;
             std::cout << std::endl << line << std::endl << std::endl;
             return line;
@@ -49,44 +48,38 @@ std::string importIdentity(const std::string filePath = "./"){
         // File Close
         importStream.close();
         std::cout << "Could not return line" << std::endl;
-    }
-    else
-    {
+    } else {
         std::cout << "Unable to open the file!" << std::endl;
         return "id1";
     }
 }
 
 int main(int argc, char **argv) {
+    logger _logger = _logger.Instance();
     std::cout << std::to_string(argc) << std::endl;
     std::cout << "Usage:\t enter [connect] <address>, to connect to an address that runs this application as well"
               << std::endl;
 
-    zmq::context_t context(1);
+    zmq::context_t context = zmq::context_t(1);
     std::string input;
     peer local_peer;
 
-    if(argc == 2){
-        if(std::string(argv[1]).find("import") != -1){
+    if (argc == 2) {
+        if (std::string(argv[1]).find("import") != -1) {
             local_peer.importPeerIdentity();
             local_peer.importPeerConnections();
             local_peer.importPeersList();
         }
     }
 
-    zmq::socket_t sub_socket = zmq::socket_t(context, zmq::socket_type::sub);
-    sub_socket.set(zmq::sockopt::subscribe, "");
-    zmq::socket_t pub_socket = zmq::socket_t(context, zmq::socket_type::pub);
 
     zmq::socket_t inproc_socket = zmq::socket_t(context, zmq::socket_type::sub);
     inproc_socket.set(zmq::sockopt::subscribe, "");
 
-    zmqSocketAdapter pub_socket_adapter(pub_socket);
-    zmqSocketAdapter sub_socket_adapter(sub_socket);
     zmqSocketAdapter inproc_socket_adapter(inproc_socket);
 
     straightLineSyncThread straight_line_sync_thread;
-    straightLineDistributeThread straight_line_distribute_thread(pub_socket_adapter, sub_socket_adapter);
+    straightLineDistributeThread straight_line_distribute_thread;
     local_peer.updateDistributionThread(&straight_line_distribute_thread);
 
 
@@ -108,7 +101,7 @@ int main(int argc, char **argv) {
     }
 
     while (input != "quit") {
-        if(!straight_line_distribute_thread.isRunning()){
+        if (!straight_line_distribute_thread.isRunning()) {
             local_peer.passiveDistribution(&context, straight_line_distribute_thread);
         }
         if (input.size() == 0) {
@@ -136,13 +129,27 @@ int main(int argc, char **argv) {
         if (input.find("create_election") != -1) {
             // nextElectionId = networkBuffer.getId()
             const election &election = local_peer.createElection(election_id);
-            std::cout << election.getPollId() << ":"  << election.getElectionOptionsJson() << std::endl;
+            std::cout << election.getPollId() << ":" << election.getElectionOptionsJson() << std::endl;
             local_peer.pushBackElection(election);
             election_id += 1; // networkBuffer.incrementElectionId
         }
         if (input.find("fetch") != -1) {
             pthread_t pollFetchWorker;
             pthread_create(&pollFetchWorker, NULL, receivePoll, (void *) &context);
+        }
+        if (input.find("sockets") != -1) {
+            _logger.log("print inproc socket options:");
+            inproc_socket_adapter.printOptions();
+        }
+        if (input.find("context") != -1) {
+            _logger.log("print context:");
+            std::cout << "io_threads: " + std::to_string(context.get(zmq::ctxopt::io_threads)) << std::endl;
+            std::cout << "thread_priority: " + std::to_string(context.get(zmq::ctxopt::thread_priority)) << std::endl;
+            std::cout << "blocky: " + std::to_string(context.get(zmq::ctxopt::blocky)) << std::endl;
+            std::cout << "ipv6: " + std::to_string(context.get(zmq::ctxopt::ipv6)) << std::endl;
+            std::cout << "max_sockets: " + std::to_string(context.get(zmq::ctxopt::max_sockets)) << std::endl;
+            std::cout << "socket_limit: " + std::to_string(context.get(zmq::ctxopt::socket_limit)) << std::endl;
+            std::cout << "msg_t_size: " + std::to_string(context.get(zmq::ctxopt::msg_t_size)) << std::endl;
         }
         if (input.find("print_connections") != -1) {
             local_peer.printConnections();

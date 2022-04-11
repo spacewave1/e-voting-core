@@ -6,6 +6,7 @@
 #define VOTE_P2P_ZMQSOCKETADAPTER_H
 
 #include "abstractSocket.h"
+#include "logger.h"
 #include <zmq.hpp>
 
 class zmqSocketAdapter : public abstractSocket {
@@ -13,6 +14,7 @@ private:
     zmq::socket_t& socket;
     bool is_bound = false;
     size_t port;
+    logger _logger = _logger.Instance();
 public:
     void setSocketPort(size_t socketPort);
     void setSocketAddress(std::string socketAddress);
@@ -27,7 +29,8 @@ public:
     void bind(std::string protocol, std::string address, size_t port = 0) override;
     void unbind(std::string protocol, std::string address, size_t port = 0) override;
     void close() override;
-    void log(std::string address, std::string content);
+
+    void printOptions();
 
     bool isBound() override;
 

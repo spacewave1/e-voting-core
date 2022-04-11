@@ -25,8 +25,6 @@ private:
     election election_snapshot_to_send;
     size_t node_position;
     size_t network_size;
-    abstractSocket& subscribe_socket;
-    abstractSocket& publish_socket;
     size_t publish_port;
     size_t subscribe_port;
     bool is_initial_requester;
@@ -36,12 +34,13 @@ private:
     void* arg;
     void cleanUp();
 public:
+    straightLineDistributeThread(const abstractSocket& publish_socket,const abstractSocket& subscribe_socket);
     election getElectionSnapshot() const;
     void setupDistribution(zmq::message_t &request, nlohmann::json receiveJson);
     void setInitialDistributer(bool _is_initial_requester);
     void setParams(void* arg, std::string address_up = "", std::string address_down = "", size_t node_position = 0, size_t network_size = 0, const election &election_snapshot = election());
-    void setSubscribeSocket(abstractSocket& socket);
-    void setPublishSocket(abstractSocket& socket);
+    void setSubscribeSocket(const abstractSocket &socket);
+    void setPublishSocket(const abstractSocket &socket);
     void setPublishPort(size_t port_number);
     void setAddressUp(std::string addressUp);
     void setAddressDown(std::string addressDown);
@@ -57,9 +56,6 @@ public:
 
     std::string invertDirection(std::string direction);
 
-    straightLineDistributeThread(abstractSocket &publish_socket,
-                                 abstractSocket &subscribe_socket);
-
     void updateElectionBox();
 
     void setContext(void *p_void);
@@ -69,6 +65,8 @@ public:
     void setIsRunning(bool b);
 
     void resetHops();
+
+    straightLineDistributeThread();
 };
 
 

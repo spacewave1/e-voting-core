@@ -11,7 +11,7 @@
 using ::testing::Return;
 
 nlohmann::json options;
-
+/*
 TEST(straightLineDistributeTest, distribution_invert_direction_up) {
     mockSocket sub_mock_socket;
     mockSocket pub_mock_socket;
@@ -84,3 +84,4 @@ TEST(straightLineDistributeTest, receive_from_down) {
     EXPECT_EQ("[\"A\",\"B\",\"C\"]", result.getElectionOptionsJson().dump());
     EXPECT_EQ("[[\"aa\",1],[\"bb\",2],[\"cc\",-1],[\"dd\",1]]", result.getVotesAsJson().dump());
 }
+ */

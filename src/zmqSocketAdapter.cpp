@@ -16,10 +16,6 @@ std::string zmqSocketAdapter::recv() {
     return message.to_string();
 }
 
-void zmqSocketAdapter::log(std::string address, std::string content) {
-    std::cout << "[" << address << "]" << (address.length() < 11 ? "\t\t" : "\t") << content << std::endl;
-}
-
 void zmqSocketAdapter::setSocket(zmq::socket_t& new_socket) {
     this->socket = std::move(new_socket);
 }
@@ -87,4 +83,17 @@ void zmqSocketAdapter::disconnect(std::string protocol, std::string address, siz
 
 void zmqSocketAdapter::close() {
     socket.close();
+}
+
+void zmqSocketAdapter::printOptions() {
+    _logger.displayData("ipv6: "  + std::to_string(socket.get(zmq::sockopt::ipv6)) );
+    _logger.displayData("affinity: " +  std::to_string(socket.get(zmq::sockopt::affinity)) );
+    _logger.displayData("backlog: " + std::to_string(socket.get(zmq::sockopt::backlog)) );
+    _logger.displayData("events: " +  std::to_string(socket.get(zmq::sockopt::events)) );
+    _logger.displayData("handshake_ivl: " +  std::to_string(socket.get(zmq::sockopt::handshake_ivl)) );
+    _logger.displayData("last_endpoint: " + socket.get(zmq::sockopt::last_endpoint) );
+    _logger.displayData("linger: " +  std::to_string(socket.get(zmq::sockopt::linger)) );
+    _logger.displayData("maxmsgsize: " +  std::to_string(socket.get(zmq::sockopt::maxmsgsize)) );
+    _logger.displayData("mechanism: " +  std::to_string(socket.get(zmq::sockopt::mechanism)) );
+
 }
