@@ -19,7 +19,7 @@ private:
     electionPrototype prototype;
     std::time_t setup_date;
     std::set<std::string> participants;
-    std::map<std::string, int> participants_votes;
+    std::map<std::string, std::string> participants_votes;
     bool is_prepared_for_distribution = false;
     election(const int id);
 
@@ -29,7 +29,7 @@ public:
     static electionBuilder create(int id);
     election(const election& el);
     election();
-    const std::map<std::string, int> &getParticipantsVotes() const;
+    const std::map<std::string, std::string> &getParticipantsVotes() const;
     const std::map<size_t, std::string> &getOptions() const;
     int getPollId() const;
     void setPollId(int poll_id);
@@ -38,9 +38,9 @@ public:
     void setSequenceNumber(size_t sequence_number);
     nlohmann::json getElectionOptionsJson() const;
     void setOptions(const std::map<size_t, std::string> &options);
-    const std::map<std::string, int> &getVotes() const;
-    void setVotes(const std::map<std::string, int> &votes);
-    bool placeVote(const std::string identity, int chosen_option);
+    const std::map<std::string, std::string> &getVotes() const;
+    void setVotes(const std::map<std::string, std::string> &votes);
+    bool placeVote(const std::string identity, std::string chosen_option);
     nlohmann::json participantVotesAsJson();
     void prepareForDistribtion(std::set<std::string> peer_identities);
     void print();

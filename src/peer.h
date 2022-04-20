@@ -2,7 +2,6 @@
 // Created by wnabo on 31.10.2021.
 //
 
-#include <string>
 #include <set>
 #include <map>
 #include "networkPlan.h"
@@ -36,13 +35,12 @@ public:
     void distributeElection(void* context, straightLineDistributeThread& thread);
     void passiveDistribution(void* context, straightLineDistributeThread& thread);
     void dumpElectionBox();
-
     void pushBackElection(election election);
     void startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread);
-
     std::vector<election> &getElectionBox();
-
     void updateDistributionThread(straightLineDistributeThread *p_thread);
+    void encryptVote(size_t election_id, std::string vote, unsigned char *encry);
+    void decryptVote(election election, unsigned char *ciphertext, unsigned char *decry);
 
 private:
     void calculatePositionFromTable();
@@ -52,6 +50,7 @@ private:
     std::vector<election> election_box;
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;
+    std::map<int, std::string> electionKeys;
 
     logger _logger = logger::Instance();
 

@@ -16,7 +16,7 @@ TEST(InprocElectionBox, UpdateTest) {
     options[2] = "B";
     options[3] = "C";
 
-    std::map<std::string, int> votes;
+    std::map<std::string, std::string> votes;
     votes["asd"] = -1;
     votes["qwe"] = -1;
     votes["yxc"] = -1;
@@ -44,10 +44,10 @@ TEST(InprocElectionBox, UpdateTest) {
     testee.runElectionUpdate();
 
     ASSERT_EQ(electionBox.size(), 1);
-    ASSERT_EQ(electionBox[0].getVotes().at("asd"), 1);
-    ASSERT_EQ(electionBox[0].getVotes().at("yxc"), -1);
-    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), -1);
-    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), -1);
+    ASSERT_EQ(electionBox[0].getVotes().at("asd"), "1");
+    ASSERT_EQ(electionBox[0].getVotes().at("yxc"), "-1");
+    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), "-1");
+    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), "-1");
 }
 
 TEST(InprocElectionBox, AddNewElectionThatHasDifferentSetupDate) {
@@ -57,11 +57,11 @@ TEST(InprocElectionBox, AddNewElectionThatHasDifferentSetupDate) {
     options[2] = "B";
     options[3] = "C";
 
-    std::map<std::string, int> votes;
-    votes["asd"] = -1;
-    votes["qwe"] = -1;
-    votes["yxc"] = -1;
-    votes["qwy"] = -1;
+    std::map<std::string, std::string> votes;
+    votes["asd"] = "-1";
+    votes["qwe"] = "-1";
+    votes["yxc"] = "-1";
+    votes["qwy"] = "-1";
 
     election election_before_update = election::create(1)
             .withSetupDate(time(NULL))
@@ -86,15 +86,15 @@ TEST(InprocElectionBox, AddNewElectionThatHasDifferentSetupDate) {
 
     ASSERT_EQ(electionBox.size(), 2);
 
-    ASSERT_EQ(electionBox[0].getVotes().at("asd"), -1);
-    ASSERT_EQ(electionBox[0].getVotes().at("yxc"), -1);
-    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), -1);
-    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), -1);
+    ASSERT_EQ(electionBox[0].getVotes().at("asd"), "-1");
+    ASSERT_EQ(electionBox[0].getVotes().at("yxc"), "-1");
+    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), "-1");
+    ASSERT_EQ(electionBox[0].getVotes().at("qwe"), "-1");
 
-    ASSERT_EQ(electionBox[1].getVotes().at("asd"), 1);
-    ASSERT_EQ(electionBox[1].getVotes().at("yxc"), -1);
-    ASSERT_EQ(electionBox[1].getVotes().at("qwe"), -1);
-    ASSERT_EQ(electionBox[1].getVotes().at("qwe"), -1);
+    ASSERT_EQ(electionBox[1].getVotes().at("asd"), "1");
+    ASSERT_EQ(electionBox[1].getVotes().at("yxc"), "-1");
+    ASSERT_EQ(electionBox[1].getVotes().at("qwe"), "-1");
+    ASSERT_EQ(electionBox[1].getVotes().at("qwe"), "-1");
 }
 
 TEST(InprocElectionBox, AddNewElection) {
@@ -104,7 +104,7 @@ TEST(InprocElectionBox, AddNewElection) {
     options[2] = "B";
     options[3] = "C";
 
-    std::map<std::string, int> votes;
+    std::map<std::string, std::string> votes;
     votes["asd"] = -1;
     votes["qwe"] = -1;
     votes["yxc"] = -1;
@@ -132,9 +132,9 @@ TEST(InprocElectionBox, AddNewElection) {
 
     // TODO: Test the rest of the election member vars
     ASSERT_EQ(electionBox.size(), 2);
-    ASSERT_EQ(electionBox[1].getVotes().at("yyy"), 1);
-    ASSERT_EQ(electionBox[1].getVotes().at("aaa"), -1);
-    ASSERT_EQ(electionBox[1].getVotes().at("eee"), -1);
-    ASSERT_EQ(electionBox[1].getVotes().at("bbb"), -1);
+    ASSERT_EQ(electionBox[1].getVotes().at("yyy"), "1");
+    ASSERT_EQ(electionBox[1].getVotes().at("aaa"), "-1");
+    ASSERT_EQ(electionBox[1].getVotes().at("eee"), "-1");
+    ASSERT_EQ(electionBox[1].getVotes().at("bbb"), "-1");
 }
 

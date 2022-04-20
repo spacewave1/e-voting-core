@@ -9,6 +9,13 @@
 #include "peer.h"
 #include <fstream>
 #include "electionBuilder.h"
+#include <sodium/randombytes.h>
+#include <sodium/crypto_aead_chacha20poly1305.h>
+
+#define ADDITIONAL_DATA (const unsigned char *) "123456"
+#define ADDITIONAL_DATA_LEN 6
+
+unsigned char nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES];
 
 void peer::printConnections() {
     // Iterate through "receiver" nodes
@@ -147,7 +154,6 @@ void peer::receive(void *abstractContext) {
 peer::~peer() {
     connection_table.clear();
     known_peer_addresses.clear();
-    peer_address = nullptr;
 }
 
 peer::peer() {
@@ -262,13 +268,20 @@ void peer::vote() {
         std::string input;
 
         std::getline(std::cin, input);
+        std::cout << input << std::endl;
         std::size_t chosen_option = std::stoi(input);
 
         std::cout << "identity: " << peer_identity << std::endl;
         std::cout << "option:" << chosen_option << std::endl;
         std::cout << "option:" << map.at(chosen_option) << std::endl;
 
-        chosen_election.placeVote(peer_identity, chosen_option);
+
+        const size_t options_pot = ((int) chosen_election.getOptions().size()) / 10 + 1;
+        unsigned char encryptedVote[options_pot + crypto_aead_chacha20poly1305_IETF_ABYTES];
+
+        encryptVote(chosen_election.getPollId(), input, encryptedVote);
+
+        chosen_election.placeVote(peer_identity, reinterpret_cast<const char *>(encryptedVote));
     }
 };
 
@@ -493,4 +506,44 @@ void peer::updateDistributionThread(straightLineDistributeThread *p_thread) {
     p_thread->setAddressUp(address_up);
     p_thread->setPosition(position);
     p_thread->setNetworkSize(known_peer_addresses.size());
+}
+
+void peer::decryptVote(election election, unsigned char *ciphertext, unsigned char *decry) {
+    unsigned long long decryptLength = election.getOptions().size() / 10 + 1;
+
+    unsigned char * decrypted = decry;
+    
+    const unsigned char *ciphertext_cstr = ciphertext;
+    const unsigned char *key = reinterpret_cast<const unsigned char *>(electionKeys[election.getPollId()].c_str());
+
+    if (crypto_aead_chacha20poly1305_ietf_decrypt(decrypted, &decryptLength, NULL, ciphertext_cstr, decryptLength + crypto_aead_chacha20poly1305_IETF_ABYTES,
+                                                  ADDITIONAL_DATA, ADDITIONAL_DATA_LEN, nonce, key) != 0) {
+        /* message forged! */
+    }
+
+    std::cout << "decrypted: " << decrypted << std::endl;
+}
+
+void peer::encryptVote(size_t election_id, std::string vote, unsigned char *encry) {
+    unsigned char key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
+    unsigned char * ciphertext = encry;
+    unsigned long long ciphertext_len = vote.length() + crypto_aead_chacha20poly1305_IETF_ABYTES;
+
+    crypto_aead_chacha20poly1305_ietf_keygen(key);
+    randombytes_buf(nonce, sizeof nonce);
+
+    std::cout << "Vote: " << vote << std::endl;
+
+    const unsigned char *vote_str = reinterpret_cast<const unsigned char *>(vote.c_str());
+
+    std::cout << "VoteStr: " << vote_str << std::endl;
+    std::cout << "Nonce: "<< nonce << std::endl;
+    std::cout << "Key: "<< key << std::endl;
+
+    crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, &ciphertext_len, vote_str,  vote.length(), ADDITIONAL_DATA,
+                                              ADDITIONAL_DATA_LEN, NULL, nonce, key);
+
+    electionKeys[election_id] = reinterpret_cast<const char *>(key);
+
+    std::cout << "Ciphertext: "<< ciphertext << std::endl;
 }

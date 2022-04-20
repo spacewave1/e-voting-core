@@ -1,6 +1,5 @@
 #include <iostream>
 #include <unistd.h>
-#include <sstream>
 #include <zmq.hpp>
 #include <regex>
 #include "zmqSocketAdapter.h"

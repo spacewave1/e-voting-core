@@ -18,12 +18,12 @@ electionBuilder election::create(int id) {
     return electionBuilder(id);
 }
 
-const std::map<std::string, int> &election::getParticipantsVotes() const {
+const std::map<std::string, std::string> &election::getParticipantsVotes() const {
     return participants_votes;
 }
 
-bool election::placeVote(const std::string identity, int chosen_option) {
-    if (participants_votes.contains(identity) && participants_votes[identity] != -1) {
+bool election::placeVote(const std::string identity, std::string chosen_option) {
+    if (participants_votes.contains(identity) && participants_votes[identity] != "-1") {
         std::cout << "Vote for the identity (" << identity << ") has already been placed." << std::endl;
         return false;
     } else if (!participants.contains(identity)) {
@@ -46,9 +46,9 @@ nlohmann::json election::getCurrentElectionStatisticAsJson() {
                   });
 
     std::for_each(participants_votes.begin(), participants_votes.end(),
-                  [&optionIdToVoteCounts](const std::pair<std::string, int> &identityToVoteOptionId) {
-                      if (identityToVoteOptionId.second != -1) {
-                          optionIdToVoteCounts[identityToVoteOptionId.second] += 1;
+                  [&optionIdToVoteCounts](const std::pair<std::string, std::string> &identityToVoteOptionId) {
+                      if (identityToVoteOptionId.second != "-1") {
+                          //optionIdToVoteCounts[identityToVoteOptionId.second] += 1;
                       }
                   });
     std::map<size_t, std::string> &p = prototype.options;
@@ -78,7 +78,7 @@ void election::print() {
                       std::cout << "\t" << id_option_pair.first << ": " << id_option_pair.second << std::endl;
                   });
     std::for_each(participants_votes.begin(), participants_votes.end(),
-                  [](std::pair<std::string, int> id_choice_pair) {
+                  [](std::pair<std::string, std::string> id_choice_pair) {
                       std::cout << "\t" << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
                   });
     std::cout << std::endl;
@@ -87,24 +87,24 @@ void election::print() {
 void election::prepareForDistribtion(std::set<std::string> peer_identities) {
     this->participants = peer_identities;
     std::for_each(peer_identities.begin(), peer_identities.end(), [this](std::string peer_identity) {
-        this->participants_votes[peer_identity] = -1;
+        this->participants_votes[peer_identity] = "-1";
     });
     this->setup_date = time(NULL);
     this->is_prepared_for_distribution = true;
 }
 
-void election::setVotes(const std::map<std::string, int> &votes) {
+void election::setVotes(const std::map<std::string, std::string> &votes) {
     participants_votes = votes;
 }
 
-const std::map<std::string, int> &election::getVotes() const {
+const std::map<std::string, std::string> &election::getVotes() const {
     return participants_votes;
 }
 
 nlohmann::json election::getVotesAsJson() const {
     nlohmann::json json = nlohmann::json();
     size_t index = 0;
-    std::for_each(participants_votes.begin(), participants_votes.end(), [&json, &index](std::pair<std::string, int> identityToVote){
+    std::for_each(participants_votes.begin(), participants_votes.end(), [&json, &index](std::pair<std::string, std::string> identityToVote){
         json[index] = {identityToVote.first, identityToVote.second};
         index++;
     });
@@ -161,10 +161,10 @@ void election::setJsonOptionsToOptions(nlohmann::json json) {
 }
 
 void election::setJsonVotesToVotes(nlohmann::json json) {
-    std::map<std::string, int> votes;
+    std::map<std::string, std::string> votes;
     if (json.is_array()) {
         std::for_each(json.begin(), json.end(), [&votes](nlohmann::json option) {
-            votes[option[0]] = option[1].get<int>();
+            votes[option[0]] = option[1].get<std::string>();
         });
     } else if(json.is_object()) {
         for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {

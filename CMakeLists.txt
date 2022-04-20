@@ -5,6 +5,15 @@ set(nlohmann_json_DIR ~/json-3.10.4/build)
 set(CMAKE_CXX_STANDARD 20)
 set(cppzmq_DIR ~/cppzmq/build)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+include(FetchContent)
+
+FetchContent_Declare(Sodium
+        GIT_REPOSITORY https://github.com/robinlinden/libsodium-cmake.git
+        )
+
+set(SODIUM_DISABLE_TESTS ON)
+FetchContent_MakeAvailable(Sodium)
+
 
 find_package(Threads REQUIRED)
 find_package(nlohmann_json 3.2.0 REQUIRED)
@@ -52,5 +61,5 @@ add_library(vote_p2p_lib STATIC ${SOURCE_FILES})
 
 add_subdirectory(test)
 
-target_link_libraries(vote_p2p PRIVATE cppzmq nlohmann_json::nlohmann_json Threads::Threads)
-target_link_libraries(vote_p2p_lib PRIVATE cppzmq nlohmann_json::nlohmann_json Threads::Threads)
+target_link_libraries(vote_p2p PRIVATE cppzmq nlohmann_json::nlohmann_json Threads::Threads sodium)
+target_link_libraries(vote_p2p_lib PRIVATE cppzmq nlohmann_json::nlohmann_json Threads::Threads sodium)

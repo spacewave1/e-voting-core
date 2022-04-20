@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.17)
 
-set(SOURCE_FILES testStraightLine.cpp MockSocket.h testElectionLogic.cpp testStraightLine.h testElectionLogic.h testInprocElectionBox.cpp testPeer.cpp)
+set(SOURCE_FILES testStraightLine.cpp MockSocket.h testElectionLogic.cpp testStraightLine.h testElectionLogic.h testInprocElectionBox.cpp testPeer.cpp testEncryption.cpp)
 set(name test_p2p_vote)
 
 add_executable(${name} ${SOURCE_FILES})
@@ -13,6 +13,7 @@ target_link_libraries(${name} PUBLIC
         cppzmq
         nlohmann_json::nlohmann_json
         Threads::Threads
+        sodium
         )
 
 add_test(

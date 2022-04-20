@@ -16,7 +16,7 @@ private:
 public:
     electionBuilder(int id) : el(id) {}
     electionBuilder &withParticipants(std::set<std::string>& participants);
-    electionBuilder &withParticipantsVotes(std::map<std::string, int>& participants_votes);
+    electionBuilder &withParticipantsVotes(std::map<std::string, std::string>& participants_votes);
     electionBuilder &withVoteOptions(std::map<size_t, std::string> options);
     electionBuilder &withSequenceNumber(int sequence_number);
     electionBuilder &withParticipantsVotesFromJson(nlohmann::json jsonVotes);

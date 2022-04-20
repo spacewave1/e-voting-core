@@ -9,7 +9,7 @@ electionBuilder& electionBuilder::withParticipants(std::set<std::string>& partic
     return *this;
 };
 
-electionBuilder& electionBuilder::withParticipantsVotes(std::map<std::string, int>& participants_votes){
+electionBuilder& electionBuilder::withParticipantsVotes(std::map<std::string, std::string>& participants_votes){
     el.participants_votes = participants_votes;
     return *this;
 }
@@ -39,7 +39,7 @@ electionBuilder::~electionBuilder() {
 
 electionBuilder &electionBuilder::withParticipantsFromParticipantVotesKeySet() {
     std::set<std::string> keys;
-    std::for_each(el.participants_votes.begin(), el.participants_votes.end(),[&keys](std::pair<std::string, int> idToVoteOptions){
+    std::for_each(el.participants_votes.begin(), el.participants_votes.end(),[&keys](std::pair<std::string, std::string> idToVoteOptions){
         keys.insert(idToVoteOptions.first);
     });
     el.participants = keys;
