@@ -119,8 +119,12 @@ int main(int argc, char **argv) {
             std::cout << "added election to distribution box" << std::endl;
         }
         if (input.find("distribute") != -1) {
-            straight_line_distribute_thread.interruptReceiveRequest();
-            local_peer.distributeElection(&context, straight_line_distribute_thread);
+            if(local_peer.getElectionBox().size() > 0) {
+                straight_line_distribute_thread.interruptReceiveRequest();
+                local_peer.distributeElection(&context, straight_line_distribute_thread);
+            } else {
+                _logger.log("No distributable elections found");
+            }
         }
         if (input.find("place_vote") != -1) {
             local_peer.vote();

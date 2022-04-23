@@ -50,6 +50,8 @@ public:
     bool isPreparedForDistribution() const;
     nlohmann::json getVotesAsJson() const;
     void setSetupDate(time_t setupDate);
+
+    std::string getSetupDateAsString() const;
 };
 
 

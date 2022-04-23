@@ -353,11 +353,11 @@ void straightLineDistributeThread::forward() {
     pub_socket_adapter.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
     pub_socket_adapter.send(std::to_string(election_snapshot_to_send.getSetupDate()));
-    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()));
+    _logger.log("send: " + election_snapshot_to_send.getSetupDateAsString());
     pub_socket_adapter.send(election_snapshot_to_send.getElectionOptionsJson().dump());
-    _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()));
-    pub_socket_adapter.send(election_snapshot_to_send.participantVotesAsJson().dump());
-    _logger.log("send: " + std::string(election_snapshot_to_send.participantVotesAsJson().dump()));
+    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()));
+    pub_socket_adapter.send(election_snapshot_to_send.participantVotesAsJson().dump(4, ' ', true));
+    _logger.log("send: " + std::string(election_snapshot_to_send.participantVotesAsJson().dump(4, ' ', true)));
 
     pub_socket_adapter.close();
 

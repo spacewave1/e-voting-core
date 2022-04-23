@@ -39,7 +39,7 @@ public:
     void startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread);
     std::vector<election> &getElectionBox();
     void updateDistributionThread(straightLineDistributeThread *p_thread);
-    void encryptVote(size_t election_id, std::string vote, unsigned char *encry);
+    void encryptVote(election &selected_election, std::string vote, unsigned char *encry);
     void decryptVote(election election, unsigned char *ciphertext, unsigned char *decry);
 
 private:

@@ -144,6 +144,14 @@ time_t election::getSetupDate() const {
     return setup_date;
 }
 
+std::string election::getSetupDateAsString() const {
+    char mbstr[100];
+    if (std::strftime(mbstr, sizeof(mbstr), "%A %c", std::localtime(&setup_date))) {
+        return mbstr;
+    }
+    return "";
+}
+
 void election::setJsonOptionsToOptions(nlohmann::json json) {
     std::map<size_t, std::string> options;
     size_t index = 0;

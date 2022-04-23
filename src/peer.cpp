@@ -9,6 +9,7 @@
 #include "peer.h"
 #include <fstream>
 #include "electionBuilder.h"
+#include "sodium/utils.h"
 #include <sodium/randombytes.h>
 #include <sodium/crypto_aead_chacha20poly1305.h>
 
@@ -277,9 +278,9 @@ void peer::vote() {
 
 
         const size_t options_pot = ((int) chosen_election.getOptions().size()) / 10 + 1;
-        unsigned char encryptedVote[options_pot + crypto_aead_chacha20poly1305_IETF_ABYTES];
+        unsigned char encryptedVote[64];
 
-        encryptVote(chosen_election.getPollId(), input, encryptedVote);
+        encryptVote(chosen_election, input, encryptedVote);
 
         chosen_election.placeVote(peer_identity, reinterpret_cast<const char *>(encryptedVote));
     }
@@ -520,13 +521,14 @@ void peer::decryptVote(election election, unsigned char *ciphertext, unsigned ch
                                                   ADDITIONAL_DATA, ADDITIONAL_DATA_LEN, nonce, key) != 0) {
         /* message forged! */
     }
-
-    std::cout << "decrypted: " << decrypted << std::endl;
 }
 
-void peer::encryptVote(size_t election_id, std::string vote, unsigned char *encry) {
+void peer::encryptVote(election &selected_election, std::string vote, unsigned char *encry) {
+
+    const size_t options_pot = ((int) selected_election.getOptions().size()) / 10 + 1;
     unsigned char key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
-    unsigned char * ciphertext = encry;
+    unsigned char * ciphertext[options_pot + crypto_aead_chacha20poly1305_IETF_ABYTES];
+    unsigned char * encoded = encry;
     unsigned long long ciphertext_len = vote.length() + crypto_aead_chacha20poly1305_IETF_ABYTES;
 
     crypto_aead_chacha20poly1305_ietf_keygen(key);
@@ -540,10 +542,16 @@ void peer::encryptVote(size_t election_id, std::string vote, unsigned char *encr
     std::cout << "Nonce: "<< nonce << std::endl;
     std::cout << "Key: "<< key << std::endl;
 
-    crypto_aead_chacha20poly1305_ietf_encrypt(ciphertext, &ciphertext_len, vote_str,  vote.length(), ADDITIONAL_DATA,
+    crypto_aead_chacha20poly1305_ietf_encrypt(reinterpret_cast<unsigned char *>(ciphertext), &ciphertext_len, vote_str, vote.length(), ADDITIONAL_DATA,
                                               ADDITIONAL_DATA_LEN, NULL, nonce, key);
 
-    electionKeys[election_id] = reinterpret_cast<const char *>(key);
+    electionKeys[selected_election.getPollId()] = reinterpret_cast<const char *>(key);
+
+
+    sodium_bin2base64(reinterpret_cast<char *const>(encoded), 64,
+                      reinterpret_cast<const unsigned char *const>(ciphertext),
+                      ciphertext_len, sodium_base64_VARIANT_ORIGINAL);
 
     std::cout << "Ciphertext: "<< ciphertext << std::endl;
+    std::cout << "Base64: "<< encoded << std::endl;
 }
