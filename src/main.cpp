@@ -129,6 +129,9 @@ int main(int argc, char **argv) {
         if (input.find("place_vote") != -1) {
             local_peer.vote();
         }
+        if (input.find("eval_vote") != -1) {
+            local_peer.eval_votes();
+        }
         if (input.find("create_election") != -1) {
             // nextElectionId = networkBuffer.getId()
             const election &election = local_peer.createElection(election_id);

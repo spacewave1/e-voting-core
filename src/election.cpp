@@ -104,18 +104,20 @@ const std::map<std::string, std::string> &election::getVotes() const {
 nlohmann::json election::getVotesAsJson() const {
     nlohmann::json json = nlohmann::json();
     size_t index = 0;
-    std::for_each(participants_votes.begin(), participants_votes.end(), [&json, &index](std::pair<std::string, std::string> identityToVote){
-        json[index] = {identityToVote.first, identityToVote.second};
-        index++;
-    });
+    std::for_each(participants_votes.begin(), participants_votes.end(),
+                  [&json, &index](std::pair<std::string, std::string> identityToVote) {
+                      json[index] = {identityToVote.first, identityToVote.second};
+                      index++;
+                  });
     return json;
 }
 
 nlohmann::json election::getElectionOptionsJson() const {
     nlohmann::json json = nlohmann::json::array();
-    std::for_each(prototype.options.begin(), prototype.options.end(), [&json](std::pair<size_t, std::string> idToOption){
-        json[idToOption.first] = idToOption.second;
-    });
+    std::for_each(prototype.options.begin(), prototype.options.end(),
+                  [&json](std::pair<size_t, std::string> idToOption) {
+                      json[idToOption.first] = idToOption.second;
+                  });
     // TODO: Do something about this
     return json;
 }
@@ -157,11 +159,11 @@ void election::setJsonOptionsToOptions(nlohmann::json json) {
     size_t index = 0;
 
     if (json.is_array()) {
-        std::for_each(json.begin(), json.end(), [&options, &index](const nlohmann::json& option) {
+        std::for_each(json.begin(), json.end(), [&options, &index](const nlohmann::json &option) {
             options[index] = option;
             index++;
         });
-    } else if(json.is_object()) {
+    } else if (json.is_object()) {
         for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {
         }
     }
@@ -174,7 +176,7 @@ void election::setJsonVotesToVotes(nlohmann::json json) {
         std::for_each(json.begin(), json.end(), [&votes](nlohmann::json option) {
             votes[option[0]] = option[1].get<std::string>();
         });
-    } else if(json.is_object()) {
+    } else if (json.is_object()) {
         for (nlohmann::json::iterator it = json.begin(); it != json.end(); ++it) {
             votes[it.key()] = it.value();
         }
@@ -182,7 +184,9 @@ void election::setJsonVotesToVotes(nlohmann::json json) {
     participants_votes = votes;
 }
 
-election::election(const election& el) : prototype(el.prototype), setup_date(el.setup_date), participants(el.participants), participants_votes(el.participants_votes), is_prepared_for_distribution(el.is_prepared_for_distribution){
+election::election(const election &el) : prototype(el.prototype), setup_date(el.setup_date),
+                                         participants(el.participants), participants_votes(el.participants_votes),
+                                         is_prepared_for_distribution(el.is_prepared_for_distribution), election_result(el.election_result) {
 }
 
 const std::map<size_t, std::string> &election::getOptions() const {
@@ -195,4 +199,36 @@ bool election::isPreparedForDistribution() const {
 
 void election::setSetupDate(time_t setupDate) {
     setup_date = setupDate;
+}
+
+bool election::hasFreeEvaluationGroups() {
+    size_t numberOfGroups = 0;
+    size_t groupSize = 4;
+    size_t counter = 0;
+    std::for_each(participants_votes.begin(), participants_votes.end(),
+                  [&groupSize, &counter, &numberOfGroups](
+                          std::pair<std::string, std::string> optionsToVotes) {
+                      if (optionsToVotes.second != "-1") {
+                          counter++;
+                      }
+                      if (counter == groupSize) {
+                          numberOfGroups++;
+                          counter = 0;
+                      }
+                  });
+    std::vector<size_t> election_values;
+    std::for_each(election_result.begin(), election_result.end(),
+                   [&election_values](std::pair<size_t, size_t> optionVoteCountPair) { election_values.push_back(optionVoteCountPair.second); });
+
+    size_t finishedVotesCount = std::accumulate(election_values.begin(), election_values.end(), 0);
+
+    return numberOfGroups - finishedVotesCount / groupSize > 0;
+}
+
+const std::map <size_t, size_t> &election::getElectionResult() const {
+    return election_result;
+}
+
+void election::setElectionResult(const std::map <size_t, size_t> &election_result) {
+    election::election_result = election_result;
 }

@@ -41,6 +41,7 @@ public:
     void updateDistributionThread(straightLineDistributeThread *p_thread);
     void encryptVote(election &selected_election, std::string vote, unsigned char *encry);
     void decryptVote(election election, unsigned char *ciphertext, unsigned char *decry);
+    void eval_votes();
 
 private:
     void calculatePositionFromTable();
@@ -50,7 +51,9 @@ private:
     std::vector<election> election_box;
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;
-    std::map<int, std::string> electionKeys;
+
+    std::map<size_t, std::string> electionKeys;
+    std::map<size_t, bool> evaluatedVotes;
 
     logger _logger = logger::Instance();
 

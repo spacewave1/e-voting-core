@@ -255,7 +255,6 @@ void peer::importPeersList(std::string importPath) {
 }
 
 void peer::vote() {
-    // Take the first election
     if (election_box.size() > 0) {
         size_t chosen_id = selectElection();
         election &chosen_election = election_box.at(chosen_id);
@@ -554,4 +553,13 @@ void peer::encryptVote(election &selected_election, std::string vote, unsigned c
 
     std::cout << "Ciphertext: "<< ciphertext << std::endl;
     std::cout << "Base64: "<< encoded << std::endl;
+}
+
+void peer::eval_votes() {
+    size_t chosen_id = selectElection();
+    election &chosen_election = election_box.at(chosen_id);
+
+    if(chosen_election.hasFreeEvaluationGroups()){
+
+    }
 }

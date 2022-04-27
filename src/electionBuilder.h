@@ -24,6 +24,7 @@ public:
     electionBuilder &withParticipantsFromParticipantVotesKeySet();
     electionBuilder &withSetupDate(time_t setupDate);
     electionBuilder &withPreparedForDistribution(bool isPrepared);
+    electionBuilder &withElectionResult(std::map<size_t, size_t> result);
 
 
     virtual ~electionBuilder();

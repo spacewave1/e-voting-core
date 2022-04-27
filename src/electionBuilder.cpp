@@ -56,3 +56,8 @@ electionBuilder &electionBuilder::withSetupDate(time_t setupDate) {
     return *this;
 }
 
+electionBuilder &electionBuilder::withElectionResult(std::map <size_t, size_t> result) {
+    el.election_result = result;
+    return *this;
+}
+

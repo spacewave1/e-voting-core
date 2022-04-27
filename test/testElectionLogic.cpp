@@ -120,3 +120,55 @@ TEST(electionTest, setVotesFromJson) {
     EXPECT_EQ(result.at("192.168.0.3"), "0");
     EXPECT_EQ(result.at("192.168.0.88"), "-1");
 }
+
+TEST(electionTest, test_hasFreeEvaluationGroups_with_evaluatedResult) {
+    std::set<std::string> participants = {"asd", "qwe", "yxc"};
+    electionPrototype prototype = electionPrototype();
+    std::map<size_t, std::string> election_options;
+    election_options[0] = "A";
+    election_options[1] = "B";
+    election_options[2] = "C";
+
+    std::map<std::string, std::string> votes;
+    votes["asd"] = "1";
+    votes["qwe"] = "0";
+    votes["yxc"] = "1";
+    votes["ccc"] = "2";
+
+    std::map<size_t, size_t> resultMap;
+    resultMap[0] = 1;
+    resultMap[1] = 2;
+    resultMap[2] = 1;
+
+    election testee = election::create(0).withSequenceNumber(0).withVoteOptions(election_options).withParticipants(
+            participants).withParticipantsVotes(votes).withElectionResult(resultMap);
+
+    bool result = testee.hasFreeEvaluationGroups();
+    EXPECT_FALSE(result);
+}
+
+TEST(electionTest, test_hasFreeEvaluationGroups_withoutEvaluatedResult) {
+    std::set<std::string> participants = {"asd", "qwe", "yxc"};
+    electionPrototype prototype = electionPrototype();
+    std::map<size_t, std::string> election_options;
+    election_options[0] = "A";
+    election_options[1] = "B";
+    election_options[2] = "C";
+
+    std::map<std::string, std::string> votes;
+    votes["asd"] = "1";
+    votes["qwe"] = "0";
+    votes["yxc"] = "1";
+    votes["ccc"] = "2";
+
+    std::map<size_t, size_t> resultMap;
+    resultMap[0] = 0;
+    resultMap[1] = 0;
+    resultMap[2] = 0;
+
+    election testee = election::create(0).withSequenceNumber(0).withVoteOptions(election_options).withParticipants(
+            participants).withParticipantsVotes(votes).withElectionResult(resultMap);
+
+    bool result = testee.hasFreeEvaluationGroups();
+    EXPECT_TRUE(result);
+}

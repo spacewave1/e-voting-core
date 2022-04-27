@@ -20,6 +20,7 @@ private:
     std::time_t setup_date;
     std::set<std::string> participants;
     std::map<std::string, std::string> participants_votes;
+    std::map<size_t, size_t> election_result;
     bool is_prepared_for_distribution = false;
     election(const int id);
 
@@ -51,7 +52,13 @@ public:
     nlohmann::json getVotesAsJson() const;
     void setSetupDate(time_t setupDate);
 
+    const std::map <size_t, size_t> &getElectionResult() const;
+
+    void setElectionResult(const std::map <size_t, size_t> &election_result);
+
     std::string getSetupDateAsString() const;
+
+    bool hasFreeEvaluationGroups();
 };
 
 
