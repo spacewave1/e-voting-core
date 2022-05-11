@@ -25,6 +25,9 @@ public:
     electionBuilder &withSetupDate(time_t setupDate);
     electionBuilder &withPreparedForDistribution(bool isPrepared);
     electionBuilder &withElectionResult(std::map<size_t, size_t> result);
+    electionBuilder &withElectionGroupsFromJson(nlohmann::json json);
+    electionBuilder &withElectionResultFromJson(nlohmann::json json);
+    electionBuilder &withEvalGroups(std::vector<std::vector<std::string>> eval_groups);
 
 
     virtual ~electionBuilder();

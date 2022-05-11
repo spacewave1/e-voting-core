@@ -258,10 +258,6 @@ void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nl
             _logger.log(reply.to_string(), address_down, "distribute");
             forward_request.disconnect("tcp://" + address_down + ":5049");
             forward_request.close();
-
-
-            zmq::socket_t socket = zmq::socket_t(*context, zmq::socket_type::sub);
-            socket.set(zmq::sockopt::subscribe, "");
         } else {
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
         }
@@ -305,7 +301,6 @@ election straightLineDistributeThread::receiveFrom(std::string address) {
     int election_id = std::stoi(election_id_string);
     _logger.log("received " + std::to_string(election_id), "localhost", "distribute");
 
-
     const std::string &sequence_id_string = sub_socket_adapter.recv();
     int sequence_id = std::stoi(sequence_id_string);
     _logger.log("received " + std::to_string(sequence_id), "localhost", "distribute");
@@ -322,6 +317,15 @@ election straightLineDistributeThread::receiveFrom(std::string address) {
     nlohmann::json election_votes_json = nlohmann::json::parse(jsonVotes);
     _logger.log("received " + election_votes_json.dump(), "localhost", "distribute");
 
+    const std::string &jsonGroups = sub_socket_adapter.recv();
+    nlohmann::json election_json_groups = nlohmann::json::parse(jsonGroups);
+    _logger.log("received " + election_json_groups.dump(), "localhost", "distribute");
+
+    const std::string &jsonResult = sub_socket_adapter.recv();
+    nlohmann::json election_json_result = nlohmann::json::parse(jsonResult);
+    _logger.log("received " + election_json_result.dump(), "localhost", "distribute");
+
+
     election receivedElection;
 
     receivedElection.setPollId(election_id);
@@ -329,6 +333,8 @@ election straightLineDistributeThread::receiveFrom(std::string address) {
     receivedElection.setSetupDate(setup_date);
     receivedElection.setJsonOptionsToOptions(electionOptionsJson);
     receivedElection.setJsonVotesToVotes(election_votes_json);
+    receivedElection.setJsonElectionGroupToGroups(election_json_groups);
+    receivedElection.setJsonResultToResult(election_json_result);
 
     sub_socket_adapter.disconnect("tcp", address, subscribe_port);
 
@@ -358,6 +364,10 @@ void straightLineDistributeThread::forward() {
     _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()));
     pub_socket_adapter.send(election_snapshot_to_send.participantVotesAsJson().dump(4, ' ', true));
     _logger.log("send: " + std::string(election_snapshot_to_send.participantVotesAsJson().dump(4, ' ', true)));
+    pub_socket_adapter.send(election_snapshot_to_send.getEvaluationGroupsAsJson().dump());
+    _logger.log("send: " + std::string(election_snapshot_to_send.getEvaluationGroupsAsJson().dump()));
+    pub_socket_adapter.send(election_snapshot_to_send.getElectionResultAsJson().dump());
+    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionResultAsJson().dump()));
 
     pub_socket_adapter.close();
 
@@ -419,12 +429,16 @@ void straightLineDistributeThread::updateElectionBox() {
     inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getSetupDate()));
     inproc_socket_adapter.send(election_snapshot_to_send.getElectionOptionsJson().dump());
     inproc_socket_adapter.send(election_snapshot_to_send.participantVotesAsJson().dump());
+    inproc_socket_adapter.send(election_snapshot_to_send.getEvaluationGroupsAsJson().dump());
+    inproc_socket_adapter.send(election_snapshot_to_send.getElectionResultAsJson().dump());
 
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()) + " to inproc thread", "localhost","distribute");
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber()) + " to inproc thread","localhost", "distribute");
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getSetupDate()) + " to inproc thread", "localhost","distribute");
     _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()) + " to inproc thread","localhost", "distribute");
     _logger.log("send: " + std::string(election_snapshot_to_send.getVotesAsJson().dump()) + " to inproc thread","localhost", "distribute");
+    _logger.log("send: " + std::string(election_snapshot_to_send.getEvaluationGroupsAsJson().dump()) + " to inproc thread","localhost", "distribute");
+    _logger.log("send: " + std::string(election_snapshot_to_send.getElectionResultAsJson().dump()) + " to inproc thread","localhost", "distribute");
 
     inproc_socket_adapter.unbind("inproc", "update_elections");
 }

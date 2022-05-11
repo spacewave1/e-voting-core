@@ -36,11 +36,19 @@ void inprocElectionboxThread::runElectionUpdate() {
         const std::string &received_votes_string = abstract_socket.recv();
         nlohmann::json received_election_votes_json = nlohmann::json::parse(received_votes_string);
 
+        const std::string &received_election_groups = abstract_socket.recv();
+        nlohmann::json received_election_groups_json = nlohmann::json::parse(received_election_groups);
+
+        const std::string &received_election_result = abstract_socket.recv();
+        nlohmann::json received_election_result_json = nlohmann::json::parse(received_election_result);
+
         _logger.log("Received: " + received_id_string, "localhost","inproc");
         _logger.log("Received: " + received_seq_string, "localhost","inproc");
         _logger.log("Received: " + received_setup_time_string, "localhost","inproc");
         _logger.log("Received: " + received_options_string, "localhost","inproc");
         _logger.log("Received: " + received_votes_string, "localhost","inproc");
+        _logger.log("Received: " + received_election_groups, "localhost","inproc");
+        _logger.log("Received: " + received_election_result, "localhost","inproc");
 
         auto p_function = [&received_id, &received_setup_time](const election &_election) {
             return _election.getPollId() == received_id && _election.getSetupDate() == received_setup_time;
@@ -51,6 +59,8 @@ void inprocElectionboxThread::runElectionUpdate() {
             result->setSequenceNumber(received_sequence_id);
             result->setSetupDate(received_setup_time);
             result->setJsonVotesToVotes(received_election_votes_json);
+            result->setJsonElectionGroupToGroups(received_election_groups_json);
+            result->setJsonResultToResult(received_election_result_json);
         } else {
             election new_election = election::create(received_id)
                     .withVoteOptionsFromJson(received_election_options_json)
@@ -58,7 +68,10 @@ void inprocElectionboxThread::runElectionUpdate() {
                     .withSetupDate(received_setup_time)
                     .withParticipantsFromParticipantVotesKeySet()
                     .withSequenceNumber(received_sequence_id)
-                    .withPreparedForDistribution(true);
+                    .withPreparedForDistribution(true)
+                    .withElectionGroupsFromJson(received_election_groups_json)
+                    .withElectionResultFromJson(received_election_result_json);
+
             election_box.push_back(new_election);
         }
 

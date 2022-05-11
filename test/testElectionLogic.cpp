@@ -172,3 +172,116 @@ TEST(electionTest, test_hasFreeEvaluationGroups_withoutEvaluatedResult) {
     bool result = testee.hasFreeEvaluationGroups();
     EXPECT_TRUE(result);
 }
+
+TEST(electionTest, test_getNumberOfPlaceVotes_three) {
+
+    std::map<std::string, std::string> votes;
+    votes["asd"] = "1";
+    votes["qwe"] = "-1";
+    votes["yxc"] = "1";
+    votes["ccc"] = "2";
+
+    election testee = election::create(0).withSequenceNumber(0).withParticipantsVotes(votes);
+
+    size_t result = testee.getNumberOfPlacedVotes();
+    EXPECT_EQ(result, 3);
+}
+
+TEST(electionTest, test_getEvaluatedVotes_zero) {
+    electionPrototype prototype = electionPrototype();
+
+    std::map<size_t, size_t> resultMap;
+    resultMap[0] = 0;
+    resultMap[1] = 0;
+    resultMap[2] = 0;
+
+    election testee = election::create(0).withSequenceNumber(0).withElectionResult(resultMap);
+
+    size_t result = testee.getVotesEvaluatedTotal();
+    EXPECT_EQ(result, 0);
+}
+
+TEST(electionTest, test_getEvaluatedVotes_five) {
+    electionPrototype prototype = electionPrototype();
+
+    std::map<size_t, size_t> resultMap;
+    resultMap[0] = 2;
+    resultMap[1] = 0;
+    resultMap[2] = 3;
+
+    election testee = election::create(0).withSequenceNumber(0).withElectionResult(resultMap);
+
+    size_t result = testee.getVotesEvaluatedTotal();
+    EXPECT_EQ(result, 5);
+    EXPECT_EQ(testee.getElectionResultAsJson().dump(), "[[0,2],[1,0],[2,3]]");
+}
+
+TEST(electionTest, test_addToEvalGroup_first) {
+    electionPrototype prototype = electionPrototype();
+
+    std::map<std::string, std::string> votes;
+    votes["asd"] = "1";
+    votes["qwe"] = "-1";
+    votes["yxc"] = "1";
+    votes["ccc"] = "2";
+
+    election testee = election::create(0).withSequenceNumber(0);
+
+    testee.addToNextEvaluationGroup("asd");
+    std::vector<std::vector<std::string>> result = testee.getEvaluationGroups();
+    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result[0].size(), 1);
+    EXPECT_EQ(result[0][0], "asd");
+}
+
+TEST(electionTest, test_addToEvalGroup_add_five) {
+    electionPrototype prototype = electionPrototype();
+
+    std::map<std::string, std::string> votes;
+    votes["asd"] = "1";
+    votes["qwe"] = "-1";
+    votes["yxc"] = "1";
+    votes["ccc"] = "2";
+
+    election testee = election::create(0).withSequenceNumber(0);
+
+    testee.addToNextEvaluationGroup("asd");
+    testee.addToNextEvaluationGroup("yxc");
+    testee.addToNextEvaluationGroup("qwe");
+    testee.addToNextEvaluationGroup("cvb");
+    testee.addToNextEvaluationGroup("tzu");
+
+    std::vector<std::vector<std::string>> result = testee.getEvaluationGroups();
+
+    std::cout << testee.getEvaluationGroupsAsJson().dump() << std::endl;
+
+    EXPECT_EQ(result.size(), 2);
+    EXPECT_EQ(result[0].size(), 4);
+    EXPECT_EQ(result[1].size(), 1);
+    EXPECT_EQ(result[0][0], "asd");
+    EXPECT_EQ(result[0][1], "yxc");
+    EXPECT_EQ(result[0][2], "qwe");
+    EXPECT_EQ(result[0][3], "cvb");
+    EXPECT_EQ(result[1][0], "tzu");
+    EXPECT_EQ(testee.getEvaluationGroupsAsJson().dump(), "[[\"asd\",\"yxc\",\"qwe\",\"cvb\"],[\"tzu\"]]");
+}
+
+TEST(electionTest, test_setResultFromJson) {
+    election testee = election::create(0);
+
+    EXPECT_EQ(testee.getElectionResultAsJson().dump(), "[]");
+    nlohmann::json resultJson = nlohmann::json::parse("[[0,2],[1,0],[2,3]]");
+    testee.setJsonResultToResult(resultJson);
+
+    EXPECT_EQ(testee.getElectionResultAsJson().dump(), "[[0,2],[1,0],[2,3]]");
+}
+
+TEST(electionTest, test_setGroupsFromJson) {
+    election testee = election::create(0);
+
+    EXPECT_EQ(testee.getEvaluationGroupsAsJson().dump(), "[]");
+    nlohmann::json groupsJson = nlohmann::json::parse(R"([["asd","yxc","qwe","cvb"],["tzu"]])");
+    testee.setJsonElectionGroupToGroups(groupsJson);
+
+    EXPECT_EQ(testee.getEvaluationGroupsAsJson().dump(), "[[\"asd\",\"yxc\",\"qwe\",\"cvb\"],[\"tzu\"]]");
+}

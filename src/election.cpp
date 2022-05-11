@@ -81,6 +81,21 @@ void election::print() {
                   [](std::pair<std::string, std::string> id_choice_pair) {
                       std::cout << "\t" << id_choice_pair.first << ": " << id_choice_pair.second << std::endl;
                   });
+
+    std::cout << "\tGroups: ";
+    std::for_each(evaluation_groups.begin(), evaluation_groups.end(), [](std::vector<std::string> group) {
+        std::cout << "[";
+        std::for_each(group.begin(), group.end(), [](const std::string& peer){
+            std::cout << peer << " ";
+        });
+        std::cout << "]";
+    });
+    std::cout << std::endl;
+
+    std::cout << "\tResult: ";
+    std::for_each(election_result.begin(), election_result.end(), [](std::pair<size_t, size_t> id_result) {
+        std::cout << "[" << id_result.first << ": " << id_result.second << "]";
+    });
     std::cout << std::endl;
 }
 
@@ -186,7 +201,7 @@ void election::setJsonVotesToVotes(nlohmann::json json) {
 
 election::election(const election &el) : prototype(el.prototype), setup_date(el.setup_date),
                                          participants(el.participants), participants_votes(el.participants_votes),
-                                         is_prepared_for_distribution(el.is_prepared_for_distribution), election_result(el.election_result) {
+                                         is_prepared_for_distribution(el.is_prepared_for_distribution), election_result(el.election_result), evaluation_groups(el.evaluation_groups) {
 }
 
 const std::map<size_t, std::string> &election::getOptions() const {
@@ -201,28 +216,30 @@ void election::setSetupDate(time_t setupDate) {
     setup_date = setupDate;
 }
 
-bool election::hasFreeEvaluationGroups() {
-    size_t numberOfGroups = 0;
-    size_t groupSize = 4;
+size_t election::getNumberOfPlacedVotes() {
     size_t counter = 0;
     std::for_each(participants_votes.begin(), participants_votes.end(),
-                  [&groupSize, &counter, &numberOfGroups](
-                          std::pair<std::string, std::string> optionsToVotes) {
+                  [&counter](
+                          const std::pair<std::string, std::string>& optionsToVotes) {
                       if (optionsToVotes.second != "-1") {
                           counter++;
                       }
-                      if (counter == groupSize) {
-                          numberOfGroups++;
-                          counter = 0;
-                      }
                   });
+    return counter;
+}
+
+
+size_t election::getVotesEvaluatedTotal() {
     std::vector<size_t> election_values;
     std::for_each(election_result.begin(), election_result.end(),
-                   [&election_values](std::pair<size_t, size_t> optionVoteCountPair) { election_values.push_back(optionVoteCountPair.second); });
+                  [&election_values](std::pair<size_t, size_t> optionVoteCountPair) { election_values.push_back(optionVoteCountPair.second); });
 
-    size_t finishedVotesCount = std::accumulate(election_values.begin(), election_values.end(), 0);
+    size_t votesEvaluatedTotal = std::accumulate(election_values.begin(), election_values.end(), 0L);
+    return votesEvaluatedTotal;
+}
 
-    return numberOfGroups - finishedVotesCount / groupSize > 0;
+bool election::hasFreeEvaluationGroups() {
+    return getNumberOfPlacedVotes() / groupSize - getVotesEvaluatedTotal() / groupSize > 0;
 }
 
 const std::map <size_t, size_t> &election::getElectionResult() const {
@@ -231,4 +248,67 @@ const std::map <size_t, size_t> &election::getElectionResult() const {
 
 void election::setElectionResult(const std::map <size_t, size_t> &election_result) {
     election::election_result = election_result;
+}
+
+void election::addToNextEvaluationGroup(std::string identity) {
+    // If evaluation groups exists check them first
+    size_t index = -1;
+    size_t counter = 0;
+    std::for_each(evaluation_groups.begin(), evaluation_groups.end(), [this, &index, &counter](const std::vector<std::string> group){
+        if(group.size() < groupSize){
+            index = counter;
+        }
+        counter++;
+    });
+
+    if(index != -1){
+        evaluation_groups[index].push_back(identity);
+    } else {
+        std::vector<std::string> newGroup;
+        newGroup.push_back(identity);
+        evaluation_groups.push_back(newGroup);
+    }
+}
+
+const std::vector<std::vector<std::string>> &election::getEvaluationGroups() const {
+    return evaluation_groups;
+}
+
+nlohmann::json election::getEvaluationGroupsAsJson() {
+    nlohmann::json js = nlohmann::ordered_json(evaluation_groups);
+    return js;
+}
+
+nlohmann::json election::getElectionResultAsJson() {
+    nlohmann::json js = nlohmann::ordered_json(election_result);
+    return js;
+}
+
+void election::setJsonResultToResult(nlohmann::json jsonResult) {
+    std::map<size_t, size_t> votes;
+    if (jsonResult.is_array()) {
+        std::for_each(jsonResult.begin(), jsonResult.end(), [&votes](nlohmann::json option) {
+            votes[option[0]] = option[1].get<size_t>();
+        });
+    } else {
+        std::cout << "could not set result json" << std::endl;
+    }
+    election_result = votes;
+}
+
+void election::setJsonElectionGroupToGroups(nlohmann::json jsonGroups) {
+    std::vector<std::vector<std::string>> groups;
+    if (jsonGroups.is_array()) {
+        std::for_each(jsonGroups.begin(), jsonGroups.end(), [&groups](nlohmann::json groupJson) {
+            std::vector<std::string> group = groupJson.get<std::vector<std::string>>();
+            groups.push_back(group);
+        });
+    } else {
+        std::cout << "could not set result json" << std::endl;
+    }
+    evaluation_groups = groups;
+}
+
+void election::setEvaluationGroups(const std::vector<std::vector<std::string>> &evaluation_groups) {
+    election::evaluation_groups = evaluation_groups;
 }

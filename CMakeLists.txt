@@ -52,6 +52,8 @@ set(SOURCE_FILES
         src/inprocElectionboxThread.cpp
         src/inprocElectionboxThread.h
         src/logger.h
+        src/replyKeyThread.cpp
+        src/replyKeyThread.h
         )
 
 enable_testing()

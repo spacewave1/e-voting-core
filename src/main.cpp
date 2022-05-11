@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <fstream>
 #include "peer.h"
+#include "replyKeyThread.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
@@ -81,10 +82,10 @@ int main(int argc, char **argv) {
     straightLineDistributeThread straight_line_distribute_thread;
     local_peer.updateDistributionThread(&straight_line_distribute_thread);
 
-
     inprocElectionboxThread inproc_electionbox_thread(local_peer.getElectionBox(), inproc_socket_adapter);
     local_peer.startInprocElectionSyncThread(&context, inproc_electionbox_thread);
 
+    replyKeyThread reply_keys_thread;
 
     auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
     networkPlan plan(straight_line_topology);
@@ -102,6 +103,9 @@ int main(int argc, char **argv) {
     while (input != "quit") {
         if (!straight_line_distribute_thread.isRunning()) {
             local_peer.passiveDistribution(&context, straight_line_distribute_thread);
+        }
+        if (!reply_keys_thread.isRunning()) {
+            local_peer.reply_keys(&context, reply_keys_thread);
         }
         if (input.size() == 0) {
             std::getline(std::cin, input);
@@ -128,9 +132,6 @@ int main(int argc, char **argv) {
         }
         if (input.find("place_vote") != -1) {
             local_peer.vote();
-        }
-        if (input.find("eval_vote") != -1) {
-            local_peer.eval_votes();
         }
         if (input.find("create_election") != -1) {
             // nextElectionId = networkBuffer.getId()
@@ -197,6 +198,16 @@ int main(int argc, char **argv) {
         }
         if (input.find("cancel_sync") != -1) {
             straight_line_sync_thread.WaitForInternalThreadToExit();
+        }
+        if (input.find("eval_vote") != -1) {
+            straight_line_distribute_thread.interruptReceiveRequest();
+            local_peer.eval_votes(&context, straight_line_distribute_thread, reply_keys_thread);
+        }
+        if(input.find("request_keys") != -1) {
+            local_peer.request_keys((void*)&context);
+        }
+        if (input.find("count_in_votes") != -1) {
+            local_peer.countInVotes(&context, straight_line_distribute_thread);
         }
         if (input.find("quit") != -1) {
         } else {

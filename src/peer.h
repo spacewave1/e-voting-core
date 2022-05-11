@@ -4,9 +4,11 @@
 
 #include <set>
 #include <map>
+#include <queue>
 #include "networkPlan.h"
 #include "election.h"
 #include "inprocElectionboxThread.h"
+#include "replyKeyThread.h"
 
 #ifndef VOTE_P2P_PEER_H
 #define VOTE_P2P_PEER_H
@@ -15,36 +17,72 @@
 class peer {
 public:
     peer();
+
     virtual ~peer();
+
     void receive(void *context);
+
     election createElection(size_t election_id);
+
     void vote();
-    void connect(std::string& input, void *context);
+
+    void connect(std::string &input, void *context);
+
     void printConnections();
-    void initSyncThread(void* context, straightLineSyncThread& thread, std::string initial_receiver_address = "");
-    const std::set <std::string> &getKnownPeerAddresses() const;
-    const std::map <std::string, std::string> &getConnectionTable() const;
-    void setKnownPeerAddresses(const std::set <std::string> &known_peer_addresses);
-    void setConnectionTable(const std::map <std::string, std::string> &connection_table);
+
+    void initSyncThread(void *context, straightLineSyncThread &thread, std::string initial_receiver_address = "");
+
+    const std::set<std::string> &getKnownPeerAddresses() const;
+
+    const std::map<std::string, std::string> &getConnectionTable() const;
+
+    void setKnownPeerAddresses(const std::set<std::string> &known_peer_addresses);
+
+    void setConnectionTable(const std::map<std::string, std::string> &connection_table);
+
     void setIdentity(std::string identity);
+
     void exportPeerConnections(std::string exportPath = "./");
+
     void exportPeersList(std::string exportPath = "./");
+
     void importPeerConnections(std::string importPath = "./");
+
     void importPeersList(std::string importPath = "./");
+
     void importPeerIdentity(std::string importPath = "./");
-    void distributeElection(void* context, straightLineDistributeThread& thread);
-    void passiveDistribution(void* context, straightLineDistributeThread& thread);
+
+    void distributeElection(void *context, straightLineDistributeThread &thread, size_t chosen_election_id = -1);
+
+    void passiveDistribution(void *context, straightLineDistributeThread &thread);
+
     void dumpElectionBox();
+
     void pushBackElection(election election);
-    void startInprocElectionSyncThread(void *context, inprocElectionboxThread& thread);
+
+    void startInprocElectionSyncThread(void *context, inprocElectionboxThread &thread);
+
     std::vector<election> &getElectionBox();
+
     void updateDistributionThread(straightLineDistributeThread *p_thread);
+
     void encryptVote(election &selected_election, std::string vote, unsigned char *encry);
+
     void decryptVote(election election, unsigned char *ciphertext, unsigned char *decry);
-    void eval_votes();
+
+    bool eval_votes(void *context, straightLineDistributeThread &thread, replyKeyThread &replyThread);
+
+    void generate_keys(size_t election_box_position = -1);
+
+    void request_keys(void *args, size_t election_box_position = -1);
+
+    void reply_keys(void *args, replyKeyThread &thread);
+
+    void countInVotes(zmq::context_t *p_context, straightLineDistributeThread thread);
 
 private:
     void calculatePositionFromTable();
+
     std::string peer_identity;
     std::string peer_address;
     size_t position;
@@ -52,8 +90,11 @@ private:
     std::set<std::string> known_peer_addresses;
     std::map<std::string, std::string> connection_table;
 
-    std::map<size_t, std::string> electionKeys;
-    std::map<size_t, bool> evaluatedVotes;
+    std::map<size_t, std::string> own_election_keys;
+    std::shared_ptr<std::map<size_t, std::queue<std::string>>> prepared_election_keys_pointer;
+    std::map<size_t, std::queue<std::string>> prepared_election_keys;
+    std::map<size_t, std::vector<std::string>> received_election_keys;
+    std::map<size_t, bool> isEvaluatedVotesMap;
 
     logger _logger = logger::Instance();
 

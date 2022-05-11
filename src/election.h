@@ -19,14 +19,15 @@ private:
     electionPrototype prototype;
     std::time_t setup_date;
     std::set<std::string> participants;
+    std::vector<std::vector<std::string>> evaluation_groups;
     std::map<std::string, std::string> participants_votes;
     std::map<size_t, size_t> election_result;
+    size_t groupSize = 4;
     bool is_prepared_for_distribution = false;
     election(const int id);
 
 public:
     friend class electionBuilder;
-
     static electionBuilder create(int id);
     election(const election& el);
     election();
@@ -52,13 +53,26 @@ public:
     nlohmann::json getVotesAsJson() const;
     void setSetupDate(time_t setupDate);
 
+    const std::vector<std::vector<std::string>> &getEvaluationGroups() const;
+
     const std::map <size_t, size_t> &getElectionResult() const;
-
     void setElectionResult(const std::map <size_t, size_t> &election_result);
-
     std::string getSetupDateAsString() const;
-
     bool hasFreeEvaluationGroups();
+    void addToNextEvaluationGroup(std::string identity);
+
+    size_t getVotesEvaluatedTotal();
+    size_t getNumberOfPlacedVotes();
+
+    nlohmann::json getEvaluationGroupsAsJson();
+
+    nlohmann::json getElectionResultAsJson();
+
+    void setJsonResultToResult(nlohmann::json jsonResult);
+
+    void setJsonElectionGroupToGroups(nlohmann::json jsonGroups);
+
+    void setEvaluationGroups(const std::vector<std::vector<std::string>> &evaluation_groups);
 };
 
 

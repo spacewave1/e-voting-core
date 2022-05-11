@@ -61,3 +61,18 @@ electionBuilder &electionBuilder::withElectionResult(std::map <size_t, size_t> r
     return *this;
 }
 
+electionBuilder &electionBuilder::withElectionGroupsFromJson(nlohmann::json json) {
+    el.setJsonElectionGroupToGroups(json);
+    return *this;
+}
+
+electionBuilder &electionBuilder::withElectionResultFromJson(nlohmann::json json) {
+    el.setJsonResultToResult(json);
+    return *this;
+}
+
+electionBuilder &electionBuilder::withEvalGroups(std::vector<std::vector<std::string>> eval_groups) {
+    el.setEvaluationGroups(eval_groups);
+    return *this;
+}
+

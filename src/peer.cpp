@@ -5,11 +5,13 @@
 #include <iostream>
 #include <zmq.hpp>
 #include <regex>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include "peer.h"
 #include <fstream>
 #include "electionBuilder.h"
 #include "sodium/utils.h"
+#include "replyKeyThread.h"
 #include <sodium/randombytes.h>
 #include <sodium/crypto_aead_chacha20poly1305.h>
 
@@ -161,6 +163,7 @@ peer::peer() {
     connection_table = std::map<std::string, std::string>();
     known_peer_addresses = std::set<std::string>();
     peer_address = "";
+    prepared_election_keys_pointer = std::make_shared<std::map<size_t, std::queue<std::string>>>(prepared_election_keys);
 }
 
 void peer::initSyncThread(void *context, straightLineSyncThread &thread, std::string initial_receiver_address) {
@@ -266,15 +269,23 @@ void peer::vote() {
         });
 
         std::string input;
+        bool inputValid = true;
+        std::size_t chosen_option;
 
-        std::getline(std::cin, input);
-        std::cout << input << std::endl;
-        std::size_t chosen_option = std::stoi(input);
+        while(inputValid) {
+            try {
+                std::getline(std::cin, input);
+                std::cout << input << std::endl;
+                chosen_option = std::stoi(input);
+                inputValid = false;
+            } catch (const std::invalid_argument& ia) {
+                std::cerr << "Invalid argument: " << ia.what() << '\n';
+            }
+        }
 
         std::cout << "identity: " << peer_identity << std::endl;
         std::cout << "option:" << chosen_option << std::endl;
         std::cout << "option:" << map.at(chosen_option) << std::endl;
-
 
         const size_t options_pot = ((int) chosen_election.getOptions().size()) / 10 + 1;
         unsigned char encryptedVote[64];
@@ -360,6 +371,25 @@ void peer::dumpElectionBox() {
     std::for_each(election_box.begin(), election_box.end(), [](election electionEntry) {
         electionEntry.print();
     });
+
+    std::for_each(received_election_keys.begin(), received_election_keys.end(), [](std::pair<size_t, std::vector<std::string>> election_id_received_keys){
+        std::cout << "\tid:" <<  election_id_received_keys.first << std::endl;
+        std::cout << "\treceived keys:";
+        std::for_each(election_id_received_keys.second.begin(), election_id_received_keys.second.end(), [](std::string key) {
+            std::cout << " " << key;
+        });
+        std::cout << std::endl;
+    });
+
+    std::for_each(own_election_keys.begin(), own_election_keys.end(), [](std::pair<size_t, std::string> election_id_key){
+        std::cout << "\tid:" <<  election_id_key.first << std::endl;
+        std::cout << "\tkey:" << " " << election_id_key.second << std::endl;
+    });
+
+    std::for_each(prepared_election_keys.begin(), prepared_election_keys.end(), [](std::pair<size_t, std::queue<std::string>> election_id_keys_queue_map){
+        std::cout << "\tid:" <<  election_id_keys_queue_map.first << std::endl;
+        std::cout << "\tkeys size: " << election_id_keys_queue_map.second.size() << std::endl;
+    });
 }
 
 void peer::passiveDistribution(void *context, straightLineDistributeThread &thread) {
@@ -384,20 +414,29 @@ size_t peer::selectElection() {
     size_t selected_election_id;
 
     while (true && input_string != "exit") {
-        std::getline(std::cin, input_string);
-        selected_election_id = std::stoi(input_string);
-        std::cout << std::endl;
-        if (isNumber(input_string) && selected_election_id < election_box.size()) {
-            return selected_election_id;
+        try {
+            std::getline(std::cin, input_string);
+            selected_election_id = std::stoi(input_string);
+            std::cout << std::endl;
+            if (isNumber(input_string) && selected_election_id < election_box.size()) {
+                return selected_election_id;
+            }
+        } catch (const std::invalid_argument& ia) {
+            std::cerr << "Invalid argument: " << ia.what() << '\n';
         }
     }
     _logger.log("Exit executable during election selection");
     std::exit(10);
 }
 
-void peer::distributeElection(void *context, straightLineDistributeThread &thread) {
+void peer::distributeElection(void *context, straightLineDistributeThread &thread, size_t chosen_election_id) {
 
-    size_t selected_election_index = selectElection();
+    size_t selected_election_index;
+    if (chosen_election_id != -1) {
+        selected_election_index = chosen_election_id;
+    } else {
+        selected_election_index = selectElection();
+    }
     election &chosen_election = election_box[selected_election_index];
     if (!chosen_election.isPreparedForDistribution()) {
         chosen_election.prepareForDistribtion(known_peer_addresses);
@@ -511,12 +550,13 @@ void peer::updateDistributionThread(straightLineDistributeThread *p_thread) {
 void peer::decryptVote(election election, unsigned char *ciphertext, unsigned char *decry) {
     unsigned long long decryptLength = election.getOptions().size() / 10 + 1;
 
-    unsigned char * decrypted = decry;
-    
-    const unsigned char *ciphertext_cstr = ciphertext;
-    const unsigned char *key = reinterpret_cast<const unsigned char *>(electionKeys[election.getPollId()].c_str());
+    unsigned char *decrypted = decry;
 
-    if (crypto_aead_chacha20poly1305_ietf_decrypt(decrypted, &decryptLength, NULL, ciphertext_cstr, decryptLength + crypto_aead_chacha20poly1305_IETF_ABYTES,
+    const unsigned char *ciphertext_cstr = ciphertext;
+    const unsigned char *key = reinterpret_cast<const unsigned char *>(own_election_keys[election.getPollId()].c_str());
+
+    if (crypto_aead_chacha20poly1305_ietf_decrypt(decrypted, &decryptLength, NULL, ciphertext_cstr,
+                                                  decryptLength + crypto_aead_chacha20poly1305_IETF_ABYTES,
                                                   ADDITIONAL_DATA, ADDITIONAL_DATA_LEN, nonce, key) != 0) {
         /* message forged! */
     }
@@ -526,8 +566,9 @@ void peer::encryptVote(election &selected_election, std::string vote, unsigned c
 
     const size_t options_pot = ((int) selected_election.getOptions().size()) / 10 + 1;
     unsigned char key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
-    unsigned char * ciphertext[options_pot + crypto_aead_chacha20poly1305_IETF_ABYTES];
-    unsigned char * encoded = encry;
+    unsigned char *ciphertext[options_pot + crypto_aead_chacha20poly1305_IETF_ABYTES];
+    unsigned char *encoded = encry;
+    unsigned char encodedKey[64];
     unsigned long long ciphertext_len = vote.length() + crypto_aead_chacha20poly1305_IETF_ABYTES;
 
     crypto_aead_chacha20poly1305_ietf_keygen(key);
@@ -538,28 +579,135 @@ void peer::encryptVote(election &selected_election, std::string vote, unsigned c
     const unsigned char *vote_str = reinterpret_cast<const unsigned char *>(vote.c_str());
 
     std::cout << "VoteStr: " << vote_str << std::endl;
-    std::cout << "Nonce: "<< nonce << std::endl;
-    std::cout << "Key: "<< key << std::endl;
+    std::cout << "Nonce: " << nonce << std::endl;
 
-    crypto_aead_chacha20poly1305_ietf_encrypt(reinterpret_cast<unsigned char *>(ciphertext), &ciphertext_len, vote_str, vote.length(), ADDITIONAL_DATA,
+    crypto_aead_chacha20poly1305_ietf_encrypt(reinterpret_cast<unsigned char *>(ciphertext), &ciphertext_len, vote_str,
+                                              vote.length(), ADDITIONAL_DATA,
                                               ADDITIONAL_DATA_LEN, NULL, nonce, key);
 
-    electionKeys[selected_election.getPollId()] = reinterpret_cast<const char *>(key);
+    sodium_bin2base64(reinterpret_cast<char *const>(encodedKey), 64,
+                      key,crypto_aead_chacha20poly1305_IETF_KEYBYTES, sodium_base64_VARIANT_ORIGINAL);
 
+    own_election_keys[selected_election.getPollId()] = reinterpret_cast<const char *>(key);
 
     sodium_bin2base64(reinterpret_cast<char *const>(encoded), 64,
                       reinterpret_cast<const unsigned char *const>(ciphertext),
                       ciphertext_len, sodium_base64_VARIANT_ORIGINAL);
 
-    std::cout << "Ciphertext: "<< ciphertext << std::endl;
-    std::cout << "Base64: "<< encoded << std::endl;
+    std::cout << "Ciphertext: " << ciphertext << std::endl;
+    std::cout << "Base64: " << encoded << std::endl;
 }
 
-void peer::eval_votes() {
+bool peer::eval_votes(void *context, straightLineDistributeThread &thread, replyKeyThread &replyThread) {
     size_t chosen_id = selectElection();
     election &chosen_election = election_box.at(chosen_id);
 
-    if(chosen_election.hasFreeEvaluationGroups()){
-
+    if (chosen_election.hasFreeEvaluationGroups() &&
+        !isEvaluatedVotesMap[chosen_id]) { // && peer not evaluated for the election yet
+        chosen_election.addToNextEvaluationGroup(peer_address);
+        distributeElection(context, thread, chosen_id);
+        generate_keys(chosen_id);
+        replyThread.set_election_keys_queue(prepared_election_keys);
+        return true;
+    } else {
+        return false;
     }
+}
+
+void peer::generate_keys(size_t election_box_position) {
+    size_t chosen_id = election_box_position;
+    if(election_box_position == -1) {
+       chosen_id = selectElection();
+    }
+    election &chosen_election = election_box.at(chosen_id);
+    std::vector<std::string> participants_without_self;
+
+    std::string identity = peer_identity;
+
+    std::srand(std::time(nullptr)); // use current time as seed for random generator
+    int random_variable = std::rand() % 3;
+
+    size_t evaluation_group_size = 3;
+
+    for (int i = 0; i < evaluation_group_size; ++i) {
+        if(i == random_variable) {
+            const char *key = own_election_keys[chosen_election.getPollId()].c_str();
+            unsigned char encodedKey[64];
+            
+            sodium_bin2base64(reinterpret_cast<char *const>(encodedKey), 64,
+                              reinterpret_cast<const unsigned char *const>(key),
+                              crypto_aead_chacha20poly1305_IETF_KEYBYTES, sodium_base64_VARIANT_ORIGINAL);
+
+            std::cout << "Own Key: " << encodedKey << std::endl;
+
+            prepared_election_keys[chosen_election.getPollId()].push(reinterpret_cast<const char *>(encodedKey));
+
+        } else {
+            unsigned char key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
+            crypto_aead_chacha20poly1305_ietf_keygen(key);
+            unsigned char encoded[64];
+
+            sodium_bin2base64(reinterpret_cast<char *const>(encoded), 64,
+                              reinterpret_cast<const unsigned char *const>(key),
+                              crypto_aead_chacha20poly1305_IETF_KEYBYTES, sodium_base64_VARIANT_ORIGINAL);
+
+            std::cout << "Key: " << encoded << std::endl;
+            prepared_election_keys[chosen_election.getPollId()].push(reinterpret_cast<const char *>(key));
+        }
+    }
+    _logger.log("Keys generated");
+}
+
+void peer::request_keys(void *args, size_t election_box_position) {
+    _logger.log("Requesting keys for " + election_box_position);
+    size_t chosen_id = election_box_position;
+    if(election_box_position == -1) {
+        chosen_id = selectElection();
+    }
+    election &chosen_election = election_box.at(chosen_id);
+    std::vector<std::string> participants_without_self;
+
+    std::string identity = peer_identity;
+
+    std::for_each(chosen_election.getEvaluationGroups().begin(), chosen_election.getEvaluationGroups().end(),
+                  [&identity, &participants_without_self](std::vector<std::string> group) {
+                      if (std::find(group.begin(), group.end(), identity) != group.end()) {
+                          std::copy_if(group.begin(), group.end(), std::back_inserter(participants_without_self),
+                                       [&identity](const std::string& participant) { return participant != identity; });
+                      }
+                  });
+
+    zmq::context_t *context = (zmq::context_t *) args;
+    std::for_each(participants_without_self.begin(), participants_without_self.end(), [this, &chosen_id, &context](std::string participant){
+        _logger.log("Send request towards " + participant);
+        zmq_sleep(1);
+        zmq::socket_t key_request_socket = zmq::socket_t(*context, zmq::socket_type::req);
+        key_request_socket.connect("tcp://" + participant + ":50061");
+        key_request_socket.send(zmq::buffer(std::to_string(chosen_id)),zmq::send_flags::none);
+
+        zmq::message_t message;
+        key_request_socket.recv(message);
+        received_election_keys[chosen_id].push_back(message.to_string());
+        _logger.log(message.to_string());
+        key_request_socket.send(zmq::buffer("accepted"));
+        _logger.log("accepted",participant);
+        key_request_socket.disconnect("tcp://" + participant + ":50061");
+        key_request_socket.close();
+    });
+
+    _logger.log("Has Received all the keys");
+}
+
+void peer::setIdentity(std::string identity) {
+    peer_identity = identity;
+}
+
+void peer::reply_keys(void *args, replyKeyThread &thread) {
+    thread.setParams(args, prepared_election_keys);
+    thread.setIsRunning(true);
+    thread.StartInternalThread();
+}
+
+void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread thread) {
+
 }
