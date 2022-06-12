@@ -9,6 +9,8 @@
 #include "election.h"
 #include "inprocElectionboxThread.h"
 #include "replyKeyThread.h"
+#include "libSodiumEncryptionService.h"
+#include "basicEncryptionService.h"
 
 #ifndef VOTE_P2P_PEER_H
 #define VOTE_P2P_PEER_H
@@ -24,7 +26,7 @@ public:
 
     election createElection(size_t election_id);
 
-    void vote();
+    void vote(basicEncryptionService& encryption_service, size_t election_id = -1);
 
     void connect(std::string &input, void *context);
 
@@ -66,19 +68,17 @@ public:
 
     void updateDistributionThread(straightLineDistributeThread *p_thread);
 
-    void encryptVote(election &selected_election, std::string vote, unsigned char *encry);
+    bool eval_votes(replyKeyThread &replyThread, basicEncryptionService &encryption_service, size_t election_id = -1);
 
-    void decryptVote(election election, unsigned char *ciphertext, unsigned char *decry);
-
-    bool eval_votes(void *context, straightLineDistributeThread &thread, replyKeyThread &replyThread);
-
-    void generate_keys(size_t election_box_position = -1);
+    void generate_keys(basicEncryptionService &encryption_service, size_t election_box_position = -1);
 
     void request_keys(void *args, size_t election_box_position = -1);
 
     void reply_keys(void *args, replyKeyThread &thread);
+    void countInVotes(zmq::context_t *p_context, straightLineDistributeThread &thread, basicEncryptionService &encryption_service, size_t election_box_position = -1);
+    size_t selectElection();
 
-    void countInVotes(zmq::context_t *p_context, straightLineDistributeThread thread);
+    void decrypt_vote(size_t election_id, basicEncryptionService &encryption_service);
 
 private:
     void calculatePositionFromTable();
@@ -98,7 +98,6 @@ private:
 
     logger _logger = logger::Instance();
 
-    size_t selectElection();
 
     bool isNumber(const std::string s);
 

@@ -10,15 +10,8 @@
 #include "peer.h"
 #include <fstream>
 #include "electionBuilder.h"
-#include "sodium/utils.h"
-#include "replyKeyThread.h"
-#include <sodium/randombytes.h>
-#include <sodium/crypto_aead_chacha20poly1305.h>
-
-#define ADDITIONAL_DATA (const unsigned char *) "123456"
-#define ADDITIONAL_DATA_LEN 6
-
-unsigned char nonce[crypto_aead_chacha20poly1305_IETF_NPUBBYTES];
+#include "basicEncryptionService.h"
+#include <charconv>
 
 void peer::printConnections() {
     // Iterate through "receiver" nodes
@@ -243,6 +236,7 @@ void peer::importPeersList(std::string importPath) {
     if (importStream.is_open()) {
         if (getline(importStream, line)) {
 
+            std::cout << line << std::endl;
             nlohmann::json peersJson = nlohmann::json::parse(line);
             _logger.log("File contents as json: ");
             _logger.displayData(peersJson.dump());
@@ -257,10 +251,44 @@ void peer::importPeersList(std::string importPath) {
     }
 }
 
-void peer::vote() {
+void peer::importPeerIdentity(std::string importPath) {
+    std::ifstream importStream;
+    std::string line;
+
+    _logger.log("is importing peers file from " + importPath + "id.dat");
+
+    // File Open in the Read Mode
+    importStream.open(importPath + "id.dat");
+
+    if (importStream.is_open()) {
+        if (getline(importStream, line)) {
+            _logger.log("Display File Content:");
+            _logger.displayData(line);
+
+            peer_identity = line;
+            peer_address = line;
+
+        };
+        // File Close
+        importStream.close();
+        _logger.error("Could not return line");
+    } else {
+        _logger.error("Unable to open the file!");
+    }
+}
+
+void peer::vote(basicEncryptionService& encryption_service, size_t election_id) {
     if (election_box.size() > 0) {
-        size_t chosen_id = selectElection();
+        size_t chosen_id = election_id;
+        if(chosen_id == -1) {
+            chosen_id = selectElection();
+        }
+        std::string chosen_id_as_string = std::to_string(election_id);
         election &chosen_election = election_box.at(chosen_id);
+
+        if (!chosen_election.isPreparedForDistribution()) {
+            chosen_election.prepareForDistribtion(known_peer_addresses);
+        }
 
         const std::map<size_t, std::string> &map = chosen_election.getOptions();
 
@@ -284,17 +312,34 @@ void peer::vote() {
         }
 
         std::cout << "identity: " << peer_identity << std::endl;
-        std::cout << "option:" << chosen_option << std::endl;
-        std::cout << "option:" << map.at(chosen_option) << std::endl;
+        //std::cout << "option:" << chosen_option << std::endl;
+        //std::cout << "option:" << map.at(chosen_option) << std::endl;
 
-        const size_t options_pot = ((int) chosen_election.getOptions().size()) / 10 + 1;
-        unsigned char encryptedVote[64];
+        std::string key = encryption_service.generateKey();
 
-        encryptVote(chosen_election, input, encryptedVote);
+        own_election_keys[chosen_id] = key;
 
-        chosen_election.placeVote(peer_identity, reinterpret_cast<const char *>(encryptedVote));
+        if(input.length() != 4){
+            std::stringstream vote_stream;
+            vote_stream
+                << (char)(input[0] + 65 - 48)
+                << (char)(input[0] + 65 - 48)
+                << (char)(input[0] + 65 - 48)
+                << (char)(input[0] + 65 - 48);
+            input = vote_stream.str();
+        }
+
+        std::string encrypted = encryption_service.encrypt(input, key);
+
+        std::cout << "Key: " << key << std::endl;
+        std::cout << "Encrypted Vote: " << encrypted << std::endl;
+
+        chosen_election.placeVote(peer_identity, encrypted);
+
+        //std::cout << result << std::endl;
+
     }
-};
+}
 
 election peer::createElection(size_t election_id) {
     _logger.promptUserInput("Enter how many possible Options can be elected");
@@ -338,32 +383,6 @@ election peer::createElection(size_t election_id) {
     initialElectionState.print();
 
     return initialElectionState;
-}
-
-void peer::importPeerIdentity(std::string importPath) {
-    std::ifstream importStream;
-    std::string line;
-
-    _logger.log("is importing peers file from " + importPath + "id.dat");
-
-    // File Open in the Read Mode
-    importStream.open(importPath + "id.dat");
-
-    if (importStream.is_open()) {
-        if (getline(importStream, line)) {
-            _logger.log("Display File Content:");
-            _logger.displayData(line);
-
-            peer_identity = line;
-            peer_address = line;
-
-        };
-        // File Close
-        importStream.close();
-        _logger.error("Could not return line");
-    } else {
-        _logger.error("Unable to open the file!");
-    }
 }
 
 
@@ -547,74 +566,27 @@ void peer::updateDistributionThread(straightLineDistributeThread *p_thread) {
     p_thread->setNetworkSize(known_peer_addresses.size());
 }
 
-void peer::decryptVote(election election, unsigned char *ciphertext, unsigned char *decry) {
-    unsigned long long decryptLength = election.getOptions().size() / 10 + 1;
-
-    unsigned char *decrypted = decry;
-
-    const unsigned char *ciphertext_cstr = ciphertext;
-    const unsigned char *key = reinterpret_cast<const unsigned char *>(own_election_keys[election.getPollId()].c_str());
-
-    if (crypto_aead_chacha20poly1305_ietf_decrypt(decrypted, &decryptLength, NULL, ciphertext_cstr,
-                                                  decryptLength + crypto_aead_chacha20poly1305_IETF_ABYTES,
-                                                  ADDITIONAL_DATA, ADDITIONAL_DATA_LEN, nonce, key) != 0) {
-        /* message forged! */
+bool peer::eval_votes(replyKeyThread &replyThread, basicEncryptionService& encryption_service, size_t election_id) {
+    size_t chosen_id = election_id;
+    if(chosen_id == -1) {
+        chosen_id = selectElection();
     }
-}
-
-void peer::encryptVote(election &selected_election, std::string vote, unsigned char *encry) {
-
-    const size_t options_pot = ((int) selected_election.getOptions().size()) / 10 + 1;
-    unsigned char key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
-    unsigned char *ciphertext[options_pot + crypto_aead_chacha20poly1305_IETF_ABYTES];
-    unsigned char *encoded = encry;
-    unsigned char encodedKey[64];
-    unsigned long long ciphertext_len = vote.length() + crypto_aead_chacha20poly1305_IETF_ABYTES;
-
-    crypto_aead_chacha20poly1305_ietf_keygen(key);
-    randombytes_buf(nonce, sizeof nonce);
-
-    std::cout << "Vote: " << vote << std::endl;
-
-    const unsigned char *vote_str = reinterpret_cast<const unsigned char *>(vote.c_str());
-
-    std::cout << "VoteStr: " << vote_str << std::endl;
-    std::cout << "Nonce: " << nonce << std::endl;
-
-    crypto_aead_chacha20poly1305_ietf_encrypt(reinterpret_cast<unsigned char *>(ciphertext), &ciphertext_len, vote_str,
-                                              vote.length(), ADDITIONAL_DATA,
-                                              ADDITIONAL_DATA_LEN, NULL, nonce, key);
-
-    sodium_bin2base64(reinterpret_cast<char *const>(encodedKey), 64,
-                      key,crypto_aead_chacha20poly1305_IETF_KEYBYTES, sodium_base64_VARIANT_ORIGINAL);
-
-    own_election_keys[selected_election.getPollId()] = reinterpret_cast<const char *>(key);
-
-    sodium_bin2base64(reinterpret_cast<char *const>(encoded), 64,
-                      reinterpret_cast<const unsigned char *const>(ciphertext),
-                      ciphertext_len, sodium_base64_VARIANT_ORIGINAL);
-
-    std::cout << "Ciphertext: " << ciphertext << std::endl;
-    std::cout << "Base64: " << encoded << std::endl;
-}
-
-bool peer::eval_votes(void *context, straightLineDistributeThread &thread, replyKeyThread &replyThread) {
-    size_t chosen_id = selectElection();
     election &chosen_election = election_box.at(chosen_id);
 
     if (chosen_election.hasFreeEvaluationGroups() &&
         !isEvaluatedVotesMap[chosen_id]) { // && peer not evaluated for the election yet
         chosen_election.addToNextEvaluationGroup(peer_address);
-        distributeElection(context, thread, chosen_id);
-        generate_keys(chosen_id);
+        generate_keys(encryption_service, chosen_id);
         replyThread.set_election_keys_queue(prepared_election_keys);
+        std::cout << "Inside eval group" << std::endl;
         return true;
     } else {
+        std::cout << "Not inside eval group" << std::endl;
         return false;
     }
 }
 
-void peer::generate_keys(size_t election_box_position) {
+void peer::generate_keys(basicEncryptionService &encryption_service, size_t election_box_position) {
     size_t chosen_id = election_box_position;
     if(election_box_position == -1) {
        chosen_id = selectElection();
@@ -631,28 +603,18 @@ void peer::generate_keys(size_t election_box_position) {
 
     for (int i = 0; i < evaluation_group_size; ++i) {
         if(i == random_variable) {
-            const char *key = own_election_keys[chosen_election.getPollId()].c_str();
-            unsigned char encodedKey[64];
-            
-            sodium_bin2base64(reinterpret_cast<char *const>(encodedKey), 64,
-                              reinterpret_cast<const unsigned char *const>(key),
-                              crypto_aead_chacha20poly1305_IETF_KEYBYTES, sodium_base64_VARIANT_ORIGINAL);
 
-            std::cout << "Own Key: " << encodedKey << std::endl;
+            std::string key_string = own_election_keys[chosen_election.getPollId()];
+            std::cout << "Own Key: " << key_string << std::endl;
+            std::cout << "Own Key length: " << key_string.length() << std::endl;
 
-            prepared_election_keys[chosen_election.getPollId()].push(reinterpret_cast<const char *>(encodedKey));
+            prepared_election_keys[chosen_election.getPollId()].push(key_string);
 
         } else {
-            unsigned char key[crypto_aead_chacha20poly1305_IETF_KEYBYTES];
-            crypto_aead_chacha20poly1305_ietf_keygen(key);
-            unsigned char encoded[64];
+            std::string fake_key = encryption_service.generateKey();
 
-            sodium_bin2base64(reinterpret_cast<char *const>(encoded), 64,
-                              reinterpret_cast<const unsigned char *const>(key),
-                              crypto_aead_chacha20poly1305_IETF_KEYBYTES, sodium_base64_VARIANT_ORIGINAL);
-
-            std::cout << "Key: " << encoded << std::endl;
-            prepared_election_keys[chosen_election.getPollId()].push(reinterpret_cast<const char *>(key));
+            std::cout << "Key: " << fake_key << std::endl;
+            prepared_election_keys[chosen_election.getPollId()].push(fake_key);
         }
     }
     _logger.log("Keys generated");
@@ -708,6 +670,25 @@ void peer::reply_keys(void *args, replyKeyThread &thread) {
     thread.StartInternalThread();
 }
 
-void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread thread) {
+void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread &thread, basicEncryptionService &encryption_service, size_t election_box_position) {
+    size_t chosen_id = election_box_position;
+    if(election_box_position == -1) {
+        chosen_id = selectElection();
+    }
+    _logger.log(&"Count in votes for " [chosen_id]);
+    election &chosen_election = election_box.at(chosen_id);
+    std::vector<std::string> participants_without_self;
 
+    std::string nonce = std::to_string(chosen_id);
+    chosen_election.countInVotesWithKeys(received_election_keys[chosen_id], encryption_service);
+
+    //chosen_election.addToNextEvaluationGroup(peer_address);
+    distributeElection(p_context, thread, chosen_id);
+
+    std::string identity = peer_identity;
+}
+
+void peer::decrypt_vote(size_t i, basicEncryptionService &encryption_service) {
+    std::string decrypted_vote = encryption_service.decrypt(election_box.at(i).getParticipantsVotes().at(peer_identity),own_election_keys[i]);
+    std::cout << "Own vote: " << decrypted_vote << std::endl;
 }

@@ -37,8 +37,8 @@ TEST(peer, generate_participant_keys) {
     peer testee;
     testee.pushBackElection(election_before_update);
     testee.setIdentity("asd");
-    testee.encryptVote(election_before_update,"1",encryptedVote);
-    testee.generate_keys(0);
+    //testee.encryptVote(election_before_update,"1",encryptedVote);
+    //testee.generate_keys(0);
 }
 
 TEST(peer, test_deque) {

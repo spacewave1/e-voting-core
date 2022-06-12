@@ -8,6 +8,7 @@
 #include <fstream>
 #include "peer.h"
 #include "replyKeyThread.h"
+#include "libSodiumEncryptionService.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
@@ -60,21 +61,21 @@ int main(int argc, char **argv) {
     std::cout << "Usage:\t enter [connect] <address>, to connect to an address that runs this application as well"
               << std::endl;
 
+    basicEncryptionService encryption_service;
     zmq::context_t context = zmq::context_t(1);
     std::string input;
+
     peer local_peer;
 
-    if (argc == 2) {
-        if (std::string(argv[1]).find("import") != -1) {
-            local_peer.importPeerIdentity();
-            local_peer.importPeerConnections();
-            local_peer.importPeersList();
-        }
-    }
+    local_peer.importPeerIdentity();
+    local_peer.importPeerConnections();
+    local_peer.importPeersList();
+
 
 
     zmq::socket_t inproc_socket = zmq::socket_t(context, zmq::socket_type::sub);
     inproc_socket.set(zmq::sockopt::subscribe, "");
+
 
     zmqSocketAdapter inproc_socket_adapter(inproc_socket);
 
@@ -131,7 +132,8 @@ int main(int argc, char **argv) {
             }
         }
         if (input.find("place_vote") != -1) {
-            local_peer.vote();
+            size_t selected_election = local_peer.selectElection();
+            local_peer.vote(encryption_service, selected_election);
         }
         if (input.find("create_election") != -1) {
             // nextElectionId = networkBuffer.getId()
@@ -201,13 +203,20 @@ int main(int argc, char **argv) {
         }
         if (input.find("eval_vote") != -1) {
             straight_line_distribute_thread.interruptReceiveRequest();
-            local_peer.eval_votes(&context, straight_line_distribute_thread, reply_keys_thread);
+            size_t selected_election = local_peer.selectElection();
+            local_peer.eval_votes(reply_keys_thread, encryption_service, selected_election);
+            local_peer.distributeElection(&context, straight_line_distribute_thread, selected_election);
         }
         if(input.find("request_keys") != -1) {
             local_peer.request_keys((void*)&context);
         }
+        if(input.find("decrypt") != -1) {
+            size_t selected_election = local_peer.selectElection();
+            local_peer.decrypt_vote(selected_election, encryption_service);
+        }
         if (input.find("count_in_votes") != -1) {
-            local_peer.countInVotes(&context, straight_line_distribute_thread);
+            straight_line_distribute_thread.interruptReceiveRequest();
+            local_peer.countInVotes(&context, straight_line_distribute_thread, encryption_service);
         }
         if (input.find("quit") != -1) {
         } else {

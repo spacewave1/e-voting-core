@@ -4,6 +4,11 @@
 
 #include "election.h"
 #include "electionBuilder.h"
+#include "sodium/utils.h"
+#include "basicEncryptionService.h"
+#include <iostream>
+#include <string>
+#include <vector>
 
 election::election(const int id) : prototype(
         electionPrototype(id)) {
@@ -248,6 +253,32 @@ const std::map <size_t, size_t> &election::getElectionResult() const {
 
 void election::setElectionResult(const std::map <size_t, size_t> &election_result) {
     election::election_result = election_result;
+}
+
+void election::countInVotesWithKeys(std::vector<std::string> keys, basicEncryptionService &encryption_service) {
+    std::vector<std::string> votes;
+    std::transform(participants_votes.begin(), participants_votes.end(),  std::back_inserter(votes),[](const std::pair<std::string, std::string>& idToVote) -> std::string {
+        std::cout << idToVote.first << std::endl;
+        std::cout << idToVote.second << std::endl;
+        return idToVote.second;
+    });
+    size_t index = 0;
+    std::for_each(votes.begin(), votes.end(),[&keys, &index, encryption_service](std::string vote) {
+        index++;
+        std::for_each(keys.begin(), keys.end(),[vote, encryption_service](std::string key) {
+            std::cout << "Encrypted vote: " << vote << std::endl;
+            std::cout << "key: " << key << std::endl;
+
+            std::string decrypted_vote =  encryption_service.decrypt(vote, key);
+
+            std::cout << "Decrypted: " << decrypted_vote << std::endl;
+        });
+    });
+
+
+
+    // If vote encrypted with key valid then add to result
+    //
 }
 
 void election::addToNextEvaluationGroup(std::string identity) {

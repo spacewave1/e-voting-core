@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 #include "../src/election.h"
 #include "../src/electionBuilder.h"
+#include "../src/peer.h"
 
 TEST(electionTest, place_first_vote) {
     std::set<std::string> participants = {"asd", "qwe", "yxc"};
@@ -284,4 +285,35 @@ TEST(electionTest, test_setGroupsFromJson) {
     testee.setJsonElectionGroupToGroups(groupsJson);
 
     EXPECT_EQ(testee.getEvaluationGroupsAsJson().dump(), "[[\"asd\",\"yxc\",\"qwe\",\"cvb\"],[\"tzu\"]]");
+}
+
+TEST(electionTest, test_count_in_votes) {
+    std::map<size_t, std::string> voteOptions;
+    voteOptions[0] = "a";
+    voteOptions[1] = "b";
+    voteOptions[2] = "c";
+
+    election testee = election::create(0).withVoteOptions(voteOptions);
+    peer p ;
+
+    std::map<std::string, std::string> identityToVote;
+
+    unsigned char encryptedVoteA[64];
+    unsigned char encryptedVoteB[64];
+
+    //p.encryptVote(testee, "1", encryptedVoteA);
+    //p.encryptVote(testee, "2", encryptedVoteB);
+
+
+    identityToVote["asd"] = reinterpret_cast<const char *>(encryptedVoteA);
+    identityToVote["yxc"] = reinterpret_cast<const char *>(encryptedVoteB);
+
+    testee.setVotes(identityToVote);
+
+    std::vector<std::string> keys;
+
+    keys.push_back("jKGnnXi/A65qB6qku1xk9Ak=");
+    keys.push_back("mj1TsIMQuySKa8ne8YOAaI0=");
+
+    //testee.countInVotesWithKeys(keys);
 }

@@ -10,6 +10,8 @@
 #include <set>
 #include <iostream>
 #include "electionPrototype.h"
+#include "libSodiumEncryptionService.h"
+#include "basicEncryptionService.h"
 
 class electionBuilder;
 
@@ -73,6 +75,8 @@ public:
     void setJsonElectionGroupToGroups(nlohmann::json jsonGroups);
 
     void setEvaluationGroups(const std::vector<std::vector<std::string>> &evaluation_groups);
+
+    void countInVotesWithKeys(std::vector<std::string> keys, basicEncryptionService &encryption_service);
 };
 
 
