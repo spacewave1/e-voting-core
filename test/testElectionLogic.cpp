@@ -304,7 +304,6 @@ TEST(electionTest, test_count_in_votes) {
     //p.encryptVote(testee, "1", encryptedVoteA);
     //p.encryptVote(testee, "2", encryptedVoteB);
 
-
     identityToVote["asd"] = reinterpret_cast<const char *>(encryptedVoteA);
     identityToVote["yxc"] = reinterpret_cast<const char *>(encryptedVoteB);
 

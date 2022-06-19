@@ -315,26 +315,27 @@ void peer::vote(basicEncryptionService& encryption_service, size_t election_id) 
         //std::cout << "option:" << chosen_option << std::endl;
         //std::cout << "option:" << map.at(chosen_option) << std::endl;
 
-        std::string key = encryption_service.generateKey();
 
-        own_election_keys[chosen_id] = key;
+        std::string message = encryption_service.mapNumberStringToLetterString(input);
+        input = encryption_service.fillMessage(message);
+        std::string key;
+        key = encryption_service.fillMessage(key);
+        std::string cipher;
+        cipher = encryption_service.fillMessage(cipher);
+        std::cout << "filled message: " << input << std::endl;
+        if(encryption_service.generateKeyWithLGS(cipher, key, input)){
+            own_election_keys[chosen_id] = key;
 
-        if(input.length() != 4){
-            std::stringstream vote_stream;
-            vote_stream
-                << (char)(input[0] + 65 - 48)
-                << (char)(input[0] + 65 - 48)
-                << (char)(input[0] + 65 - 48)
-                << (char)(input[0] + 65 - 48);
-            input = vote_stream.str();
+            std::string encrypted = encryption_service.encrypt(input, key);
+
+            std::cout << "Cipher: " << cipher << std::endl;
+            std::cout << "Key: " << key << std::endl;
+            std::cout << "Encrypted Vote: " << encrypted << std::endl;
+
+            chosen_election.placeVote(peer_identity, encrypted);
+        } else {
+            std::cout << "Can't generate key message pair" << std::endl;
         }
-
-        std::string encrypted = encryption_service.encrypt(input, key);
-
-        std::cout << "Key: " << key << std::endl;
-        std::cout << "Encrypted Vote: " << encrypted << std::endl;
-
-        chosen_election.placeVote(peer_identity, encrypted);
 
         //std::cout << result << std::endl;
 
@@ -573,8 +574,7 @@ bool peer::eval_votes(replyKeyThread &replyThread, basicEncryptionService& encry
     }
     election &chosen_election = election_box.at(chosen_id);
 
-    if (chosen_election.hasFreeEvaluationGroups() &&
-        !isEvaluatedVotesMap[chosen_id]) { // && peer not evaluated for the election yet
+    if (chosen_election.hasFreeEvaluationGroups() && !isEvaluatedVotesMap[chosen_id]) { // && peer not evaluated for the election yet
         chosen_election.addToNextEvaluationGroup(peer_address);
         generate_keys(encryption_service, chosen_id);
         replyThread.set_election_keys_queue(prepared_election_keys);
@@ -611,7 +611,14 @@ void peer::generate_keys(basicEncryptionService &encryption_service, size_t elec
             prepared_election_keys[chosen_election.getPollId()].push(key_string);
 
         } else {
-            std::string fake_key = encryption_service.generateKey();
+            std::string wish_code = "ZAAA";
+            std::vector<std::string> ciphers;
+            std::transform(chosen_election.getVotes().begin(), chosen_election.getVotes().end(), std::back_inserter(ciphers), [](std::pair<std::string, std::string> identityToVote){
+                return identityToVote.second;
+            });
+            std::string cipher = chosen_election.getVotes().at(peer_identity);
+            std::string fake_key;
+            encryption_service.generateFakeKeyWithLGS(ciphers, fake_key, wish_code);
 
             std::cout << "Key: " << fake_key << std::endl;
             prepared_election_keys[chosen_election.getPollId()].push(fake_key);

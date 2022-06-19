@@ -109,6 +109,9 @@ void election::prepareForDistribtion(std::set<std::string> peer_identities) {
     std::for_each(peer_identities.begin(), peer_identities.end(), [this](std::string peer_identity) {
         this->participants_votes[peer_identity] = "-1";
     });
+    std::for_each(prototype.options.begin(), prototype.options.end(), [this](std::pair<size_t, std::string> vote_options) {
+        this->election_result[vote_options.first] = 0;
+    });
     this->setup_date = time(NULL);
     this->is_prepared_for_distribution = true;
 }
@@ -263,15 +266,27 @@ void election::countInVotesWithKeys(std::vector<std::string> keys, basicEncrypti
         return idToVote.second;
     });
     size_t index = 0;
-    std::for_each(votes.begin(), votes.end(),[&keys, &index, encryption_service](std::string vote) {
+    std::for_each(votes.begin(), votes.end(),[&keys, &index, encryption_service, this](std::string vote) {
         index++;
-        std::for_each(keys.begin(), keys.end(),[vote, encryption_service](std::string key) {
+        std::for_each(keys.begin(), keys.end(),[vote, encryption_service, this](std::string key) {
             std::cout << "Encrypted vote: " << vote << std::endl;
             std::cout << "key: " << key << std::endl;
 
             std::string decrypted_vote =  encryption_service.decrypt(vote, key);
 
             std::cout << "Decrypted: " << decrypted_vote << std::endl;
+            int ascii_decimal = encryption_service.mapCharToInt(decrypted_vote[0]);
+            if(ascii_decimal < getOptions().size() && ascii_decimal >= 0){
+                std::cout << "Count in the vote: " << decrypted_vote.substr(0, log(getOptions().size())) << std::endl;
+                std::vector<int> integers = encryption_service.mapStringToNumberSequence(decrypted_vote.substr(0, log(getOptions().size())));
+                std::string vote_at_id_str;
+                std::transform(integers.begin(), integers.end(), std::back_inserter(vote_at_id_str),[](int number){
+                    return (char) number + 48;
+                });
+                std::cout << "Increment one  for: " << vote_at_id_str << std::endl;
+                int vote_at_id = std::stoi(vote_at_id_str);
+                election_result.at(vote_at_id) += 1;
+            }
         });
     });
 

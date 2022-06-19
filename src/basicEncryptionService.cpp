@@ -77,63 +77,172 @@ int basicEncryptionService::mapCharToInt(char character) const {
     }
 }
 
-std::pair<std::string, std::string> basicEncryptionService::generateKeyWithLGS(std::string cipher, std::string code) {
-    std::vector<int> cipherNumbers = mapStringToNumberSequence(cipher);
-    std::vector<int> codeNumbersVector = mapStringToNumberSequence(code);
-    int codeNumbers[4] = { codeNumbersVector[0] % 26, codeNumbersVector[1] % 26, codeNumbersVector[2] % 26, codeNumbersVector[3] % 26};
+bool basicEncryptionService::isValidMessageKeyCombination(int codeNumbers[], int key[]) {
+    std::string code_string = {static_cast<char>(codeNumbers[0] + 65),
+                               static_cast<char>(codeNumbers[1] + 65),
+                               static_cast<char>(codeNumbers[2] + 65),
+                               static_cast<char>(codeNumbers[3] + 65),
+    };
+    std::string key_string = {static_cast<char>(key[0] + 65),
+                              static_cast<char>(key[1] + 65),
+                              static_cast<char>(key[2] + 65),
+                              static_cast<char>(key[3] + 65),
+    };
+    return decrypt(encrypt(code_string, key_string), key_string) == code_string;
+}
 
-    std::vector<int> key_vector = {0, 0, 0, 0};
-    int key[4] = {1, 1, 1, 1};
-    int shuffleCipher = 0;
+bool basicEncryptionService::findInverseKeyCombination(std::string& key, std::vector<std::string> ciphers) {
+    std::vector<bool> conditions;
     std::srand(std::time(nullptr)); // use current time as seed for random generator
-    std::vector<bool> conditions = { false, false, false, false};
-    bool foundCombination = false;
+    int a_offset = std::rand() % 26;
+    int b_offset = std::rand() % 26;
+    int c_offset = std::rand() % 26;
+    int d_offset = std::rand() % 26;
 
-    size_t index = 0;
-    unsigned long max = 26 * 26 * 26 * 26;
-    while(shuffleCipher < 30 && !foundCombination) {
-        foundCombination = false;
-        for(size_t a = 0; a < 26 && !foundCombination; a++) {
-            for(size_t b = 0; b < 26 && !foundCombination; b++) {
-                for(size_t c = 0; c < 26 && !foundCombination; c++) {
-                    for(size_t d = 0; d < 26; d++) {
-                        key[0] = a;
-                        key[1] = b;
-                        key[2] = c;
-                        key[3] = d;
-                        conditions[0] = cipherNumbers[0] == ((codeNumbers[0] * key[0] + codeNumbers[1] * key[2]) % 26);
-                        conditions[1] = cipherNumbers[1] == ((codeNumbers[0] * key[1] + codeNumbers[1] * key[3]) % 26);
-                        conditions[2] = cipherNumbers[2] == ((codeNumbers[2] * key[0] + codeNumbers[3] * key[2]) % 26);
-                        conditions[3] = cipherNumbers[3] == ((codeNumbers[2] * key[1] + codeNumbers[3] * key[3]) % 26);
+    std::cout << "rand: " << a_offset << std::endl;
+    std::cout << "rand: " << b_offset << std::endl;
+    std::cout << "rand: " << c_offset << std::endl;
+    std::cout << "rand: " << d_offset << std::endl;
+
+
+    for (int a = 0; a < 26; a++) {
+        for (int b = 0; b < 26; b++) {
+            for (int c = 0; c < 26; c++) {
+                for (int d = 0; d < 26; d++) {
+                    std::vector<int> numbers {a,b,c,d};
+
+                    if(!hasInverseMatrixZeros(numbers)){
+
+                        std::string keyFromNumbers = "0000";
+                        keyFromNumbers[0] = (char) ((a + a_offset) % 26 + 65);
+                        keyFromNumbers[1] = (char) ((b + b_offset) % 26 + 65);
+                        keyFromNumbers[2] = (char) ((c + c_offset) % 26 + 65);
+                        keyFromNumbers[3] = (char) ((d + d_offset) % 26 + 65);
+
+                        std::transform(ciphers.begin(), ciphers.end(), std::back_inserter(conditions), [this, keyFromNumbers](const std::string& cipher){
+                            return mapCharToInt(decrypt(cipher, keyFromNumbers)[0]) > 10 &&
+                                        mapCharToInt(decrypt(cipher, keyFromNumbers)[1]) < 26 &&
+                                        mapCharToInt(decrypt(cipher, keyFromNumbers)[2]) < 26 &&
+                                        mapCharToInt(decrypt(cipher, keyFromNumbers)[3]) < 26;
+                        });
 
                         if(std::count(conditions.begin(), conditions.end(), true) == 4) {
-                            key_vector[0] = key[0];
-                            key_vector[1] = key[1];
-                            key_vector[2] = key[2];
-                            key_vector[3] = key[3];
-                            if(!hasInverseMatrixZeros(key_vector)) {
-                                foundCombination = true;
-                            }
-                            break;
+                            std::cout << keyFromNumbers << std::endl;
+                            key[0] = keyFromNumbers[0];
+                            key[1] = keyFromNumbers[1];
+                            key[2] = keyFromNumbers[2];
+                            key[3] = keyFromNumbers[3];
+
+                            return true;
                         }
-                        index++;
+
+                        conditions.clear();
                     }
                 }
-                const std::string format = std::to_string(100 * index / max);
-                printf("\r%s", format.c_str());
             }
         }
-        if(!foundCombination) {
+    }
+    return false;
+}
+
+bool basicEncryptionService::findKeyCombination(int *key, std::vector<bool> conditions, int codeNumbers[4],
+                                                std::vector<int> cipherNumbers) {
+    std::vector<int> key_vector = {1, 1, 1, 1};
+    for (size_t a = 0; a < 26; a++) {
+        for (size_t b = 0; b < 26; b++) {
+            for (size_t c = 0; c < 26; c++) {
+                for (size_t d = 0; d < 26; d++) {
+                    key[0] = a;
+                    key[1] = b;
+                    key[2] = c;
+                    key[3] = d;
+
+                    conditions[0] = cipherNumbers[0] == ((codeNumbers[0] * key[0] + codeNumbers[1] * key[2]) % 26);
+                    conditions[1] = cipherNumbers[1] == ((codeNumbers[0] * key[1] + codeNumbers[1] * key[3]) % 26);
+                    conditions[2] = cipherNumbers[2] == ((codeNumbers[2] * key[0] + codeNumbers[3] * key[2]) % 26);
+                    conditions[3] = cipherNumbers[3] == ((codeNumbers[2] * key[1] + codeNumbers[3] * key[3]) % 26);
+
+                    if (std::count(conditions.begin(), conditions.end(), true) == 4) {
+                        key_vector[0] = key[0];
+                        key_vector[1] = key[1];
+                        key_vector[2] = key[2];
+                        key_vector[3] = key[3];
+                        if (!hasInverseMatrixZeros(key_vector) && isValidMessageKeyCombination(codeNumbers, key)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false;
+}
+
+bool basicEncryptionService::generateFakeKeyWithLGS(std::vector<std::string> ciphers, std::string &key_string, std::string &code) {
+    std::vector<int> wish_code_numbers = mapStringToNumberSequence(code);
+
+    int codeNumbers[4] = {wish_code_numbers[0] % 26, wish_code_numbers[1] % 26, wish_code_numbers[2] % 26,
+                          wish_code_numbers[3] % 26};
+
+    std::string key = "0000";
+    int shuffleKey = 30;
+    bool foundCombination = false;
+
+    while(shuffleKey > 0 && !foundCombination) {
+        foundCombination = findInverseKeyCombination(key, ciphers);
+        if (!foundCombination) {
+            codeNumbers[0] = std::rand() % 26;
+            codeNumbers[0] = codeNumbers[0] < 10 ? codeNumbers[0] + 10 : codeNumbers[0];
+
+            codeNumbers[1] = std::rand() % 26;
+            codeNumbers[2] = std::rand() % 26;
+            codeNumbers[3] = std::rand() % 26;
+            std::cout << "Shuffles left: " << shuffleKey-- << std::endl;
+        }
+    }
+
+    std::string newKeyString = "0000";
+    newKeyString[0] = key[0];
+    newKeyString[1] = key[1];
+    newKeyString[2] = key[2];
+    newKeyString[3] = key[3];
+
+    key_string = newKeyString;
+    return foundCombination;
+}
+
+bool basicEncryptionService::generateKeyWithLGS(std::string &cipher, std::string &key_string, std::string code) {
+    std::vector<int> cipherNumbers = mapStringToNumberSequence(cipher);
+    std::vector<int> codeNumbersVector = mapStringToNumberSequence(code);
+    int codeNumbers[4] = {codeNumbersVector[0] % 26, codeNumbersVector[1] % 26, codeNumbersVector[2] % 26,
+                          codeNumbersVector[3] % 26};
+    std::vector<int> key_vector = {1, 1, 1, 1};
+
+    int key[4] = {1, 1, 1, 1};
+    int shuffleCipher = 30;
+    std::srand(std::time(nullptr)); // use current time as seed for random generator
+    std::vector<bool> conditions = {false, false, false, false};
+    bool foundCombination = false;
+    while (shuffleCipher > 0 && !foundCombination) {
+        foundCombination = findKeyCombination(key, conditions, codeNumbers, cipherNumbers);
+        if (!foundCombination) {
             cipherNumbers[0] = std::rand() % 26;
             cipherNumbers[1] = std::rand() % 26;
             cipherNumbers[2] = std::rand() % 26;
             cipherNumbers[3] = std::rand() % 26;
-            std::cout << "Shuffled Cipher: " << shuffleCipher++ << std::endl;
+            std::cout << "Shuffles left: " << shuffleCipher-- << std::endl;
         }
     }
 
-    std::cout << "Key: (a = " << key[0] << ",b = " << key[1] << ",c = " << key[2] << ",d = " << key[3] << ")" << std::endl;
-    std::cout << "With Cipher: ( " << cipherNumbers[0] << " " << cipherNumbers[1] << " " << cipherNumbers[2] << " " << cipherNumbers[3] << ")" << std::endl;
+    key_vector[0] = key[0];
+    key_vector[1] = key[1];
+    key_vector[2] = key[2];
+    key_vector[3] = key[3];
+
+    std::cout << "Key: (a = " << key[0] << ",b = " << key[1] << ",c = " << key[2] << ",d = " << key[3] << ")"
+              << std::endl;
+    std::cout << "With Cipher: ( " << cipherNumbers[0] << " " << cipherNumbers[1] << " " << cipherNumbers[2] << " "
+              << cipherNumbers[3] << ")" << std::endl;
     std::cout << "has inverse zeroes: " << hasInverseMatrixZeros(key_vector) << std::endl;
 
     std::string newCipher = "0000";
@@ -142,33 +251,27 @@ std::pair<std::string, std::string> basicEncryptionService::generateKeyWithLGS(s
     newCipher[2] = (char) (cipherNumbers[2] + 65);
     newCipher[3] = (char) (cipherNumbers[3] + 65);
 
-    std::string key_string = "0000";
-    key_string[0] = key[0] + 65;
-    key_string[1] = key[1] + 65;
-    key_string[2] = key[2] + 65;
-    key_string[3] = key[3] + 65;
-    return std::make_pair(key_string, newCipher);
+    cipher = newCipher;
+
+    std::string newKeyString = "0000";
+    newKeyString[0] = key[0] + 65;
+    newKeyString[1] = key[1] + 65;
+    newKeyString[2] = key[2] + 65;
+    newKeyString[3] = key[3] + 65;
+
+    key_string = newKeyString;
+    return foundCombination;
 }
 
-std::string basicEncryptionService::generateKey() {
-    std::vector<int> numbers = {0, 0, 0, 0};
-
+std::string basicEncryptionService::fillMessage(std::string &message) {
     std::srand(std::time(nullptr)); // use current time as seed for random generator
-
-    while (hasInverseMatrixZeros(numbers)) {
-        std::cout << "next key" << std::endl;
-        numbers = {0, 0, 0, 0};
-        std::transform(numbers.begin(), numbers.end(), numbers.begin(),
-                       [](int number) -> unsigned int { return number + std::rand() % 26; });
-        std::cout << numbers[0] << " " << numbers[1] << " " << numbers[2] << " " << numbers[3] << std::endl;
-    }
-
-    std::string key = "0000";
-    key[0] = numbers[0] + 65;
-    key[1] = numbers[1] + 65;
-    key[2] = numbers[2] + 65;
-    key[3] = numbers[3] + 65;
-    return key;
+    size_t padding_length = 4 - message.length();
+    std::string padding(padding_length, 'Z');
+    std::transform(padding.begin(), padding.end(), std::inserter(padding, padding.begin()), [](char character) {
+        return (char) ((int) ((std::rand() % 26) + 65));
+    });
+    message = message + padding.substr(0, padding_length);
+    return message;
 }
 
 bool basicEncryptionService::hasInverseMatrixZeros(std::vector<int> numbers) {
@@ -207,4 +310,13 @@ int basicEncryptionService::gcdExtended(int a, int b, int *x, int *y) const {
     *y = x1;
 
     return gcd;
+}
+
+std::string basicEncryptionService::mapNumberStringToLetterString(std::string number_string) {
+    std::string letter_string;
+    std::transform(number_string.begin(), number_string.end(), std::back_inserter(letter_string),
+                   [](char character) {
+                       return character - 48 + 65;
+                   });
+    return letter_string;
 }

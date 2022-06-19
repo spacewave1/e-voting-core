@@ -21,14 +21,11 @@ TEST(hillTest, decryption) {
 
 TEST(hillTest, encryptDecrypt) {
     basicEncryptionService bas;
-    std::pair<std::string, std::string> key_and_cipher = bas.generateKeyWithLGS("ZCET", "ABFR");
-    std::cout << "key: " << key_and_cipher.first << std::endl;
-    std::cout << "cipher: " << key_and_cipher.second << std::endl;
-    std::string encrypted = bas.encrypt("ABFR", key_and_cipher.first);
+    std::string encrypted = bas.encrypt("ABBB", "FRZC");
     std::cout << "encrypted: " << encrypted << std::endl;
-    std::string result = bas.decrypt(encrypted, key_and_cipher.first);
+    std::string result = bas.decrypt(encrypted, "FRZC");
     std::cout << "result: " << result << std::endl;
-    EXPECT_EQ(result, "ABFR");
+    EXPECT_EQ(result, "ABBB");
 }
 
 TEST(hillTest, validArgumentsNoException) {
@@ -67,25 +64,83 @@ TEST(hillTest, testStringMapping) {
     EXPECT_EQ(result, std::vector({ 0, 1, 2, 3}));
 }
 
-TEST(hillTest, testRandomKeyInConstraints) {
+TEST(hill, testFillMessage) {
     basicEncryptionService bas;
-    const std::string &key = bas.generateKey();
-    std::cout << key << std::endl;
-
-    EXPECT_TRUE(key.length() <= 4);
-
-    std::for_each(key.begin(), key.end(), [](char character){
-        EXPECT_TRUE(character >= 65 && character <= 90);
-    });
+    std::string message = "A";
+    std::string result = bas.fillMessage(message);
+    std::cout << "Output: " << result << std::endl;
+    EXPECT_TRUE(result.length() == 4);
+    EXPECT_TRUE(result[0] == 'A');
 }
 
-TEST(hill, testKeysWithLGS) {
+TEST(hill, testFillMessage_no_fill) {
     basicEncryptionService bas;
-    const std::string cipher = "ZCET";
-    const char *code = "AAAB";
-    std::pair<std::string, std::string> result = bas.generateKeyWithLGS(cipher, code);
-    std::cout << "Cipher: " << result.second << std::endl;
+    std::string message = "ABRD";
+    std::string result = bas.fillMessage(message);
+    std::cout << "Output: " << result << std::endl;
+    EXPECT_TRUE(result.length() == 4);
+    EXPECT_TRUE(result == "ABRD");
+}
+
+TEST(hill, testFillMessage_with_empty_message) {
+    basicEncryptionService bas;
+    std::string message;
+    std::string result = bas.fillMessage(message);
+    std::cout << "Output: " << result << std::endl;
+    EXPECT_TRUE(result.length() == 4);
+}
+
+TEST(hill, testGeneratingInvalidCombination) {
+    basicEncryptionService bas;
+    std::string key = "AAAA";
+    std::string cipher = "ZCET";
+    std::string code = "BAAA";
+    bool result = bas.generateKeyWithLGS(cipher, key, code);
+    std::cout << "Cipher: " << cipher << std::endl;
     std::cout << "Code: " << code << std::endl;
-    std::cout << "Key: " << result.first << std::endl;
-    EXPECT_EQ(result.first, "DCDF");
+    std::cout << "Key: " << key << std::endl;
+
+    EXPECT_FALSE(result);
+    EXPECT_TRUE(key == "ZZZZ");
+}
+
+TEST(hill, testGeneratingValidCombination) {
+    basicEncryptionService bas;
+    std::string key = "AAAA";
+    std::string cipher = "ZCET";
+    std::string code = "ABBB";
+    bool result = bas.generateKeyWithLGS(cipher, key, code);
+    std::cout << "Cipher: " << cipher << std::endl;
+    std::cout << "Code: " << code << std::endl;
+    std::cout << "Key: " << key << std::endl;
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(key == "FRZC");
+}
+
+TEST(hill, testCheckValidFunction) {
+    basicEncryptionService bas;
+    int code[] = { 2, 14, 3, 4};
+    int key[] = { 3, 3, 2, 5};
+    bool result = bas.isValidMessageKeyCombination(code, key);
+    EXPECT_TRUE(result);
+}
+
+TEST(hill, testMapNumberToLetterString) {
+    basicEncryptionService bas;
+    std::string number_string = "1234";
+    std::string result = bas.mapNumberStringToLetterString(number_string);
+    std::cout << "result: "<<  result << std::endl;
+    EXPECT_TRUE(result == "BCDE");
+}
+
+TEST(hill, testGenerate) {
+    basicEncryptionService bas;
+    std::string wishing_code = "ZAAA";
+    std::string key = "AAAA";
+    std::vector<std::string> cipher = {"BHVG", "UPEE", "INRU", "OPBV"};
+    bool result = bas.generateFakeKeyWithLGS(cipher, key, wishing_code);
+    std::cout << "Generated key: " << key << std::endl;
+    std::cout << "Will decrypt to: " << wishing_code << std::endl;
+    EXPECT_TRUE(wishing_code[0] > 76);
 }

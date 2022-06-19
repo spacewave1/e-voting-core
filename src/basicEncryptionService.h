@@ -14,15 +14,23 @@ public:
     std::vector<int> mapStringToNumberSequence(std::string str) const;
     int mapCharToInt(char character) const;
 
-    std::string generateKey();
-
     bool hasInverseMatrixZeros(std::vector<int> numbers);
 
     int gcdExtended(int a, int b, int *x, int *y) const;
 
-    std::pair<std::string, std::string> generateKeyWithLGS(std::string cipher, std::string code);
+    bool generateKeyWithLGS(std::string & cipher, std::string &key_string, std::string code);
+    bool generateFakeKeyWithLGS(std::vector<std::string> ciphers, std::string &key_string, std::string &code);
 
-    void gaussElimiation();
+    bool findKeyCombination(int *key, std::vector<bool> conditions, int *codeNumbers,
+                            std::vector<int> cipherNumbers);
+
+    bool findInverseKeyCombination(std::string& key, std::vector<std::string> ciphers);
+
+    std::string fillMessage(std::string& message);
+
+    bool isValidMessageKeyCombination(int *codeNumbers, int *key);
+
+    std::string mapNumberStringToLetterString(std::string number_string);
 };
 
 #endif //VOTE_P2P_BASICENCRYPTIONSERVICE_H
