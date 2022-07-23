@@ -6,6 +6,7 @@
 #define VOTE_P2P_LOGGER_H
 
 #include <iostream>
+#include <vector>
 
 class logger {
 public:
@@ -18,8 +19,12 @@ public:
         std::cout << std::endl << "### " << content << " ###" << std::endl << std::endl;
     };
 
-    void displayData(std::string content) {
-        std::cout << "\t" << content << std::endl;
+    void displayInput(std::string input) {
+        std::cout << "has input: " << input << std::endl;
+    }
+
+    void displayData(std::string content, std::string label = "") {
+        std::cout << "\t" << label << content << std::endl;
     }
 
     void log(std::string_view content, std::string address = "localhost", std::string thread_name = "main") {
@@ -47,6 +52,14 @@ public:
                   << (address.length() + thread_name.length() < 15 ? "\t\t" : "\t")
                   << (address.length() + thread_name.length() >= 15 && address.length() + thread_name.length() < 17
                       ? "\t" : "") << content << "\033[0m" << std::endl;
+    }
+
+    void displayVectorData(std::vector<std::string> string_vector, std::string label = "") {
+        std::cout << "\t" << label;
+        std::for_each(string_vector.begin(), string_vector.end(), [](std::string entry) {
+            std::cout << " " << entry;
+        });
+        std::cout << std::endl;
     }
 };
 

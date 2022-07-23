@@ -20,6 +20,7 @@ private:
     void* arg;
     bool is_running = false;
     bool is_interrupted = false;
+    bool is_verbose = true;
     std::shared_ptr<std::map<size_t, std::queue<std::string>>> prepared_election_keys;
 public:
     void setParams(void *p_void, const std::map<size_t, std::queue<std::string>>& election_keys_queue);

@@ -10,7 +10,6 @@
 #include <set>
 #include <iostream>
 #include "electionPrototype.h"
-#include "libSodiumEncryptionService.h"
 #include "basicEncryptionService.h"
 
 class electionBuilder;

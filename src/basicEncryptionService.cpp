@@ -99,10 +99,10 @@ bool basicEncryptionService::findInverseKeyCombination(std::string& key, std::ve
     int c_offset = std::rand() % 26;
     int d_offset = std::rand() % 26;
 
-    std::cout << "rand: " << a_offset << std::endl;
-    std::cout << "rand: " << b_offset << std::endl;
-    std::cout << "rand: " << c_offset << std::endl;
-    std::cout << "rand: " << d_offset << std::endl;
+    _logger.displayData(std::to_string(a_offset), "rand: ");
+    _logger.displayData(std::to_string(b_offset), "rand: ");
+    _logger.displayData(std::to_string(c_offset), "rand: ");
+    _logger.displayData(std::to_string(d_offset), "rand: ");
 
 
     for (int a = 0; a < 26; a++) {
@@ -127,7 +127,7 @@ bool basicEncryptionService::findInverseKeyCombination(std::string& key, std::ve
                         });
 
                         if(std::count(conditions.begin(), conditions.end(), true) == 4) {
-                            std::cout << keyFromNumbers << std::endl;
+                            _logger.displayData(keyFromNumbers);
                             key[0] = keyFromNumbers[0];
                             key[1] = keyFromNumbers[1];
                             key[2] = keyFromNumbers[2];
@@ -197,7 +197,7 @@ bool basicEncryptionService::generateFakeKeyWithLGS(std::vector<std::string> cip
             codeNumbers[1] = std::rand() % 26;
             codeNumbers[2] = std::rand() % 26;
             codeNumbers[3] = std::rand() % 26;
-            std::cout << "Shuffles left: " << shuffleKey-- << std::endl;
+            _logger.log("Shuffles left: " + std::to_string(shuffleKey--));
         }
     }
 
@@ -230,7 +230,7 @@ bool basicEncryptionService::generateKeyWithLGS(std::string &cipher, std::string
             cipherNumbers[1] = std::rand() % 26;
             cipherNumbers[2] = std::rand() % 26;
             cipherNumbers[3] = std::rand() % 26;
-            std::cout << "Shuffles left: " << shuffleCipher-- << std::endl;
+            _logger.log("Shuffles left: " + std::to_string(shuffleCipher--));
         }
     }
 
@@ -239,11 +239,11 @@ bool basicEncryptionService::generateKeyWithLGS(std::string &cipher, std::string
     key_vector[2] = key[2];
     key_vector[3] = key[3];
 
-    std::cout << "Key: (a = " << key[0] << ",b = " << key[1] << ",c = " << key[2] << ",d = " << key[3] << ")"
-              << std::endl;
-    std::cout << "With Cipher: ( " << cipherNumbers[0] << " " << cipherNumbers[1] << " " << cipherNumbers[2] << " "
-              << cipherNumbers[3] << ")" << std::endl;
-    std::cout << "has inverse zeroes: " << hasInverseMatrixZeros(key_vector) << std::endl;
+    _logger.log("Key: (a = " + std::to_string(key[0]) + ",b = " + std::to_string(key[1]) + ",c = " + std::to_string(key[2]) + ",d = " + std::to_string(key[3])+ ")");
+
+    _logger.log("With Cipher: ( " + std::to_string(cipherNumbers[0]) + " " + std::to_string(cipherNumbers[1]) + " " + std::to_string(cipherNumbers[2]) + " " + std::to_string(cipherNumbers[3]) + ")");
+
+    _logger.log("has inverse zeroes: " + std::to_string(hasInverseMatrixZeros(key_vector)));
 
     std::string newCipher = "0000";
     newCipher[0] = (char) (cipherNumbers[0] + 65);

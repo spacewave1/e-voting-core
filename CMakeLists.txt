@@ -54,8 +54,6 @@ set(SOURCE_FILES
         src/logger.h
         src/replyKeyThread.cpp
         src/replyKeyThread.h
-        src/libSodiumEncryptionService.cpp
-        src/libSodiumEncryptionService.h
         src/basicEncryptionService.cpp
         src/basicEncryptionService.h
         src/hillLengthException.h

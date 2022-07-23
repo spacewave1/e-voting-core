@@ -18,62 +18,59 @@ void peer::printConnections() {
     size_t index = 0;
 
     _logger.log("print connections");
-    std::cout << std::endl;
 
-    std::cout << "Host Ip Addresses:" << std::endl;
+    _logger.log("Host Ip Addresses:");
 
-    std::for_each(known_peer_addresses.begin(), known_peer_addresses.end(), [&index](const std::string ip_address) {
-        std::cout << "[" << index << "] " << ip_address << std::endl;
+    std::for_each(known_peer_addresses.begin(), known_peer_addresses.end(), [this ,&index](const std::string ip_address) {
+        _logger.log("[" + std::to_string(index) + "] " + ip_address);
         index++;
     });
 
     // Iterate through connections
     index = 0;
-    std::cout << std::endl << "Connections:" << std::endl;
+    _logger.log("Connections:");
 
     std::for_each(connection_table.begin(), connection_table.end(),
-                  [&index](const std::pair<std::string, std::string> connection) {
-                      std::cout << "[" << index << "] " << connection.first << "->" << connection.second << std::endl;
-                      index++;
-                  });
+                  [this, &index](const std::pair<std::string, std::string> connection) {
+        _logger.log("[" + std::to_string(index) + "] " + connection.first + "->" + connection.second);
+        index++;
+      });
 
     nlohmann::json send_json = nlohmann::json();
     send_json["nodes"] = nlohmann::ordered_json(known_peer_addresses);
     send_json["connections"] = nlohmann::ordered_json(connection_table);
 
-    std::cout << std::endl << "As Json:" << std::endl << nlohmann::to_string(send_json) << std::endl;
+    _logger.log("As Json: " + nlohmann::to_string(send_json));
 }
 
-void printMetaData(zmq::message_t &msg) {
-    std::cout << std::endl;
-    std::cout << "Socket-Type: ";
+void peer::printMetaData(zmq::message_t &msg) {
     try {
-        std::cout << msg.gets("Socket-Type") << std::endl;
+        std::string socket_type_string = msg.gets("Socket-Type");
+        _logger.log("Socket-Type: " + socket_type_string);
     } catch (zmq::error_t er) {
-        std::cout << "[]" << std::endl;
+        _logger.error("Can't read Socket-Type");
     }
 
-    std::cout << "Peer-address: ";
     try {
-        std::cout << msg.gets("Peer-Address") << std::endl;
+        std::string peer_address_string = msg.gets("Peer-Address");
+        _logger.log("Peer-Address: " + peer_address_string);
     } catch (zmq::error_t er) {
-        std::cout << "[]" << std::endl;
+        _logger.error("Can't read Peer-Address");
     }
 
-    std::cout << "User-Id: ";
     try {
-        std::cout << msg.gets("User-Id") << std::endl;
+        std::string user_id_string = msg.gets("User-Id");
+        _logger.log("User-Id: " + user_id_string);
     } catch (zmq::error_t er) {
-        std::cout << "[]" << std::endl;
+        _logger.error("Can't read User-Id");
     }
 
-    std::cout << "Routing-Id: ";
     try {
-        std::cout << msg.gets("Routing-Id") << std::endl;
+        std::string routing_id_string = msg.gets("Routing-Id");
+        _logger.log("Routing-Id: " + routing_id_string);
     } catch (zmq::error_t er) {
-        std::cout << "[]" << std::endl;
+        _logger.error("Can't read Routing-Id");
     }
-    std::cout << std::endl;
 }
 
 void peer::connect(std::string &input, void *abstractContext) {
@@ -235,8 +232,7 @@ void peer::importPeersList(std::string importPath) {
 
     if (importStream.is_open()) {
         if (getline(importStream, line)) {
-
-            std::cout << line << std::endl;
+            _logger.displayData(line);
             nlohmann::json peersJson = nlohmann::json::parse(line);
             _logger.log("File contents as json: ");
             _logger.displayData(peersJson.dump());
@@ -292,8 +288,8 @@ void peer::vote(basicEncryptionService& encryption_service, size_t election_id) 
 
         const std::map<size_t, std::string> &map = chosen_election.getOptions();
 
-        std::for_each(map.begin(), map.end(), [](std::pair<size_t, std::string> idToOption) {
-            std::cout << idToOption.first << ": " << idToOption.second << std::endl;
+        std::for_each(map.begin(), map.end(), [this](std::pair<size_t, std::string> idToOption) {
+            _logger.displayData(std::to_string(idToOption.first) + ": " + idToOption.second);
         });
 
         std::string input;
@@ -303,7 +299,7 @@ void peer::vote(basicEncryptionService& encryption_service, size_t election_id) 
         while(inputValid) {
             try {
                 std::getline(std::cin, input);
-                std::cout << input << std::endl;
+                _logger.displayInput(input);
                 chosen_option = std::stoi(input);
                 inputValid = false;
             } catch (const std::invalid_argument& ia) {
@@ -311,9 +307,7 @@ void peer::vote(basicEncryptionService& encryption_service, size_t election_id) 
             }
         }
 
-        std::cout << "identity: " << peer_identity << std::endl;
-        //std::cout << "option:" << chosen_option << std::endl;
-        //std::cout << "option:" << map.at(chosen_option) << std::endl;
+        _logger.log("identity: " + peer_identity);
 
 
         std::string message = encryption_service.mapNumberStringToLetterString(input);
@@ -322,23 +316,21 @@ void peer::vote(basicEncryptionService& encryption_service, size_t election_id) 
         key = encryption_service.fillMessage(key);
         std::string cipher;
         cipher = encryption_service.fillMessage(cipher);
-        std::cout << "filled message: " << input << std::endl;
+
+        _logger.log("filled message: " + input);
         if(encryption_service.generateKeyWithLGS(cipher, key, input)){
             own_election_keys[chosen_id] = key;
 
             std::string encrypted = encryption_service.encrypt(input, key);
 
-            std::cout << "Cipher: " << cipher << std::endl;
-            std::cout << "Key: " << key << std::endl;
-            std::cout << "Encrypted Vote: " << encrypted << std::endl;
+            _logger.log("Cipher: " + cipher);
+            _logger.log("Key: " + key);
+            _logger.log("Encrypted Vote: " + encrypted);
 
             chosen_election.placeVote(peer_identity, encrypted);
         } else {
-            std::cout << "Can't generate key message pair" << std::endl;
+            _logger.log("Can't generate key message pair");
         }
-
-        //std::cout << result << std::endl;
-
     }
 }
 
@@ -350,7 +342,6 @@ election peer::createElection(size_t election_id) {
 
     std::size_t number_of_options = std::atoi(input.c_str());
     std::vector<std::string> options(number_of_options);
-    std::cout << options.size() << std::endl;
 
     size_t index = 0;
     std::transform(options.begin(), options.end(), options.begin(),
@@ -363,16 +354,16 @@ election peer::createElection(size_t election_id) {
                    });
 
     nlohmann::json electionJson = nlohmann::json(options);
-    std::cout << electionJson.dump() << std::endl;
+    _logger.displayData(electionJson.dump());
 
     std::map<size_t, std::string> map_options = std::map<size_t, std::string>();
 
     index = 0;
     if (electionJson.is_array()) {
-        std::for_each(electionJson.begin(), electionJson.end(), [&map_options, &index](const nlohmann::json &option) {
+        std::for_each(electionJson.begin(), electionJson.end(), [&map_options, &index, this](const nlohmann::json &option) {
             map_options[index] = option.dump();
             index++;
-            std::cout << option.dump() << std::endl;
+            _logger.displayData(option.dump());
         });
     }
 
@@ -392,23 +383,19 @@ void peer::dumpElectionBox() {
         electionEntry.print();
     });
 
-    std::for_each(received_election_keys.begin(), received_election_keys.end(), [](std::pair<size_t, std::vector<std::string>> election_id_received_keys){
-        std::cout << "\tid:" <<  election_id_received_keys.first << std::endl;
-        std::cout << "\treceived keys:";
-        std::for_each(election_id_received_keys.second.begin(), election_id_received_keys.second.end(), [](std::string key) {
-            std::cout << " " << key;
-        });
-        std::cout << std::endl;
+    std::for_each(received_election_keys.begin(), received_election_keys.end(), [this](std::pair<size_t, std::vector<std::string>> election_id_received_keys){
+        _logger.displayData(std::to_string(election_id_received_keys.first), "id:");
+        _logger.displayVectorData(election_id_received_keys.second, "received keys:");
     });
 
-    std::for_each(own_election_keys.begin(), own_election_keys.end(), [](std::pair<size_t, std::string> election_id_key){
-        std::cout << "\tid:" <<  election_id_key.first << std::endl;
-        std::cout << "\tkey:" << " " << election_id_key.second << std::endl;
+    std::for_each(own_election_keys.begin(), own_election_keys.end(), [this](std::pair<size_t, std::string> election_id_key){
+        _logger.displayData(std::to_string(election_id_key.first), "id:");
+        _logger.displayData(election_id_key.second, "key:");
     });
 
-    std::for_each(prepared_election_keys.begin(), prepared_election_keys.end(), [](std::pair<size_t, std::queue<std::string>> election_id_keys_queue_map){
-        std::cout << "\tid:" <<  election_id_keys_queue_map.first << std::endl;
-        std::cout << "\tkeys size: " << election_id_keys_queue_map.second.size() << std::endl;
+    std::for_each(prepared_election_keys.begin(), prepared_election_keys.end(), [this](std::pair<size_t, std::queue<std::string>> election_id_keys_queue_map){
+        _logger.displayData(std::to_string(election_id_keys_queue_map.first), "id:");
+        _logger.displayData(std::to_string(election_id_keys_queue_map.second.size()), "keys size:");
     });
 }
 
@@ -422,7 +409,6 @@ void peer::passiveDistribution(void *context, straightLineDistributeThread &thre
 
 size_t peer::selectElection() {
     _logger.promptUserInput("Select which election to distribute by id");
-    std::cout << std::endl;
     size_t idx = 0;
     std::for_each(election_box.begin(), election_box.end(), [&idx, this](const election &current_election) {
         this->_logger.displayData("[" + std::to_string(idx) + "]: " + current_election.getElectionOptionsJson().dump() +
@@ -437,7 +423,6 @@ size_t peer::selectElection() {
         try {
             std::getline(std::cin, input_string);
             selected_election_id = std::stoi(input_string);
-            std::cout << std::endl;
             if (isNumber(input_string) && selected_election_id < election_box.size()) {
                 return selected_election_id;
             }
@@ -578,10 +563,10 @@ bool peer::eval_votes(replyKeyThread &replyThread, basicEncryptionService& encry
         chosen_election.addToNextEvaluationGroup(peer_address);
         generate_keys(encryption_service, chosen_id);
         replyThread.set_election_keys_queue(prepared_election_keys);
-        std::cout << "Inside eval group" << std::endl;
+        _logger.log("Inside eval group");
         return true;
     } else {
-        std::cout << "Not inside eval group" << std::endl;
+        _logger.warn("Not inside eval group");
         return false;
     }
 }
@@ -605,8 +590,8 @@ void peer::generate_keys(basicEncryptionService &encryption_service, size_t elec
         if(i == random_variable) {
 
             std::string key_string = own_election_keys[chosen_election.getPollId()];
-            std::cout << "Own Key: " << key_string << std::endl;
-            std::cout << "Own Key length: " << key_string.length() << std::endl;
+            _logger.displayData(key_string, "Own Key: ");
+            _logger.displayData(std::to_string(key_string.length()), "Own Key length: ");
 
             prepared_election_keys[chosen_election.getPollId()].push(key_string);
 
@@ -620,7 +605,7 @@ void peer::generate_keys(basicEncryptionService &encryption_service, size_t elec
             std::string fake_key;
             encryption_service.generateFakeKeyWithLGS(ciphers, fake_key, wish_code);
 
-            std::cout << "Key: " << fake_key << std::endl;
+            _logger.displayData(fake_key, "Key: ");
             prepared_election_keys[chosen_election.getPollId()].push(fake_key);
         }
     }
@@ -697,5 +682,5 @@ void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread 
 
 void peer::decrypt_vote(size_t i, basicEncryptionService &encryption_service) {
     std::string decrypted_vote = encryption_service.decrypt(election_box.at(i).getParticipantsVotes().at(peer_identity),own_election_keys[i]);
-    std::cout << "Own vote: " << decrypted_vote << std::endl;
+    _logger.displayData(decrypted_vote, "Own vote: ");
 }

@@ -8,7 +8,6 @@
 #include <fstream>
 #include "peer.h"
 #include "replyKeyThread.h"
-#include "libSodiumEncryptionService.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
@@ -131,11 +130,11 @@ int main(int argc, char **argv) {
                 _logger.log("No distributable elections found");
             }
         }
-        if (input.find("place_vote") != -1) {
+        if (input.find("cast_vote") != -1) {
             size_t selected_election = local_peer.selectElection();
             local_peer.vote(encryption_service, selected_election);
         }
-        if (input.find("create_election") != -1) {
+        if (input.find("create_poll") != -1) {
             // nextElectionId = networkBuffer.getId()
             const election &election = local_peer.createElection(election_id);
             std::cout << election.getPollId() << ":" << election.getElectionOptionsJson() << std::endl;
@@ -163,7 +162,7 @@ int main(int argc, char **argv) {
         if (input.find("print_connections") != -1) {
             local_peer.printConnections();
         }
-        if (input.find("print_elections") != -1) {
+        if (input.find("print_polls") != -1) {
             local_peer.dumpElectionBox();
         }
         if (input.find("forward_sync") != -1) {
@@ -201,20 +200,19 @@ int main(int argc, char **argv) {
         if (input.find("cancel_sync") != -1) {
             straight_line_sync_thread.WaitForInternalThreadToExit();
         }
-        if (input.find("eval_vote") != -1) {
+        if (input.find("prepare_tallying") != -1) {
             straight_line_distribute_thread.interruptReceiveRequest();
             size_t selected_election = local_peer.selectElection();
             local_peer.eval_votes(reply_keys_thread, encryption_service, selected_election);
             local_peer.distributeElection(&context, straight_line_distribute_thread, selected_election);
         }
-        if(input.find("request_keys") != -1) {
-            local_peer.request_keys((void*)&context);
-        }
+        // For testing purposes
         if(input.find("decrypt") != -1) {
             size_t selected_election = local_peer.selectElection();
             local_peer.decrypt_vote(selected_election, encryption_service);
         }
-        if (input.find("count_in_votes") != -1) {
+        if (input.find("tally_votes") != -1) {
+            local_peer.request_keys((void*)&context);
             straight_line_distribute_thread.interruptReceiveRequest();
             local_peer.countInVotes(&context, straight_line_distribute_thread, encryption_service);
         }

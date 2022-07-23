@@ -7,37 +7,42 @@
 
 void replyKeyThread::setParams(void *p_void, const std::map<size_t, std::queue<std::string>>& election_keys_queue) {
     this->arg = p_void;
-    std::cout << "keys: ";
-    std::for_each(election_keys_queue.begin(), election_keys_queue.end(), [](std::pair<size_t, std::queue<std::string>> idKeys){
-        std::cout << idKeys.first;
-        std::cout << "";
-        std::cout << idKeys.second.size();
-    });
-    std::cout << std::endl << std::endl;
-    std::cout << "keys after set: ";
     this->prepared_election_keys = std::make_shared<std::map<size_t, std::queue<std::string>>>(election_keys_queue);
-    std::for_each(prepared_election_keys->begin(), prepared_election_keys->end(), [](std::pair<size_t, std::queue<std::string>> idKeys){
-        std::cout << idKeys.first;
-        std::cout << idKeys.second.size();
-    });
-    std::cout << std::endl;
+
+    if(is_verbose) {
+        _logger.log("keys: ");
+        std::for_each(election_keys_queue.begin(), election_keys_queue.end(), [this](std::pair<size_t, std::queue<std::string>> idKeys){
+            std::string id_string = std::to_string(idKeys.first);
+            std::string keys_size_string = std::to_string(idKeys.second.size());
+            _logger.log(id_string + ": " + keys_size_string);
+        });
+        _logger.log("keys after set: ");
+        std::for_each(prepared_election_keys->begin(), prepared_election_keys->end(), [this](std::pair<size_t, std::queue<std::string>> idKeys){
+            std::string id_string = std::to_string(idKeys.first);
+            std::string keys_size_string = std::to_string(idKeys.second.size());
+            _logger.log(id_string + ": " + keys_size_string);
+        });
+    }
 }
 
 void replyKeyThread::set_election_keys_queue(const std::map<size_t, std::queue<std::string>>& election_keys_queue) {
-    std::cout << "keys: ";
-    std::for_each(election_keys_queue.begin(), election_keys_queue.end(), [](std::pair<size_t, std::queue<std::string>> idKeys){
-        std::cout << idKeys.first;
-        std::cout << "";
-        std::cout << idKeys.second.size();
-    });
-    std::cout << std::endl << std::endl;
-    std::cout << "keys after set: ";
+
     this->prepared_election_keys = std::make_shared<std::map<size_t, std::queue<std::string>>>(election_keys_queue);
-    std::for_each(prepared_election_keys->begin(), prepared_election_keys->end(), [](std::pair<size_t, std::queue<std::string>> idKeys){
-        std::cout << idKeys.first;
-        std::cout << idKeys.second.size();
-    });
-    std::cout << std::endl;
+
+    if(is_verbose) {
+        _logger.log("keys: ");
+        std::for_each(election_keys_queue.begin(), election_keys_queue.end(), [this](std::pair<size_t, std::queue<std::string>> idKeys){
+            std::string id_string = std::to_string(idKeys.first);
+            std::string keys_size_string = std::to_string(idKeys.second.size());
+            _logger.log(id_string + ": " + keys_size_string);
+        });
+        _logger.log("keys after set: ");
+        std::for_each(prepared_election_keys->begin(), prepared_election_keys->end(), [this](std::pair<size_t, std::queue<std::string>> idKeys){
+            std::string id_string = std::to_string(idKeys.first);
+            std::string keys_size_string = std::to_string(idKeys.second.size());
+            _logger.log(id_string + ": " + keys_size_string);
+        });
+    }
 }
 
 void replyKeyThread::InternalThreadEntry() {
@@ -64,29 +69,35 @@ void replyKeyThread::InternalThreadEntry() {
         }
 
         zmq::message_t message;
-        key_reply_socket.recv(message);
+        zmq::recv_result_t result = key_reply_socket.recv(message);
 
-        _logger.log("Received: " + message.to_string());
-        try {
-            size_t election_id = std::stoi(message.to_string());
-            std::for_each(prepared_election_keys->begin(), prepared_election_keys->end(), [](std::pair<size_t, std::queue<std::string>> idKeys){
-                std::cout << idKeys.first;
-                std::cout << idKeys.second.size();
-            });
+        if(result.has_value()) {
+            _logger.log("Received: " + message.to_string());
+            try {
+                size_t election_id = std::stoi(message.to_string());
 
-            std::basic_string<char> &data = prepared_election_keys->at(election_id).front();
-            _logger.log("Reply Key: " + data);
+                std::basic_string<char> &data = prepared_election_keys->at(election_id).front();
+                if(is_verbose) {
+                    std::for_each(prepared_election_keys->begin(), prepared_election_keys->end(), [this](std::pair<size_t, std::queue<std::string>> idKeys){
+                        std::string idOfElection = std::to_string(idKeys.first);
+                        std::string numberOfKeys = std::to_string(idKeys.second.size());
+                        _logger.log("id: " + idOfElection);
+                        _logger.log("numberOfElections: " + numberOfKeys);
+                    });
+                    _logger.log("Reply Key: " + data);
+                }
 
-            key_reply_socket.send(zmq::buffer(data));
-            prepared_election_keys->at(election_id).pop();
+                key_reply_socket.send(zmq::buffer(data));
+                prepared_election_keys->at(election_id).pop();
 
-            key_reply_socket.recv(message);
+                key_reply_socket.recv(message);
 
-            _logger.log(message.to_string());
-            key_reply_socket.close();
-        } catch (const std::invalid_argument& ia) {
-            std::cout << "Invalid id" << std::endl;
-            is_running = false;
+                _logger.log(message.to_string());
+                key_reply_socket.close();
+            } catch (const std::invalid_argument& ia) {
+                _logger.error("Invalid id");
+                is_running = false;
+            }   
         }
     }
 }

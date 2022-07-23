@@ -6,8 +6,11 @@
 #define VOTE_P2P_BASICENCRYPTIONSERVICE_H
 
 #include <string>
+#include "logger.h"
 
 class basicEncryptionService {
+private:
+    logger _logger = logger::Instance();
 public:
     std::string encrypt(std::string message_string, std::string key_string);
     std::string decrypt(std::string cipher_string, std::string key_string) const;

@@ -29,7 +29,7 @@ const std::map<std::string, std::string> &election::getParticipantsVotes() const
 
 bool election::placeVote(const std::string identity, std::string chosen_option) {
     if (participants_votes.contains(identity) && participants_votes[identity] != "-1") {
-        std::cout << "Vote for the identity (" << identity << ") has already been placed." << std::endl;
+        std::cout << "Vote for the identity (" << identity << ")  has already been placed." << std::endl;
         return false;
     } else if (!participants.contains(identity)) {
         std::cout << "The requesting identity (" << identity << ") is not on the list of participants" << std::endl;

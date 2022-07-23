@@ -9,7 +9,6 @@
 #include "election.h"
 #include "inprocElectionboxThread.h"
 #include "replyKeyThread.h"
-#include "libSodiumEncryptionService.h"
 #include "basicEncryptionService.h"
 
 #ifndef VOTE_P2P_PEER_H
@@ -100,6 +99,8 @@ private:
 
 
     bool isNumber(const std::string s);
+
+    void printMetaData(zmq::message_t &msg);
 
     size_t getAndIncrement(std::string self_address, std::string current_address,
                            std::map<std::string, std::string> &connection_table, size_t current_position);
