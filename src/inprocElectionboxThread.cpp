@@ -4,6 +4,7 @@
 
 #include "inprocElectionboxThread.h"
 #include "electionBuilder.h"
+#include "interruptException.h"
 #include <zmq.hpp>
 
 void inprocElectionboxThread::InternalThreadEntry() {
@@ -16,30 +17,30 @@ inprocElectionboxThread::inprocElectionboxThread(std::vector<election> &election
 void inprocElectionboxThread::runElectionUpdate() {
     // Currently expecting pub-sub socket
 
-    while(!is_interrupted) {
+    try {
         zmq_sleep(1);
         abstract_socket.connect("inproc", "update_elections");
 
         _logger.log("wait for election", "localhost", "inproc");
-        const std::string &received_id_string = abstract_socket.recv();
+        const std::string &received_id_string = abstract_socket.interruptableRecv(is_interrupted);
         const int received_id = std::stoi(received_id_string);
 
-        const std::string &received_seq_string = abstract_socket.recv();
+        const std::string &received_seq_string = abstract_socket.interruptableRecv(is_interrupted);
         int received_sequence_id = std::stoi(received_seq_string);
 
-        const std::string &received_setup_time_string = abstract_socket.recv();
+        const std::string &received_setup_time_string = abstract_socket.interruptableRecv(is_interrupted);
         time_t received_setup_time = (unsigned int) std::stoul(received_setup_time_string);
 
-        const std::string &received_options_string = abstract_socket.recv();
+        const std::string &received_options_string = abstract_socket.interruptableRecv(is_interrupted);
         nlohmann::json received_election_options_json = nlohmann::json::parse(received_options_string);
 
-        const std::string &received_votes_string = abstract_socket.recv();
+        const std::string &received_votes_string = abstract_socket.interruptableRecv(is_interrupted);
         nlohmann::json received_election_votes_json = nlohmann::json::parse(received_votes_string);
 
-        const std::string &received_election_groups = abstract_socket.recv();
+        const std::string &received_election_groups = abstract_socket.interruptableRecv(is_interrupted);
         nlohmann::json received_election_groups_json = nlohmann::json::parse(received_election_groups);
 
-        const std::string &received_election_result = abstract_socket.recv();
+        const std::string &received_election_result = abstract_socket.interruptableRecv(is_interrupted);
         nlohmann::json received_election_result_json = nlohmann::json::parse(received_election_result);
 
         _logger.log("Received: " + received_id_string, "localhost","inproc");
@@ -76,9 +77,9 @@ void inprocElectionboxThread::runElectionUpdate() {
         }
 
         abstract_socket.disconnect("inproc", "update_elections");
+    } catch (interruptException ex) {
+        _logger.log("interrupted","localhost","inproc");
     }
-
-    _logger.log("interrupted","localhost","inproc");
 }
 
 inprocElectionboxThread::~inprocElectionboxThread() {

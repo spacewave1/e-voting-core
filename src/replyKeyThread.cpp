@@ -4,6 +4,8 @@
 
 #include <zmq.hpp>
 #include "replyKeyThread.h"
+#include "zmqSocketAdapter.h"
+#include "interruptException.h"
 
 void replyKeyThread::setParams(void *p_void, const std::map<size_t, std::queue<std::string>>& election_keys_queue) {
     this->arg = p_void;
@@ -47,19 +49,15 @@ void replyKeyThread::set_election_keys_queue(const std::map<size_t, std::queue<s
 
 void replyKeyThread::InternalThreadEntry() {
     _logger.log("Create Reply Socket for keys");
-    auto* context = (zmq::context_t*) arg;
 
     _logger.log("Start thread");
-    is_interrupted = false;
     is_running = true;
 
     while (!is_interrupted && is_running) {
-        zmq_sleep(1);
-        zmq::socket_t key_reply_socket = zmq::socket_t(*context, zmq::socket_type::rep);
         bool isSocketBind = false;
         while (!isSocketBind) {
             try {
-                key_reply_socket.bind("tcp://*:50061");
+                socket.bind("tcp","*", 50061);
                 isSocketBind = true;
             }
             catch (zmq::error_t &e) {
@@ -69,10 +67,10 @@ void replyKeyThread::InternalThreadEntry() {
         }
 
         zmq::message_t message;
-        zmq::recv_result_t result = key_reply_socket.recv(message);
-
-        if(result.has_value()) {
+        try {
+            std::string result = socket.interruptableRecv(is_interrupted);
             _logger.log("Received: " + message.to_string());
+
             try {
                 size_t election_id = std::stoi(message.to_string());
 
@@ -87,22 +85,24 @@ void replyKeyThread::InternalThreadEntry() {
                     _logger.log("Reply Key: " + data);
                 }
 
-                key_reply_socket.send(zmq::buffer(data));
+                socket.send(data);
                 prepared_election_keys->at(election_id).pop();
 
-                key_reply_socket.recv(message);
+                std::string message2 = socket.interruptableRecv(is_interrupted);
 
                 _logger.log(message.to_string());
-                key_reply_socket.close();
+                socket.close();
             } catch (const std::invalid_argument& ia) {
                 _logger.error("Invalid id");
                 is_running = false;
-            }   
+            }
+        } catch (interruptException ex) {
+            _logger.log("interrupt exception");
         }
     }
 }
 
-replyKeyThread::replyKeyThread(){
+replyKeyThread::replyKeyThread(zmqSocketAdapter &socket) : socket(socket) {
 
 }
 
@@ -112,4 +112,8 @@ bool replyKeyThread::isRunning() {
 
 void replyKeyThread::setIsRunning(bool is_running) {
     this->is_running = is_running;
+}
+
+void replyKeyThread::interrupt() {
+    this->is_interrupted = true;
 }

@@ -5,7 +5,7 @@
 #ifndef VOTE_P2P_ZMQSOCKETADAPTER_H
 #define VOTE_P2P_ZMQSOCKETADAPTER_H
 
-#include "abstractSocket.h"
+#include "network/abstractSocket.h"
 #include "logger.h"
 #include <zmq.hpp>
 
@@ -24,10 +24,12 @@ public:
     zmq::context_t context;
     void send(std::string payload) override;
     std::string recv() override;
+    std::string interruptableRecv(bool &is_interrupt) override;
     void disconnect(std::string protocol, std::string address, size_t port = 0) override;
     void connect(std::string protocol, std::string address, size_t port = 0) override;
     void bind(std::string protocol, std::string address, size_t port = 0) override;
     void unbind(std::string protocol, std::string address, size_t port = 0) override;
+
     void close() override;
 
     void printOptions();
@@ -35,7 +37,6 @@ public:
     bool isBound() override;
 
     zmqSocketAdapter(zmq::socket_t &socket);
-
 };
 
 

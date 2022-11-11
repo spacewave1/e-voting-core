@@ -7,7 +7,7 @@
 
 #include "abstractThread.h"
 #include "election.h"
-#include "abstractSocket.h"
+#include "network/abstractSocket.h"
 #include <nlohmann/json.hpp>
 #include <zmq.hpp>
 #include <string>
@@ -31,12 +31,14 @@ private:
     size_t current_number_of_hops = 0;
     bool is_interrupted = false;
     bool is_running = false;
+    abstractSocket& initial_receive_socket;
     void* arg;
     void cleanUp();
 public:
-    straightLineDistributeThread(const abstractSocket& publish_socket,const abstractSocket& subscribe_socket);
+    straightLineDistributeThread(abstractSocket& initial_receive_socket);
+    straightLineDistributeThread(const abstractSocket& publish_socket, const abstractSocket& subscribe_socket, const abstractSocket& initial_receive_socket);
     election getElectionSnapshot() const;
-    void setupDistribution(zmq::message_t &request, nlohmann::json receiveJson);
+    void setupDistribution(nlohmann::json receiveJson);
     void setInitialDistributer(bool _is_initial_requester);
     void setParams(void* arg, std::string address_up = "", std::string address_down = "", size_t node_position = 0, size_t network_size = 0, const election &election_snapshot = election());
     void setSubscribeSocket(const abstractSocket &socket);
@@ -65,8 +67,6 @@ public:
     void setIsRunning(bool b);
 
     void resetHops();
-
-    straightLineDistributeThread();
 };
 
 

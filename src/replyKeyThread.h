@@ -8,6 +8,7 @@
 
 #include "abstractThread.h"
 #include "logger.h"
+#include "zmqSocketAdapter.h"
 #include <map>
 #include <set>
 #include <queue>
@@ -21,12 +22,14 @@ private:
     bool is_running = false;
     bool is_interrupted = false;
     bool is_verbose = true;
+    abstractSocket& socket;
     std::shared_ptr<std::map<size_t, std::queue<std::string>>> prepared_election_keys;
 public:
     void setParams(void *p_void, const std::map<size_t, std::queue<std::string>>& election_keys_queue);
     bool isRunning();
-    replyKeyThread();
+    replyKeyThread(zmqSocketAdapter &socket);
     void setIsRunning(bool is_running);
+    void interrupt();
     void set_election_keys_queue(const std::map<size_t, std::queue<std::string>>& election_keys_queue);
 };
 

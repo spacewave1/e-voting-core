@@ -5,6 +5,7 @@
 #include "straightLineDistributeThread.h"
 #include "peer.h"
 #include "zmqSocketAdapter.h"
+#include "interruptException.h"
 
 void straightLineDistributeThread::InternalThreadEntry() {
     _logger.log("Start thread");
@@ -137,28 +138,24 @@ void straightLineDistributeThread::sendInitialRequest() {
 
 void straightLineDistributeThread::receiveInitialSetupRequest() {
     auto *context = (zmq::context_t *) arg;
-    zmq::message_t request;
     nlohmann::json receiveJson;
 
-    zmq::socket_t receive_request_socket(*context, zmq::socket_type::rep);
+    initial_receive_socket.bind("tcp", "*", 5049);
+    try {
+        std::string request = initial_receive_socket.interruptableRecv(is_interrupted);
+        
+        receiveJson = nlohmann::json::parse(request);
+        //_logger.log(receiveJson.dump(), request.gets("Peer-Address"), "distribute");
 
-    receive_request_socket.bind("tcp://*:5049");
+        initial_receive_socket.send("accept");
+        initial_receive_socket.close();
 
-    while (!is_interrupted) {
-        receive_request_socket.recv(request, zmq::recv_flags::dontwait);
+        setupDistribution(receiveJson);
 
-        if (!request.empty()) {
-            receiveJson = nlohmann::json::parse(request.to_string());
-            _logger.log(receiveJson.dump(), request.gets("Peer-Address"), "distribute");
-
-            receive_request_socket.send(zmq::buffer("accept"));
-            receive_request_socket.close();
-
-            setupDistribution((zmq::message_t &) request, receiveJson);
-
-            _logger.log("Has setup from passive distribution", "distribute");
-            break;
-        }
+        _logger.log("Has setup from passive distribution", "distribute");
+        
+    } catch(interruptException ex) {
+        _logger.log("interrupted");
     }
 }
 
@@ -233,7 +230,7 @@ void straightLineDistributeThread::receiveData(std::string direction) {
     }
 }
 
-void straightLineDistributeThread::setupDistribution(zmq::message_t &request, nlohmann::json receiveJson) {
+void straightLineDistributeThread::setupDistribution(nlohmann::json receiveJson) {
     auto *context = (zmq::context_t *) arg;
     size_t originPosition = std::stoi(receiveJson["originPosition"].dump());
     subscribe_port = std::stoi(receiveJson["origin_publish_port"].dump());
@@ -479,6 +476,6 @@ void straightLineDistributeThread::resetHops() {
     current_number_of_hops = 0;
 }
 
-straightLineDistributeThread::straightLineDistributeThread() {
+straightLineDistributeThread::straightLineDistributeThread(abstractSocket &initial_receive_socket) : initial_receive_socket(initial_receive_socket) {
 
 }

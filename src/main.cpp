@@ -70,25 +70,28 @@ int main(int argc, char **argv) {
     local_peer.importPeerConnections();
     local_peer.importPeersList();
 
-
-
     zmq::socket_t inproc_socket = zmq::socket_t(context, zmq::socket_type::sub);
     inproc_socket.set(zmq::sockopt::subscribe, "");
 
+    zmq::socket_t key_reply_socket = zmq::socket_t(context, zmq::socket_type::rep);
+    zmq::socket_t receive_distribute_socket = zmq::socket_t(context, zmq::socket_type::rep);
 
     zmqSocketAdapter inproc_socket_adapter(inproc_socket);
+    zmqSocketAdapter key_socket_adapter(key_reply_socket);
+    zmqSocketAdapter distribute_data_adapter(receive_distribute_socket);
 
     straightLineSyncThread straight_line_sync_thread;
-    straightLineDistributeThread straight_line_distribute_thread;
+    straightLineDistributeThread straight_line_distribute_thread(distribute_data_adapter);
     local_peer.updateDistributionThread(&straight_line_distribute_thread);
 
     inprocElectionboxThread inproc_electionbox_thread(local_peer.getElectionBox(), inproc_socket_adapter);
     local_peer.startInprocElectionSyncThread(&context, inproc_electionbox_thread);
 
-    replyKeyThread reply_keys_thread;
+    replyKeyThread reply_keys_thread(key_socket_adapter);
 
-    auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
-    networkPlan plan(straight_line_topology);
+    // How will this be used ?
+    //auto straight_line_topology = straightLineTopology(straight_line_sync_thread, straight_line_distribute_thread);
+    //networkPlan plan(straight_line_topology);
     size_t election_id = 0;
 
     pthread_t syncWorker;
@@ -217,6 +220,13 @@ int main(int argc, char **argv) {
             local_peer.countInVotes(&context, straight_line_distribute_thread, encryption_service);
         }
         if (input.find("quit") != -1) {
+            straight_line_distribute_thread.interruptReceiveRequest();
+            inproc_electionbox_thread.interrupt();
+            reply_keys_thread.interrupt();
+
+            inproc_electionbox_thread.WaitForInternalThreadToExit();
+            reply_keys_thread.WaitForInternalThreadToExit();
+            straight_line_distribute_thread.WaitForInternalThreadToExit();
         } else {
             input.clear();
         }

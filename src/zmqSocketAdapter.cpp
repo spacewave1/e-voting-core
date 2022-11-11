@@ -3,6 +3,7 @@
 //
 
 #include "zmqSocketAdapter.h"
+#include "interruptException.h"
 #include <iostream>
 
 void zmqSocketAdapter::send(std::string payload) {
@@ -12,8 +13,20 @@ void zmqSocketAdapter::send(std::string payload) {
 std::string zmqSocketAdapter::recv() {
     zmq::message_t message;
     socket.recv(message);
-    //log(message.gets("Peer-Address"), message.to_string());
+    _logger.log(message.to_string(),message.gets("Peer-Address"));
     return message.to_string();
+}
+
+std::string zmqSocketAdapter::interruptableRecv(bool& is_interrupt) {
+    zmq::message_t message;
+    while(!is_interrupt) {
+        socket.recv(message, zmq::recv_flags::dontwait);
+        //log(message.gets("Peer-Address"), message.to_string());
+        if(!message.empty()) {
+            return message.to_string();
+        }
+    }
+    throw interruptException();
 }
 
 void zmqSocketAdapter::setSocket(zmq::socket_t& new_socket) {
