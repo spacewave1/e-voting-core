@@ -2,12 +2,12 @@
 #include <unistd.h>
 #include <zmq.hpp>
 #include <regex>
-#include "zmqSocketAdapter.h"
+#include "evoting/zmqSocketAdapter.h"
 #include <nlohmann/json.hpp>
 #include <pthread.h>
 #include <fstream>
-#include "peer.h"
-#include "replyKeyThread.h"
+#include "evoting/peer.h"
+#include "evoting/replyKeyThread.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;

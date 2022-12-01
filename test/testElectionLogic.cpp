@@ -3,9 +3,9 @@
 //
 
 #include "gtest/gtest.h"
-#include "../src/election.h"
-#include "../src/electionBuilder.h"
-#include "../src/peer.h"
+#include "../src/evoting/election.h"
+#include "../src/evoting/electionBuilder.h"
+#include "../src/evoting/peer.h"
 
 TEST(electionTest, place_first_vote) {
     std::set<std::string> participants = {"asd", "qwe", "yxc"};

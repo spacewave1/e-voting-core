@@ -2,11 +2,11 @@
 // Created by wnabo on 30.12.2021.
 //
 
-#include "../src/straightLineDistributeThread.h"
+#include "../src/evoting/straightLineDistributeThread.h"
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "MockSocket.h"
-#include "../src/electionBuilder.h"
+#include "../src/evoting/electionBuilder.h"
 
 using ::testing::Return;
 

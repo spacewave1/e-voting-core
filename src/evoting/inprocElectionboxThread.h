@@ -7,7 +7,7 @@
 
 #include "abstractThread.h"
 #include "election.h"
-#include "network/abstractSocket.h"
+#include "../network/abstractSocket.h"
 #include "logger.h"
 
 class inprocElectionboxThread : public abstractThread  {

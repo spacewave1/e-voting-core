@@ -3,8 +3,8 @@
 //
 
 #include "gtest/gtest.h"
-#include "../src/basicEncryptionService.h"
-#include "../src/hillLengthException.h"
+#include "../src/evoting/basicEncryptionService.h"
+#include "../src/evoting/hillLengthException.h"
 #include <iostream>
 
 TEST(hillTest, encryption) {

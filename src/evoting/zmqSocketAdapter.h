@@ -5,7 +5,7 @@
 #ifndef VOTE_P2P_ZMQSOCKETADAPTER_H
 #define VOTE_P2P_ZMQSOCKETADAPTER_H
 
-#include "network/abstractSocket.h"
+#include "../network/abstractSocket.h"
 #include "logger.h"
 #include <zmq.hpp>
 

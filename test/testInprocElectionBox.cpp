@@ -3,8 +3,8 @@
 //
 
 #include "gtest/gtest.h"
-#include "../src/inprocElectionboxThread.h"
-#include "../src/electionBuilder.h"
+#include "../src/evoting/inprocElectionboxThread.h"
+#include "../src/evoting/electionBuilder.h"
 #include "MockSocket.h"
 
 using ::testing::Return;

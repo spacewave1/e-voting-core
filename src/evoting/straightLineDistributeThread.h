@@ -7,7 +7,7 @@
 
 #include "abstractThread.h"
 #include "election.h"
-#include "network/abstractSocket.h"
+#include "../network/abstractSocket.h"
 #include <nlohmann/json.hpp>
 #include <zmq.hpp>
 #include <string>
