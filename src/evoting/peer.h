@@ -5,11 +5,12 @@
 #include <set>
 #include <map>
 #include <queue>
-#include "networkPlan.h"
 #include "election.h"
 #include "inprocElectionboxThread.h"
 #include "replyKeyThread.h"
 #include "basicEncryptionService.h"
+#include "straightLineSyncThread.h"
+#include "straightLineDistributeThread.h"
 
 #ifndef VOTE_P2P_PEER_H
 #define VOTE_P2P_PEER_H
@@ -21,37 +22,25 @@ public:
 
     virtual ~peer();
 
-    void receive(void *context);
-
     election createElection(size_t election_id);
 
     void vote(basicEncryptionService& encryption_service, size_t election_id = -1);
-
-    void connect(std::string &input, void *context);
 
     void printConnections();
 
     void initSyncThread(void *context, straightLineSyncThread &thread, std::string initial_receiver_address = "");
 
-    const std::set<std::string> &getKnownPeerAddresses() const;
+    std::set<std::string> &getKnownPeerAddresses();
 
-    const std::map<std::string, std::string> &getConnectionTable() const;
+    std::map<std::string, std::string> &getConnectionTable();
+
+    std::string &getIdentity();
 
     void setKnownPeerAddresses(const std::set<std::string> &known_peer_addresses);
 
     void setConnectionTable(const std::map<std::string, std::string> &connection_table);
 
     void setIdentity(std::string identity);
-
-    void exportPeerConnections(std::string exportPath = "./");
-
-    void exportPeersList(std::string exportPath = "./");
-
-    void importPeerConnections(std::string importPath = "./");
-
-    void importPeersList(std::string importPath = "./");
-
-    void importPeerIdentity(std::string importPath = "./");
 
     void distributeElection(void *context, straightLineDistributeThread &thread, size_t chosen_election_id = -1);
 
@@ -99,8 +88,6 @@ private:
 
 
     bool isNumber(const std::string s);
-
-    void printMetaData(zmq::message_t &msg);
 
     size_t getAndIncrement(std::string self_address, std::string current_address,
                            std::map<std::string, std::string> &connection_table, size_t current_position);

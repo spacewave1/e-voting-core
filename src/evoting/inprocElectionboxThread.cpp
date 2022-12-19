@@ -22,25 +22,25 @@ void inprocElectionboxThread::runElectionUpdate() {
         abstract_socket.connect("inproc", "update_elections");
 
         _logger.log("wait for election", "localhost", "inproc");
-        const std::string &received_id_string = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_id_string = abstract_socket.interruptableRecv(is_interrupted).payload;
         const int received_id = std::stoi(received_id_string);
 
-        const std::string &received_seq_string = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_seq_string = abstract_socket.interruptableRecv(is_interrupted).payload;
         int received_sequence_id = std::stoi(received_seq_string);
 
-        const std::string &received_setup_time_string = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_setup_time_string = abstract_socket.interruptableRecv(is_interrupted).payload;
         time_t received_setup_time = (unsigned int) std::stoul(received_setup_time_string);
 
-        const std::string &received_options_string = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_options_string = abstract_socket.interruptableRecv(is_interrupted).payload;
         nlohmann::json received_election_options_json = nlohmann::json::parse(received_options_string);
 
-        const std::string &received_votes_string = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_votes_string = abstract_socket.interruptableRecv(is_interrupted).payload;
         nlohmann::json received_election_votes_json = nlohmann::json::parse(received_votes_string);
 
-        const std::string &received_election_groups = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_election_groups = abstract_socket.interruptableRecv(is_interrupted).payload;
         nlohmann::json received_election_groups_json = nlohmann::json::parse(received_election_groups);
 
-        const std::string &received_election_result = abstract_socket.interruptableRecv(is_interrupted);
+        const std::string &received_election_result = abstract_socket.interruptableRecv(is_interrupted).payload;
         nlohmann::json received_election_result_json = nlohmann::json::parse(received_election_result);
 
         _logger.log("Received: " + received_id_string, "localhost","inproc");

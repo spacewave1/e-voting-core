@@ -4,7 +4,6 @@
 
 #include <zmq.hpp>
 #include "replyKeyThread.h"
-#include "zmqSocketAdapter.h"
 #include "interruptException.h"
 
 void replyKeyThread::setParams(void *p_void, const std::map<size_t, std::queue<std::string>>& election_keys_queue) {
@@ -68,7 +67,7 @@ void replyKeyThread::InternalThreadEntry() {
 
         zmq::message_t message;
         try {
-            std::string result = socket.interruptableRecv(is_interrupted);
+            std::string result = socket.interruptableRecv(is_interrupted).payload;
             _logger.log("Received: " + message.to_string());
 
             try {
@@ -88,7 +87,7 @@ void replyKeyThread::InternalThreadEntry() {
                 socket.send(data);
                 prepared_election_keys->at(election_id).pop();
 
-                std::string message2 = socket.interruptableRecv(is_interrupted);
+                std::string message2 = socket.interruptableRecv(is_interrupted).payload;
 
                 _logger.log(message.to_string());
                 socket.close();

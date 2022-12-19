@@ -3,27 +3,27 @@
 //
 
 #include "zmqSocketAdapter.h"
-#include "interruptException.h"
+#include "../evoting/interruptException.h"
 #include <iostream>
 
 void zmqSocketAdapter::send(std::string payload) {
     socket.send(zmq::buffer(payload));
 }
 
-std::string zmqSocketAdapter::recv() {
+socketMessage zmqSocketAdapter::recv() {
     zmq::message_t message;
     socket.recv(message);
-    _logger.log(message.to_string(),message.gets("Peer-Address"));
-    return message.to_string();
+    _logger.log(message.to_string(), message.gets("Peer-Address"));
+    return { message.to_string(), message.gets("Peer-Address") };
 }
 
-std::string zmqSocketAdapter::interruptableRecv(bool& is_interrupt) {
+socketMessage zmqSocketAdapter::interruptableRecv(bool& is_interrupt) {
     zmq::message_t message;
     while(!is_interrupt) {
         socket.recv(message, zmq::recv_flags::dontwait);
         //log(message.gets("Peer-Address"), message.to_string());
         if(!message.empty()) {
-            return message.to_string();
+            return { message.to_string(),message.gets("Peer-Address") };
         }
     }
     throw interruptException();
@@ -109,4 +109,8 @@ void zmqSocketAdapter::printOptions() {
     _logger.displayData("maxmsgsize: " +  std::to_string(socket.get(zmq::sockopt::maxmsgsize)) );
     _logger.displayData("mechanism: " +  std::to_string(socket.get(zmq::sockopt::mechanism)) );
 
+}
+
+void zmqSocketAdapter::recvAlt() {
+    // TODO:
 }

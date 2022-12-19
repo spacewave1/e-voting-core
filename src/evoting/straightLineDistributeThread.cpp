@@ -4,7 +4,7 @@
 
 #include "straightLineDistributeThread.h"
 #include "peer.h"
-#include "zmqSocketAdapter.h"
+#include "../network/zmqSocketAdapter.h"
 #include "interruptException.h"
 
 void straightLineDistributeThread::InternalThreadEntry() {
@@ -142,7 +142,7 @@ void straightLineDistributeThread::receiveInitialSetupRequest() {
 
     initial_receive_socket.bind("tcp", "*", 5049);
     try {
-        std::string request = initial_receive_socket.interruptableRecv(is_interrupted);
+        std::string request = initial_receive_socket.interruptableRecv(is_interrupted).payload;
         
         receiveJson = nlohmann::json::parse(request);
         //_logger.log(receiveJson.dump(), request.gets("Peer-Address"), "distribute");
@@ -294,31 +294,31 @@ election straightLineDistributeThread::receiveFrom(std::string address) {
 
     _logger.log("subscribe to " + address + ":" + std::to_string(subscribe_port), "localhost", "distribute");
 
-    const std::string &election_id_string = sub_socket_adapter.recv();
+    const std::string &election_id_string = sub_socket_adapter.recv().payload;
     int election_id = std::stoi(election_id_string);
     _logger.log("received " + std::to_string(election_id), "localhost", "distribute");
 
-    const std::string &sequence_id_string = sub_socket_adapter.recv();
+    const std::string &sequence_id_string = sub_socket_adapter.recv().payload;
     int sequence_id = std::stoi(sequence_id_string);
     _logger.log("received " + std::to_string(sequence_id), "localhost", "distribute");
 
-    const std::string &setup_date_string = sub_socket_adapter.recv();
+    const std::string &setup_date_string = sub_socket_adapter.recv().payload;
     time_t setup_date = (unsigned int) std::stoul(setup_date_string);
     _logger.log("received " + std::to_string(setup_date), "localhost", "distribute");
 
-    const std::string &json = sub_socket_adapter.recv();
+    const std::string &json = sub_socket_adapter.recv().payload;
     nlohmann::json electionOptionsJson = nlohmann::json::parse(json);
     _logger.log("received " + electionOptionsJson.dump(), "localhost", "distribute");
 
-    const std::string &jsonVotes = sub_socket_adapter.recv();
+    const std::string &jsonVotes = sub_socket_adapter.recv().payload;
     nlohmann::json election_votes_json = nlohmann::json::parse(jsonVotes);
     _logger.log("received " + election_votes_json.dump(), "localhost", "distribute");
 
-    const std::string &jsonGroups = sub_socket_adapter.recv();
+    const std::string &jsonGroups = sub_socket_adapter.recv().payload;
     nlohmann::json election_json_groups = nlohmann::json::parse(jsonGroups);
     _logger.log("received " + election_json_groups.dump(), "localhost", "distribute");
 
-    const std::string &jsonResult = sub_socket_adapter.recv();
+    const std::string &jsonResult = sub_socket_adapter.recv().payload;
     nlohmann::json election_json_result = nlohmann::json::parse(jsonResult);
     _logger.log("received " + election_json_result.dump(), "localhost", "distribute");
 

@@ -8,7 +8,7 @@
 
 #include "abstractThread.h"
 #include "logger.h"
-#include "zmqSocketAdapter.h"
+#include "../network/zmqSocketAdapter.h"
 #include <map>
 #include <set>
 #include <queue>

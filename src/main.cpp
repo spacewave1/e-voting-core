@@ -2,12 +2,14 @@
 #include <unistd.h>
 #include <zmq.hpp>
 #include <regex>
-#include "evoting/zmqSocketAdapter.h"
+#include "network/zmqSocketAdapter.h"
 #include <nlohmann/json.hpp>
 #include <pthread.h>
 #include <fstream>
 #include "evoting/peer.h"
 #include "evoting/replyKeyThread.h"
+#include "network/connectionService.h"
+#include "identity/identityService.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
@@ -30,32 +32,8 @@ void *receivePoll(void *arg) {
     });
 }
 
-std::string importIdentity(const std::string filePath = "./") {
-    std::ifstream importStream;
-    std::string line;
-
-    std::cout << "is importing peers file from " << filePath + "id.dat" << std::endl;
-
-    // File Open in the Read Mode
-    importStream.open(filePath + "id.dat");
-
-    if (importStream.is_open()) {
-        if (getline(importStream, line)) {
-            std::cout << "File contents: " << std::endl;
-            std::cout << std::endl << line << std::endl << std::endl;
-            return line;
-        };
-        // File Close
-        importStream.close();
-        std::cout << "Could not return line" << std::endl;
-    } else {
-        std::cout << "Unable to open the file!" << std::endl;
-        return "id1";
-    }
-}
-
 int main(int argc, char **argv) {
-    logger _logger = _logger.Instance();
+    logger _logger = logger::Instance();
     std::cout << std::to_string(argc) << std::endl;
     std::cout << "Usage:\t enter [connect] <address>, to connect to an address that runs this application as well"
               << std::endl;
@@ -64,11 +42,20 @@ int main(int argc, char **argv) {
     zmq::context_t context = zmq::context_t(1);
     std::string input;
 
+    connectionService connection_service;
+    identityService identity_service;
+
     peer local_peer;
 
-    local_peer.importPeerIdentity();
-    local_peer.importPeerConnections();
-    local_peer.importPeersList();
+    std::set<std::string> imported_peer_list;
+    std::map<std::string, std::string> imported_peer_connections;
+
+    local_peer.setIdentity(identity_service.importPeerIdentity());
+    std::set<std::string>& addresses = connection_service.importPeersList(imported_peer_list);
+    local_peer.setKnownPeerAddresses(addresses);
+
+    std::map<std::string, std::string> &table = connection_service.importPeerConnections(imported_peer_connections);
+    local_peer.setConnectionTable(table);
 
     zmq::socket_t inproc_socket = zmq::socket_t(context, zmq::socket_type::sub);
     inproc_socket.set(zmq::sockopt::subscribe, "");
@@ -108,16 +95,16 @@ int main(int argc, char **argv) {
             local_peer.passiveDistribution(&context, straight_line_distribute_thread);
         }
         if (!reply_keys_thread.isRunning()) {
-            local_peer.reply_keys(&context, reply_keys_thread);
+            local_peer.reply_keys (&context, reply_keys_thread);
         }
         if (input.size() == 0) {
             std::getline(std::cin, input);
         }
         if (input.find("connect_to") != -1) {
-            local_peer.connect(input, &context);
+            connection_service.connect(input, &context, local_peer.getKnownPeerAddresses(), local_peer.getConnectionTable(), local_peer.getIdentity());
         }
         if (input.find("receive_connection") != -1) {
-            local_peer.receive(&context);
+            connection_service.receive(&context, local_peer.getKnownPeerAddresses(), local_peer.getConnectionTable());
         }
         if (input.find("update_election_box") != -1) {
             // TODO: Needs to check id and sequence number
@@ -140,7 +127,7 @@ int main(int argc, char **argv) {
         if (input.find("create_poll") != -1) {
             // nextElectionId = networkBuffer.getId()
             const election &election = local_peer.createElection(election_id);
-            std::cout << election.getPollId() << ":" << election.getElectionOptionsJson() << std::endl;
+            //std::cout << election.getPollId() << ":" << election.getElectionOptionsJson() << std::endl;
             local_peer.pushBackElection(election);
             election_id += 1; // networkBuffer.incrementElectionId
         }
@@ -175,17 +162,17 @@ int main(int argc, char **argv) {
             pthread_exit(&syncWorker);
         }
         if (input.find("import") != -1) {
-            local_peer.importPeerConnections();
-            local_peer.importPeersList();
+            //local_peer.importPeerConnections();
+            //local_peer.importPeersList();
             local_peer.updateDistributionThread(&straight_line_distribute_thread);
         }
         if (input.find("export_peer_connections") != -1) {
             std::cout << "is export peers connections" << std::endl;
-            local_peer.exportPeerConnections();
+            //local_peer.exportPeerConnections();
         }
         if (input.find("export_peers_list") != -1) {
             std::cout << "is export peers list" << std::endl;
-            local_peer.exportPeersList();
+            //local_peer.exportPeersList();
         }
         if (input.find("init_sync") != -1) {
             std::cout << "is connecting to " << input << std::endl;
