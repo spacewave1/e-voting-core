@@ -16,3 +16,4 @@ _deps
 /cmake-build-debug-remote-c/*
 /cmake-build-debug-remote-d/*
 /build/
+ngraph.hpp

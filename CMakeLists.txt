@@ -5,13 +5,14 @@ set(nlohmann_json_DIR ~/json-3.10.4/build)
 set(CMAKE_CXX_STANDARD 20)
 set(cppzmq_DIR ~/.libs/cppzmq-4.9.0/build)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
+
 include(FetchContent)
 
 find_package(Threads REQUIRED)
 find_package(nlohmann_json 3.11.0 REQUIRED)
 find_package(cppzmq REQUIRED)
 
-include_directories(${cppzmq_INCLUDE_DIR})
+include_directories(./ngraph)
 
 add_subdirectory(googletest)
 
@@ -28,7 +29,6 @@ set(SOURCE_FILES
         src/evoting/straightLineDistributeThread.h
         src/network/zmqSocketAdapter.h
         src/network/zmqSocketAdapter.cpp
-        src/network/zmqSocketAdapter.h
         src/evoting/electionBuilder.cpp
         src/evoting/electionBuilder.h
         src/evoting/electionPrototype.h
@@ -45,16 +45,25 @@ set(SOURCE_FILES
         src/network/connectionService.cpp
         src/network/connectionService.h
         src/network/socketMessage.h
+
+)
+
+set(IDENTITY_SRC_FILES
+        ngraph/ngraph.hpp
+        src/identity/identityTest.cpp
+        src/identity/identityGraph.cpp
+        src/identity/identityGraph.h
         src/identity/identityService.cpp
-        src/identity/identityService.h
-        )
+        src/identity/identityService.h)
 
 enable_testing()
 
 add_executable(vote_app  ${SOURCE_FILES})
+add_executable(identity_test ${IDENTITY_SRC_FILES})
 add_library(vote_core SHARED ${SOURCE_FILES})
 
 add_subdirectory(test)
 
+#target_link_libraries(identity_test)
 target_link_libraries(vote_app PRIVATE cppzmq nlohmann_json::nlohmann_json Threads::Threads)
 target_link_libraries(vote_core PRIVATE cppzmq nlohmann_json::nlohmann_json Threads::Threads)

@@ -32,3 +32,21 @@ std::string identityService::importPeerIdentity(std::string importPath) {
     }
     return "";
 }
+
+void identityService::addClaimToIdentityGraph(std::string claim, identityGraph& graph, size_t& counter) {
+    graph.addFullyBackedClaim(claim, "<verifier>","<issuer>","<credential",counter);
+}
+
+void identityService::exportIdentityGraph(identityGraph graph, std::string exportPath){
+    std::string edgesAsString = graph.serializeEdges();
+    std::string node_content_as_string = graph.serializeNodeContent();
+
+    std::ofstream exportStream;
+    exportStream.open(exportPath + "graph.edges");
+    exportStream << edgesAsString << "\n";
+    exportStream.close();
+
+    exportStream.open(exportPath + "graph.nodes");
+    exportStream << node_content_as_string << "\n";
+    exportStream.close();
+}
