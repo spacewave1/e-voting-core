@@ -18,9 +18,9 @@ void connectionService::exportPeerConnections(std::string exportPath, std::map<s
     exportStream.close();
 }
 
-void connectionService::exportPeersList(std::string exportPath, std::set<std::string> known_peer_addresses) {
+void connectionService::exportPeersList(std::string exportPath, std::set<std::string> known_peer_addresses, std::string exportFile) {
     std::ofstream exportStream;
-    exportStream.open(exportPath + "peers.json");
+    exportStream.open(exportPath + exportFile);
     nlohmann::json peersJson = nlohmann::json();
     peersJson["peers"] = nlohmann::ordered_json(known_peer_addresses);
     exportStream << peersJson.dump() << "\n";

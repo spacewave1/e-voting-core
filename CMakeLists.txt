@@ -45,7 +45,10 @@ set(SOURCE_FILES
         src/network/connectionService.cpp
         src/network/connectionService.h
         src/network/socketMessage.h
-
+        src/identity/identityService.cpp
+        src/identity/identityService.h
+        src/identity/identityGraph.cpp
+        src/identity/identityGraph.h
 )
 
 set(IDENTITY_SRC_FILES
