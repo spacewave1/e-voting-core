@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
-#include "abstractSocket.h"
+#include "pthread.h"
 
 void connectionService::exportPeerConnections(std::string exportPath, std::map<std::string, std::string> connection_table) {
     std::ofstream exportStream;
@@ -125,35 +125,6 @@ void connectionService::connect(std::string &input, void *abstractContext, std::
     }
 }
 
-void connectionService::receiveAlt(abstractSocket& socket, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table) {
-    //socket.bind("tcp", "*", 5555);
-    socket.recvAlt();
-    socketMessage message;
-    if (!message.payload.empty()) {
-        if (!known_peer_addresses.contains(message.payload)) {
-            if (std::regex_match(message.payload,
-                                 std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
-
-                // Add to connection to topology
-                known_peer_addresses.insert(message.payload);
-                known_peer_addresses.insert(message.addressFrom);
-                connection_table.insert(
-                        std::make_pair(message.addressFrom, message.payload));
-
-                _logger.log("added: " + message.payload + " to network");
-
-                socket.send(message.addressFrom);
-            } else {
-                socket.send(std::string("rejected"));
-                _logger.log("the requested peer address is rejected, an ip4 is required");
-            }
-        } else {
-            socket.send(std::string("rejected"));
-            _logger.log("Peer rejected, already ip address already belongs to a known peer");
-        }
-    }
-}
-
 void connectionService::receive(void *abstractContext, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table) {
     _logger.log("Wait for connection");
 
@@ -219,5 +190,30 @@ void connectionService::printMetaData(zmq::message_t &msg) {
         _logger.log("Routing-Id: " + routing_id_string);
     } catch (zmq::error_t er) {
         _logger.error("Can't read Routing-Id");
+    }
+}
+
+void connectionService::changeToListenState(abstractSocket& socket) {
+    socket.recvAlt();
+}
+
+void connectionService::sendConnectionRequest(abstractSocket& socket, std::string &input) {
+    socket.send(input);
+}
+
+void connectionService::receiveConnectionReply(abstractSocket& socket, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
+    const socketMessage &message = socket.recv();
+    if (!message.payload.empty()) {
+        if (std::regex_match(message.payload,std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
+            const std::string delimiter = " ";
+            size_t position_of_whitespace = input.find(delimiter);
+            auto address = input.substr(position_of_whitespace + delimiter.size(), input.size() - position_of_whitespace);
+            peer_address = std::string(address);
+
+            known_peer_addresses.insert(std::string(address));
+            connection_table[message.payload] = std::string(address);
+        } else {
+            _logger.warn("requesting peer already has a bound a peer to the net");
+        }
     }
 }

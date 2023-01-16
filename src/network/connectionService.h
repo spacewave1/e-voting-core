@@ -24,9 +24,12 @@ public:
                  std::map<std::string, std::string> &connection_table);
     void printMetaData(zmq::message_t &msg);
     void receive(void *abstractContext, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table);
-    void receiveAlt(abstractSocket& socket, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table);
+    void changeToListenState(abstractSocket& socket);
 
     std::string createNetworkRegistrationRequest(std::string connectToAddress);
+
+    void sendConnectionRequest(abstractSocket& socket, std::string &input);
+    void receiveConnectionReply(abstractSocket& socket, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address);
 
 private:
     logger _logger = logger::Instance();
