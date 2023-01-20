@@ -49,6 +49,8 @@ set(SOURCE_FILES
         src/identity/identityService.h
         src/identity/identityGraph.cpp
         src/identity/identityGraph.h
+        src/network/syncService.cpp
+        src/network/syncService.h
 )
 
 set(IDENTITY_SRC_FILES

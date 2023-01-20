@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
+#include <utility>
 #include "pthread.h"
 
 void connectionService::exportPeerConnections(std::string exportPath, std::map<std::string, std::string> connection_table) {
@@ -108,21 +109,8 @@ void connectionService::connect(std::string &input, void *abstractContext, std::
 
     zmq::message_t reply;
     sock.recv(reply, zmq::recv_flags::none);
-    if (!reply.empty()) {
-        _logger.log("has replied" + reply.to_string(), reply.gets("Peer-Address"));
-        if (std::regex_match(reply.to_string(),std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
-            _logger.log("print message metadata\n\n");
-            printMetaData(reply);
 
-            _logger.log("added ip");
-
-            peer_address = std::string(address);
-            known_peer_addresses.insert(std::string(address));
-            connection_table[reply.to_string()] = std::string(address);
-        } else {
-            _logger.warn("requesting peer already has a bound a peer to the net");
-        }
-    }
+    computeConnectionReply(socketMessage{reply.to_string(), reply.gets("Peer-Address")},known_peer_addresses,connection_table,input);
 }
 
 void connectionService::receive(void *abstractContext, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table) {
@@ -139,8 +127,7 @@ void connectionService::receive(void *abstractContext, std::set<std::string>& kn
 
     if (!request.empty()) {
         if (!known_peer_addresses.contains(request.to_string())) {
-            if (std::regex_match(request.to_string(),
-                                 std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
+            if (std::regex_match(request.to_string(),std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
 
                 // Add to connection to topology
                 known_peer_addresses.insert(request.to_string());
@@ -202,16 +189,53 @@ void connectionService::sendConnectionRequest(abstractSocket& socket, std::strin
 }
 
 void connectionService::receiveConnectionReply(abstractSocket& socket, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
+    changeToListenState(socket);
     const socketMessage &message = socket.recv();
-    if (!message.payload.empty()) {
-        if (std::regex_match(message.payload,std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
-            const std::string delimiter = " ";
-            size_t position_of_whitespace = input.find(delimiter);
-            auto address = input.substr(position_of_whitespace + delimiter.size(), input.size() - position_of_whitespace);
-            peer_address = std::string(address);
+    computeConnectionReply(message, known_peer_addresses, connection_table, std::move(peer_address));
+}
 
-            known_peer_addresses.insert(std::string(address));
-            connection_table[message.payload] = std::string(address);
+int connectionService::receiveConnectionRequest(abstractSocket& socket, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
+    const socketMessage &socketMessage = socket.recv();
+    return computeConnectionRequest(socketMessage, input, known_peer_addresses, connection_table, peer_address);
+}
+
+int connectionService::computeConnectionRequest(socketMessage socket_message, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
+    if (!socket_message.payload.empty()) {
+        if (!known_peer_addresses.contains(socket_message.payload)) {
+            if (std::regex_match(socket_message.payload,std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
+
+                // Add to connection to topology
+                known_peer_addresses.insert(socket_message.payload);
+                known_peer_addresses.insert(socket_message.addressFrom);
+                connection_table.insert(
+                        std::make_pair(socket_message.addressFrom, socket_message.payload));
+
+                _logger.log("added: " + socket_message.payload + " to network");
+
+                return 0;
+            } else {
+                _logger.log("the requested peer address is rejected, an ip4 is required");
+                return 1;
+            }
+        } else {
+            _logger.log("Peer rejected, already ip address already belongs to a known peer");
+            return 1;
+        }
+    }
+    return -1;
+}
+
+void connectionService::computeConnectionReply(const socketMessage& message, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string own_address){
+    if (!message.payload.empty()) {
+        _logger.log("has replied: " + message.payload, message.addressFrom);
+        if (std::regex_match(message.addressFrom,std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
+            const std::string delimiter = " ";
+            size_t position_of_whitespace = message.payload.find(delimiter);
+            auto address = message.payload.substr(position_of_whitespace + delimiter.size(), message.payload.size() - position_of_whitespace);
+
+            known_peer_addresses.insert(message.addressFrom);
+            known_peer_addresses.insert(own_address);
+            connection_table[own_address] = message.addressFrom;
         } else {
             _logger.warn("requesting peer already has a bound a peer to the net");
         }

@@ -57,12 +57,18 @@ int main(int argc, char **argv) {
     std::map<std::string, std::string> &table = connection_service.importPeerConnections(imported_peer_connections);
     local_peer.setConnectionTable(table);
 
+    zmq::socket_t connection_socket = zmq::socket_t(context, zmq::socket_type::req);
+    zmq::socket_t onboard_socket = zmq::socket_t(context, zmq::socket_type::rep);
+
     zmq::socket_t inproc_socket = zmq::socket_t(context, zmq::socket_type::sub);
     inproc_socket.set(zmq::sockopt::subscribe, "");
 
     zmq::socket_t key_reply_socket = zmq::socket_t(context, zmq::socket_type::rep);
     zmq::socket_t receive_distribute_socket = zmq::socket_t(context, zmq::socket_type::rep);
 
+
+    zmqSocketAdapter connection_socket_adapter(connection_socket);
+    zmqSocketAdapter onboard_socket_adapter(connection_socket);
     zmqSocketAdapter inproc_socket_adapter(inproc_socket);
     zmqSocketAdapter key_socket_adapter(key_reply_socket);
     zmqSocketAdapter distribute_data_adapter(receive_distribute_socket);
