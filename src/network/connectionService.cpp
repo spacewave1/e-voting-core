@@ -82,8 +82,8 @@ std::set<std::string>& connectionService::importPeersList(std::set<std::string> 
 }
 
 void connectionService::connect(abstractSocket& socket, const std::string& input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table) {
-    //socket.connect("tcp", input, 5555);
-    socket.send(input);
+    socket.connect("tcp", input, 5555);
+    //socket.send(input);
 }
 
 std::string connectionService::createNetworkRegistrationRequest(std::string connectToAddress) {
@@ -127,7 +127,6 @@ void connectionService::receive(void *abstractContext, std::set<std::string>& kn
 
     if (!request.empty()) {
         if (!known_peer_addresses.contains(request.to_string())) {
-            if (std::regex_match(request.to_string(),std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
 
                 // Add to connection to topology
                 known_peer_addresses.insert(request.to_string());
@@ -139,10 +138,6 @@ void connectionService::receive(void *abstractContext, std::set<std::string>& kn
                 _logger.log("added: " + request.to_string() + " to network");
 
                 sock.send(zmq::message_t(std::string(request.gets("Peer-Address"))), zmq::send_flags::none);
-            } else {
-                sock.send(zmq::message_t(std::string("rejected")), zmq::send_flags::none);
-                _logger.log("the requested peer address is rejected, an ip4 is required");
-            }
         } else {
             sock.send(zmq::message_t(std::string("rejected")), zmq::send_flags::none);
             _logger.log("Peer rejected, already ip address already belongs to a known peer");
@@ -202,21 +197,16 @@ int connectionService::receiveConnectionRequest(abstractSocket& socket, std::str
 int connectionService::computeConnectionRequest(socketMessage socket_message, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
     if (!socket_message.payload.empty()) {
         if (!known_peer_addresses.contains(socket_message.payload)) {
-            if (std::regex_match(socket_message.payload,std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {
 
-                // Add to connection to topology
-                known_peer_addresses.insert(socket_message.payload);
-                known_peer_addresses.insert(socket_message.addressFrom);
-                connection_table.insert(
-                        std::make_pair(socket_message.addressFrom, socket_message.payload));
+            // Add to connection to topology
+            known_peer_addresses.insert(socket_message.payload);
+            known_peer_addresses.insert(socket_message.addressFrom);
+            connection_table.insert(
+                    std::make_pair(socket_message.addressFrom, socket_message.payload));
 
-                _logger.log("added: " + socket_message.payload + " to network");
+            _logger.log("added: " + socket_message.payload + " to network");
 
-                return 0;
-            } else {
-                _logger.log("the requested peer address is rejected, an ip4 is required");
-                return 1;
-            }
+            return 0;
         } else {
             _logger.log("Peer rejected, already ip address already belongs to a known peer");
             return 1;
