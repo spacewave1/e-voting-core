@@ -231,3 +231,7 @@ void connectionService::computeConnectionReply(const socketMessage& message, std
         }
     }
 }
+
+void connectionService::sendConnectionResponse(abstractSocket& socket, const char *message) {
+    socket.send(message);
+}

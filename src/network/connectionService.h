@@ -30,6 +30,8 @@ public:
     void computeConnectionReply(const socketMessage& message, std::set<std::string> &known_peer_addresses, std::map<std::string, std::string> &connection_table, std::string own_address);
     std::string createNetworkRegistrationRequest(std::string connectToAddress);
 
+    void sendConnectionResponse(abstractSocket& socket, const char *message);
+
 private:
     logger _logger = logger::Instance();
 

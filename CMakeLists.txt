@@ -63,7 +63,7 @@ set(IDENTITY_SRC_FILES
 
 enable_testing()
 
-add_executable(vote_app  ${SOURCE_FILES})
+add_executable(vote_app  ${SOURCE_FILES} src/evoting/distributionService.cpp src/evoting/distributionService.h)
 add_executable(identity_test ${IDENTITY_SRC_FILES})
 add_library(vote_core SHARED ${SOURCE_FILES})
 
