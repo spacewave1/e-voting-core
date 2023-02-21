@@ -51,6 +51,8 @@ set(SOURCE_FILES
         src/identity/identityGraph.h
         src/network/syncService.cpp
         src/network/syncService.h
+        src/evoting/distributionService.cpp
+        src/evoting/distributionService.h
 )
 
 set(IDENTITY_SRC_FILES
@@ -63,7 +65,7 @@ set(IDENTITY_SRC_FILES
 
 enable_testing()
 
-add_executable(vote_app  ${SOURCE_FILES} src/evoting/distributionService.cpp src/evoting/distributionService.h)
+add_executable(vote_app  ${SOURCE_FILES})
 add_executable(identity_test ${IDENTITY_SRC_FILES})
 add_library(vote_core SHARED ${SOURCE_FILES})
 

@@ -15,7 +15,7 @@
 
 class connectionService {
 public:
-    void exportPeerConnections(std::string exportPath = "./", std::map<std::string, std::string> connection_table = std::map<std::string, std::string>());
+    void exportPeerConnections(std::string exportPath = "./", std::map<std::string, std::string> connection_table = std::map<std::string, std::string>(), std::string exportFile = "connections.json");
     void exportPeersList(std::string exportPath = "./", std::set<std::string> known_peer_addresses = std::set<std::string>(), std::string exportFile = "peers.json");
     std::map<std::string, std::string>& importPeerConnections(std::map<std::string, std::string>& connection_table, std::string importPath = "./");
     std::set<std::string>& importPeersList(std::set<std::string>& peer_addresses, std::string importPath = "./");

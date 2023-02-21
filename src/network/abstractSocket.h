@@ -18,6 +18,7 @@ public:
     virtual void bind(std::string protocol, std::string address, size_t port = 0) = 0;
     virtual void unbind(std::string protocol, std::string address, size_t port = 0) = 0;
     virtual void connect(std::string protocol, std::string address, size_t port = 0) = 0;
+    virtual void setupSocket(std::string localAddress, size_t port) = 0;
     virtual void close() = 0;
     virtual bool isBound() = 0;
 };

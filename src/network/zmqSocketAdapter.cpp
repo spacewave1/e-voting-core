@@ -114,3 +114,7 @@ void zmqSocketAdapter::printOptions() {
 void zmqSocketAdapter::recvAlt() {
     // TODO:
 }
+
+void zmqSocketAdapter::setupSocket(std::string localAddress, size_t port) {
+    // TODO:
+}

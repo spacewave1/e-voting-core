@@ -34,6 +34,8 @@ public:
     bool isBound() override;
     void printOptions();
 
+    void setupSocket(std::string localAddress, size_t port) override;
+
     zmqSocketAdapter(zmq::socket_t &socket);
 };
 

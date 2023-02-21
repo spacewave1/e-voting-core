@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 election::election(const int id) : prototype(
         electionPrototype(id)) {
@@ -357,4 +358,23 @@ void election::setJsonElectionGroupToGroups(nlohmann::json jsonGroups) {
 
 void election::setEvaluationGroups(const std::vector<std::vector<std::string>> &evaluation_groups) {
     election::evaluation_groups = evaluation_groups;
+}
+
+nlohmann::json election::participantsAsJson() {
+    nlohmann::json json = nlohmann::json::array();
+    size_t index = 0;
+    std::for_each(participants.begin(), participants.end(),
+                  [&json, &index](const std::string participant) {
+                      json[index] = participant;
+                      index++;
+                  });
+    return json;
+}
+
+std::ostream &operator<<(std::ostream &os, election &election) {
+    os << "prototype: " << election.prototype << " participants: " << election.participantsAsJson().dump() << " options: "
+       << election.getElectionOptionsJson().dump()  << " participants_votes: "
+       << election.getVotesAsJson().dump() << " groupSize: "
+       << election.groupSize << " is_prepared_for_distribution: " << election.is_prepared_for_distribution;
+    return os;
 }

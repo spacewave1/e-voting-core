@@ -12,7 +12,6 @@
 #include <zmq.hpp>
 #include <string>
 #include "logger.h"
-
 class straightLineDistributeThread : public abstractThread {
 private:
     logger _logger = logger::Instance();

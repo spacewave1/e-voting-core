@@ -6,6 +6,8 @@
 #ifndef VOTE_P2P_ELECTIONPROTOTYPE_H
 #define VOTE_P2P_ELECTIONPROTOTYPE_H
 
+#include <ostream>
+
 struct electionPrototype {
     electionPrototype() {};
 
@@ -18,6 +20,11 @@ struct electionPrototype {
     int election_id;
     size_t sequence_number{};
     std::map<size_t, std::string> options{};
+
+    friend std::ostream &operator<<(std::ostream &os, const electionPrototype &prototype) {
+        os << "election_id: " << prototype.election_id << " sequence_number: " << prototype.sequence_number;
+        return os;
+    }
 };
 
 #endif //VOTE_P2P_ELECTIONPROTOTYPE_H

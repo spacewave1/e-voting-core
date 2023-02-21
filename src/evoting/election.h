@@ -45,6 +45,7 @@ public:
     void setVotes(const std::map<std::string, std::string> &votes);
     bool placeVote(const std::string identity, std::string chosen_option);
     nlohmann::json participantVotesAsJson();
+    nlohmann::json participantsAsJson();
     void prepareForDistribtion(std::set<std::string> peer_identities);
     void print();
     void setJsonOptionsToOptions(nlohmann::json json);
@@ -76,6 +77,8 @@ public:
     void setEvaluationGroups(const std::vector<std::vector<std::string>> &evaluation_groups);
 
     void countInVotesWithKeys(std::vector<std::string> keys, basicEncryptionService &encryption_service);
+
+    friend std::ostream &operator<<(std::ostream &os, election &election);
 };
 
 

@@ -10,9 +10,9 @@
 #include <utility>
 #include "pthread.h"
 
-void connectionService::exportPeerConnections(std::string exportPath, std::map<std::string, std::string> connection_table) {
+void connectionService::exportPeerConnections(std::string exportPath, std::map<std::string, std::string> connection_table, std::string exportFile) {
     std::ofstream exportStream;
-    exportStream.open(exportPath + "connections.json");
+    exportStream.open(exportPath + exportFile);
     nlohmann::json connectionsJson = nlohmann::json();
     connectionsJson["connections"] = nlohmann::ordered_json(connection_table);
     exportStream << connectionsJson.dump() << "\n";
@@ -70,7 +70,6 @@ std::set<std::string>& connectionService::importPeersList(std::set<std::string> 
             _logger.log("File contents as json: ");
             _logger.displayData(peersJson.dump());
             peer_addresses = peersJson["peers"].get<std::set<std::string>>();
-
         };
         // File Close
         importStream.close();
