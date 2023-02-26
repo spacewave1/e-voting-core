@@ -52,7 +52,7 @@ void inprocElectionboxThread::runElectionUpdate() {
         _logger.log("Received: " + received_election_result, "localhost","inproc");
 
         auto p_function = [&received_id, &received_setup_time](const election &_election) {
-            return _election.getPollId() == received_id && _election.getSetupDate() == received_setup_time;
+            return _election.getId() == received_id && _election.getSetupDate() == received_setup_time;
         };
         auto result = std::find_if(election_box.begin(), election_box.end(), p_function);
         if (result != election_box.end()) {

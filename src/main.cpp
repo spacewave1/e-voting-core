@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
     std::cout << "Usage:\t enter [connect] <address>, to connect to an address that runs this application as well"
               << std::endl;
 
-    basicEncryptionService encryption_service;
+    hillEncryptionService encryption_service;
     zmq::context_t context = zmq::context_t(1);
     std::string input;
 

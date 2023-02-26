@@ -3,24 +3,24 @@
 //
 
 #include "gtest/gtest.h"
-#include "../src/evoting/basicEncryptionService.h"
+#include "../src/evoting/hillEncryptionService.h"
 #include "../src/evoting/hillLengthException.h"
 #include <iostream>
 
 TEST(hillTest, encryption) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string result = bas.encrypt("BAAA","DDCF");
     EXPECT_EQ(result, "DDAA");
 }
 
 TEST(hillTest, decryption) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string result = bas.decrypt("AACF","DDCF");
     EXPECT_EQ(result, "AAAB");
 }
 
 TEST(hillTest, encryptDecrypt) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string encrypted = bas.encrypt("ABBB", "FRZC");
     std::cout << "encrypted: " << encrypted << std::endl;
     std::string result = bas.decrypt(encrypted, "FRZC");
@@ -29,13 +29,13 @@ TEST(hillTest, encryptDecrypt) {
 }
 
 TEST(hillTest, validArgumentsNoException) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     EXPECT_NO_THROW(bas.encrypt("aaaa", "aaaa"));
     EXPECT_NO_THROW(bas.decrypt("aaaa", "aaaa"));
 }
 
 TEST(hillTest, decryption_throw_exceptions_on_invalid_arguments) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     EXPECT_THROW(bas.decrypt("aaaab", "aaaa"), hillLengthException);
     EXPECT_THROW(bas.decrypt("aaa", "aaaa"), hillLengthException);
     EXPECT_THROW(bas.decrypt("aaaa", "aaaab"), hillLengthException);
@@ -43,7 +43,7 @@ TEST(hillTest, decryption_throw_exceptions_on_invalid_arguments) {
 }
 
 TEST(hillTest, encryption_throw_exceptions_on_invalid_arguments) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     EXPECT_THROW(bas.encrypt("aaaab", "aaaa"), hillLengthException);
     EXPECT_THROW(bas.encrypt("aaa", "aaaa"), hillLengthException);
     EXPECT_THROW(bas.encrypt("aaaa", "aaaab"), hillLengthException);
@@ -51,7 +51,7 @@ TEST(hillTest, encryption_throw_exceptions_on_invalid_arguments) {
 }
 
 TEST(hillTest, testCharMapping) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     EXPECT_EQ(bas.mapCharToInt('a'), 0);
     EXPECT_EQ(bas.mapCharToInt('A'), 0);
     EXPECT_EQ(bas.mapCharToInt('z'), 25);
@@ -59,13 +59,13 @@ TEST(hillTest, testCharMapping) {
 }
 
 TEST(hillTest, testStringMapping) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     const std::vector<int> &result = bas.mapStringToNumberSequence("abcd");
     EXPECT_EQ(result, std::vector({ 0, 1, 2, 3}));
 }
 
 TEST(hill, testFillMessage) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string message = "A";
     std::string result = bas.fillMessage(message);
     std::cout << "Output: " << result << std::endl;
@@ -74,7 +74,7 @@ TEST(hill, testFillMessage) {
 }
 
 TEST(hill, testFillMessage_no_fill) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string message = "ABRD";
     std::string result = bas.fillMessage(message);
     std::cout << "Output: " << result << std::endl;
@@ -83,7 +83,7 @@ TEST(hill, testFillMessage_no_fill) {
 }
 
 TEST(hill, testFillMessage_with_empty_message) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string message;
     std::string result = bas.fillMessage(message);
     std::cout << "Output: " << result << std::endl;
@@ -91,7 +91,7 @@ TEST(hill, testFillMessage_with_empty_message) {
 }
 
 TEST(hill, testGeneratingInvalidCombination) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string key = "AAAA";
     std::string cipher = "ZCET";
     std::string code = "BAAA";
@@ -105,7 +105,7 @@ TEST(hill, testGeneratingInvalidCombination) {
 }
 
 TEST(hill, testGeneratingValidCombination) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string key = "AAAA";
     std::string cipher = "ZCET";
     std::string code = "ABBB";
@@ -119,7 +119,7 @@ TEST(hill, testGeneratingValidCombination) {
 }
 
 TEST(hill, testCheckValidFunction) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     int code[] = { 2, 14, 3, 4};
     int key[] = { 3, 3, 2, 5};
     bool result = bas.isValidMessageKeyCombination(code, key);
@@ -127,7 +127,7 @@ TEST(hill, testCheckValidFunction) {
 }
 
 TEST(hill, testMapNumberToLetterString) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string number_string = "1234";
     std::string result = bas.mapNumberStringToLetterString(number_string);
     std::cout << "result: "<<  result << std::endl;
@@ -135,7 +135,7 @@ TEST(hill, testMapNumberToLetterString) {
 }
 
 TEST(hill, testGenerate) {
-    basicEncryptionService bas;
+    hillEncryptionService bas;
     std::string wishing_code = "ZAAA";
     std::string key = "AAAA";
     std::vector<std::string> cipher = {"BHVG", "UPEE", "INRU", "OPBV"};

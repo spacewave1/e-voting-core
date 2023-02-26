@@ -4,12 +4,12 @@
 
 #include <iostream>
 #include <vector>
-#include "basicEncryptionService.h"
+#include "hillEncryptionService.h"
 #include <ctime>
 #include <cstring>
 #include "hillLengthException.h"
 
-std::string basicEncryptionService::encrypt(std::string message_string, std::string key_string) {
+std::string hillEncryptionService::encrypt(std::string message_string, std::string key_string) {
     if (message_string.length() != 4 || key_string.length() != 4) {
         throw hillLengthException();
     }
@@ -29,7 +29,7 @@ std::string basicEncryptionService::encrypt(std::string message_string, std::str
     return code;
 }
 
-std::string basicEncryptionService::decrypt(std::string cipher_string, std::string key_string) const {
+std::string hillEncryptionService::decrypt(std::string cipher_string, std::string key_string) const {
     if (cipher_string.length() != 4 || key_string.length() != 4) {
         throw hillLengthException();
     }
@@ -61,7 +61,7 @@ std::string basicEncryptionService::decrypt(std::string cipher_string, std::stri
     return code;
 }
 
-std::vector<int> basicEncryptionService::mapStringToNumberSequence(std::string str) const {
+std::vector<int> hillEncryptionService::mapStringToNumberSequence(std::string str) const {
     std::vector<int> numbers;
     std::for_each(str.begin(), str.end(), [this, &numbers](char character) {
         numbers.push_back(mapCharToInt(character));
@@ -69,7 +69,7 @@ std::vector<int> basicEncryptionService::mapStringToNumberSequence(std::string s
     return numbers;
 }
 
-int basicEncryptionService::mapCharToInt(char character) const {
+int hillEncryptionService::mapCharToInt(char character) const {
     if (character >= 65 && character <= 90) {
         return character - 65;
     } else if (character >= 97 && character <= 122) {
@@ -77,7 +77,7 @@ int basicEncryptionService::mapCharToInt(char character) const {
     }
 }
 
-bool basicEncryptionService::isValidMessageKeyCombination(int codeNumbers[], int key[]) {
+bool hillEncryptionService::isValidMessageKeyCombination(int codeNumbers[], int key[]) {
     std::string code_string = {static_cast<char>(codeNumbers[0] + 65),
                                static_cast<char>(codeNumbers[1] + 65),
                                static_cast<char>(codeNumbers[2] + 65),
@@ -91,7 +91,7 @@ bool basicEncryptionService::isValidMessageKeyCombination(int codeNumbers[], int
     return decrypt(encrypt(code_string, key_string), key_string) == code_string;
 }
 
-bool basicEncryptionService::findInverseKeyCombination(std::string& key, std::vector<std::string> ciphers) {
+bool hillEncryptionService::findInverseKeyCombination(std::string& key, std::vector<std::string> ciphers) {
     std::vector<bool> conditions;
     std::srand(std::time(nullptr)); // use current time as seed for random generator
     int a_offset = std::rand() % 26;
@@ -145,8 +145,8 @@ bool basicEncryptionService::findInverseKeyCombination(std::string& key, std::ve
     return false;
 }
 
-bool basicEncryptionService::findKeyCombination(int *key, std::vector<bool> conditions, int codeNumbers[4],
-                                                std::vector<int> cipherNumbers) {
+bool hillEncryptionService::findKeyCombination(int *key, std::vector<bool> conditions, int codeNumbers[4],
+                                               std::vector<int> cipherNumbers) {
     std::vector<int> key_vector = {1, 1, 1, 1};
     for (size_t a = 0; a < 26; a++) {
         for (size_t b = 0; b < 26; b++) {
@@ -178,7 +178,7 @@ bool basicEncryptionService::findKeyCombination(int *key, std::vector<bool> cond
     return false;
 }
 
-bool basicEncryptionService::generateFakeKeyWithLGS(std::vector<std::string> ciphers, std::string &key_string, std::string &code) {
+bool hillEncryptionService::generateFakeKeyWithLGS(std::vector<std::string> ciphers, std::string &key_string, std::string &code) {
     std::vector<int> wish_code_numbers = mapStringToNumberSequence(code);
 
     int codeNumbers[4] = {wish_code_numbers[0] % 26, wish_code_numbers[1] % 26, wish_code_numbers[2] % 26,
@@ -211,7 +211,7 @@ bool basicEncryptionService::generateFakeKeyWithLGS(std::vector<std::string> cip
     return foundCombination;
 }
 
-bool basicEncryptionService::generateKeyWithLGS(std::string &cipher, std::string &key_string, std::string code) {
+bool hillEncryptionService::generateKeyWithLGS(std::string &cipher, std::string &key_string, std::string code) {
     std::vector<int> cipherNumbers = mapStringToNumberSequence(cipher);
     std::vector<int> codeNumbersVector = mapStringToNumberSequence(code);
     int codeNumbers[4] = {codeNumbersVector[0] % 26, codeNumbersVector[1] % 26, codeNumbersVector[2] % 26,
@@ -263,7 +263,7 @@ bool basicEncryptionService::generateKeyWithLGS(std::string &cipher, std::string
     return foundCombination;
 }
 
-std::string basicEncryptionService::fillMessage(std::string &message) {
+std::string hillEncryptionService::fillMessage(std::string &message) {
     std::srand(std::time(nullptr)); // use current time as seed for random generator
     size_t padding_length = 4 - message.length();
     std::string padding(padding_length, 'Z');
@@ -274,7 +274,7 @@ std::string basicEncryptionService::fillMessage(std::string &message) {
     return message;
 }
 
-bool basicEncryptionService::hasInverseMatrixZeros(std::vector<int> numbers) {
+bool hillEncryptionService::hasInverseMatrixZeros(std::vector<int> numbers) {
     int inverseKey[4];
     int det = (numbers[0] * numbers[3] - numbers[1] * numbers[2]);
     int inverseDet, y;
@@ -293,7 +293,7 @@ bool basicEncryptionService::hasInverseMatrixZeros(std::vector<int> numbers) {
 
 // See: https://www.geeksforgeeks.org/euclidean-algorithms-basic-and-extended/
 // Function for extended Euclidean Algorithm
-int basicEncryptionService::gcdExtended(int a, int b, int *x, int *y) const {
+int hillEncryptionService::gcdExtended(int a, int b, int *x, int *y) const {
     // Base Case
     if (a == 0) {
         *x = 0;
@@ -312,7 +312,7 @@ int basicEncryptionService::gcdExtended(int a, int b, int *x, int *y) const {
     return gcd;
 }
 
-std::string basicEncryptionService::mapNumberStringToLetterString(std::string number_string) {
+std::string hillEncryptionService::mapNumberStringToLetterString(std::string number_string) {
     std::string letter_string;
     std::transform(number_string.begin(), number_string.end(), std::back_inserter(letter_string),
                    [](char character) {

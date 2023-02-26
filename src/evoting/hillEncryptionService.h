@@ -2,13 +2,13 @@
 // Created by wnabo on 10.06.2022.
 //
 
-#ifndef VOTE_P2P_BASICENCRYPTIONSERVICE_H
-#define VOTE_P2P_BASICENCRYPTIONSERVICE_H
+#ifndef VOTE_P2P_HILLENCRYPTIONSERVICE_H
+#define VOTE_P2P_HILLENCRYPTIONSERVICE_H
 
 #include <string>
 #include "logger.h"
 
-class basicEncryptionService {
+class hillEncryptionService {
 private:
     logger _logger = logger::Instance();
 public:
@@ -36,4 +36,4 @@ public:
     std::string mapNumberStringToLetterString(std::string number_string);
 };
 
-#endif //VOTE_P2P_BASICENCRYPTIONSERVICE_H
+#endif //VOTE_P2P_HILLENCRYPTIONSERVICE_H

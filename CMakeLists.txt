@@ -38,7 +38,7 @@ set(SOURCE_FILES
         src/evoting/replyKeyThread.cpp
         src/evoting/replyKeyThread.h
         src/evoting/basicEncryptionService.cpp
-        src/evoting/basicEncryptionService.h
+        src/evoting/hillEncryptionService.h
         src/evoting/hillLengthException.h
         src/evoting/interruptException.h
         src/network/abstractSocket.h
@@ -53,6 +53,8 @@ set(SOURCE_FILES
         src/network/syncService.h
         src/evoting/distributionService.cpp
         src/evoting/distributionService.h
+        src/evoting/tallyService.cpp
+        src/evoting/tallyService.h
 )
 
 set(IDENTITY_SRC_FILES

@@ -351,8 +351,8 @@ void straightLineDistributeThread::forward() {
 
     _logger.log("send on port: " + std::to_string(publish_port));
 
-    pub_socket_adapter.send(std::to_string(election_snapshot_to_send.getPollId()));
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()));
+    pub_socket_adapter.send(std::to_string(election_snapshot_to_send.getId()));
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getId()));
     pub_socket_adapter.send(std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber() + 1));
     pub_socket_adapter.send(std::to_string(election_snapshot_to_send.getSetupDate()));
@@ -421,7 +421,7 @@ void straightLineDistributeThread::updateElectionBox() {
     zmqSocketAdapter inproc_socket_adapter = zmqSocketAdapter(inproc_socket);
     inproc_socket_adapter.bind("inproc", "update_elections");
 
-    inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getPollId()));
+    inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getId()));
     inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getSequenceNumber()));
     inproc_socket_adapter.send(std::to_string(election_snapshot_to_send.getSetupDate()));
     inproc_socket_adapter.send(election_snapshot_to_send.getElectionOptionsJson().dump());
@@ -429,7 +429,7 @@ void straightLineDistributeThread::updateElectionBox() {
     inproc_socket_adapter.send(election_snapshot_to_send.getEvaluationGroupsAsJson().dump());
     inproc_socket_adapter.send(election_snapshot_to_send.getElectionResultAsJson().dump());
 
-    _logger.log("send: " + std::to_string(election_snapshot_to_send.getPollId()) + " to inproc thread", "localhost","distribute");
+    _logger.log("send: " + std::to_string(election_snapshot_to_send.getId()) + " to inproc thread", "localhost", "distribute");
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getSequenceNumber()) + " to inproc thread","localhost", "distribute");
     _logger.log("send: " + std::to_string(election_snapshot_to_send.getSetupDate()) + " to inproc thread", "localhost","distribute");
     _logger.log("send: " + std::string(election_snapshot_to_send.getElectionOptionsJson().dump()) + " to inproc thread","localhost", "distribute");

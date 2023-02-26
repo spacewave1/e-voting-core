@@ -223,8 +223,8 @@ void distributionService::sendElection(abstractSocket *socket, election &electio
 
     _logger.log("send on port: " + std::to_string(publish_port));
 
-    socket->send(std::to_string(election_snapshot.getPollId()));
-    _logger.log("send: " + std::to_string(election_snapshot.getPollId()));
+    socket->send(std::to_string(election_snapshot.getId()));
+    _logger.log("send: " + std::to_string(election_snapshot.getId()));
     socket->send(std::to_string(election_snapshot.getSequenceNumber() + 1));
     _logger.log("send: " + std::to_string(election_snapshot.getSequenceNumber() + 1));
     socket->send(std::to_string(election_snapshot.getSetupDate()));
@@ -304,7 +304,7 @@ std::string distributionService::sendForwardistributionRequestDirection(abstract
 
 void distributionService::updateElectionBox(election el, std::vector<election>& election_box) {
     auto p_function = [el](const election &_election) {
-            return _election.getPollId() == el.getPollId() && _election.getSetupDate() == el.getSetupDate();
+            return _election.getId() == el.getId() && _election.getSetupDate() == el.getSetupDate();
         };
         auto result = std::find_if(election_box.begin(), election_box.end(), p_function);
         if (result != election_box.end()) {
@@ -315,7 +315,7 @@ void distributionService::updateElectionBox(election el, std::vector<election>& 
             result->setJsonElectionGroupToGroups(el.getEvaluationGroupsAsJson());
             result->setJsonResultToResult(el.getElectionResultAsJson());
         } else {
-            election new_election = election::create(el.getPollId())
+            election new_election = election::create(el.getId())
                     .withVoteOptionsFromJson(el.getElectionOptionsJson())
                     .withParticipantsVotesFromJson(el.participantVotesAsJson())
                     .withSetupDate(el.getSetupDate())

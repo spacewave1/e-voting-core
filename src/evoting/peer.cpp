@@ -9,7 +9,7 @@
 #include <nlohmann/json.hpp>
 #include "peer.h"
 #include "electionBuilder.h"
-#include "basicEncryptionService.h"
+#include "hillEncryptionService.h"
 #include <charconv>
 
 void peer::printConnections() {
@@ -76,7 +76,7 @@ void peer::setConnectionTable(const std::map<std::string, std::string> &connecti
     peer::connection_table = connection_table;
 }
 
-void peer::vote(basicEncryptionService& encryption_service, size_t election_id) {
+void peer::vote(hillEncryptionService& encryption_service, size_t election_id) {
     if (election_box.size() > 0) {
         size_t chosen_id = election_id;
         if(chosen_id == -1) {
@@ -216,7 +216,7 @@ size_t peer::selectElection() {
     std::for_each(election_box.begin(), election_box.end(), [&idx, this](const election &current_election) {
         this->_logger.displayData("[" + std::to_string(idx) + "]: " + current_election.getElectionOptionsJson().dump() +
                                   ", with election_id="
-                                  + std::to_string(current_election.getPollId()));
+                                  + std::to_string(current_election.getId()));
         idx++;
     });
     std::string input_string;
@@ -355,7 +355,7 @@ void peer::updateDistributionThread(straightLineDistributeThread *p_thread) {
     p_thread->setNetworkSize(known_peer_addresses.size());
 }
 
-bool peer::eval_votes(replyKeyThread &replyThread, basicEncryptionService& encryption_service, size_t election_id) {
+bool peer::eval_votes(replyKeyThread &replyThread, hillEncryptionService& encryption_service, size_t election_id) {
     size_t chosen_id = election_id;
     if(chosen_id == -1) {
         chosen_id = selectElection();
@@ -374,7 +374,7 @@ bool peer::eval_votes(replyKeyThread &replyThread, basicEncryptionService& encry
     }
 }
 
-void peer::generate_keys(basicEncryptionService &encryption_service, size_t election_box_position) {
+void peer::generate_keys(hillEncryptionService &encryption_service, size_t election_box_position) {
     size_t chosen_id = election_box_position;
     if(election_box_position == -1) {
        chosen_id = selectElection();
@@ -392,11 +392,11 @@ void peer::generate_keys(basicEncryptionService &encryption_service, size_t elec
     for (int i = 0; i < evaluation_group_size; ++i) {
         if(i == random_variable) {
 
-            std::string key_string = own_election_keys[chosen_election.getPollId()];
+            std::string key_string = own_election_keys[chosen_election.getId()];
             _logger.displayData(key_string, "Own Key: ");
             _logger.displayData(std::to_string(key_string.length()), "Own Key length: ");
 
-            prepared_election_keys[chosen_election.getPollId()].push(key_string);
+            prepared_election_keys[chosen_election.getId()].push(key_string);
 
         } else {
             std::string wish_code = "ZAAA";
@@ -409,7 +409,7 @@ void peer::generate_keys(basicEncryptionService &encryption_service, size_t elec
             encryption_service.generateFakeKeyWithLGS(ciphers, fake_key, wish_code);
 
             _logger.displayData(fake_key, "Key: ");
-            prepared_election_keys[chosen_election.getPollId()].push(fake_key);
+            prepared_election_keys[chosen_election.getId()].push(fake_key);
         }
     }
     _logger.log("Keys generated");
@@ -465,7 +465,7 @@ void peer::reply_keys(void *args, replyKeyThread &thread) {
     thread.StartInternalThread();
 }
 
-void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread &thread, basicEncryptionService &encryption_service, size_t election_box_position) {
+void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread &thread, hillEncryptionService &encryption_service, size_t election_box_position) {
     size_t chosen_id = election_box_position;
     if(election_box_position == -1) {
         chosen_id = selectElection();
@@ -483,7 +483,7 @@ void peer::countInVotes(zmq::context_t *p_context, straightLineDistributeThread 
     std::string identity = peer_identity;
 }
 
-void peer::decrypt_vote(size_t i, basicEncryptionService &encryption_service) {
+void peer::decrypt_vote(size_t i, hillEncryptionService &encryption_service) {
     std::string decrypted_vote = encryption_service.decrypt(election_box.at(i).getParticipantsVotes().at(peer_identity),own_election_keys[i]);
     _logger.displayData(decrypted_vote, "Own vote: ");
 }

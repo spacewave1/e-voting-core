@@ -5,7 +5,7 @@
 #include "election.h"
 #include "electionBuilder.h"
 #include "sodium/utils.h"
-#include "basicEncryptionService.h"
+#include "hillEncryptionService.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -158,7 +158,7 @@ void election::setPollId(int poll_id) {
     election::prototype.election_id = poll_id;
 }
 
-int election::getPollId() const {
+int election::getId() const {
     return prototype.election_id;
 }
 
@@ -259,7 +259,7 @@ void election::setElectionResult(const std::map <size_t, size_t> &election_resul
     election::election_result = election_result;
 }
 
-void election::countInVotesWithKeys(std::vector<std::string> keys, basicEncryptionService &encryption_service) {
+void election::countInVotesWithKeys(std::vector<std::string> keys, hillEncryptionService &encryption_service) {
     std::vector<std::string> votes;
     std::transform(participants_votes.begin(), participants_votes.end(),  std::back_inserter(votes),[](const std::pair<std::string, std::string>& idToVote) -> std::string {
         std::cout << idToVote.first << std::endl;
@@ -376,5 +376,21 @@ std::ostream &operator<<(std::ostream &os, election &election) {
        << election.getElectionOptionsJson().dump()  << " participants_votes: "
        << election.getVotesAsJson().dump() << " groupSize: "
        << election.groupSize << " is_prepared_for_distribution: " << election.is_prepared_for_distribution;
+    os << std::endl;
+    os << "\tgroups: ";
+    std::for_each(election.evaluation_groups.begin(), election.evaluation_groups.end(), [&os](std::vector<std::string> group) {
+        os << "[";
+        std::for_each(group.begin(), group.end(), [&os](const std::string& peer){
+            os << peer << " ";
+        });
+        os << "]";
+    });
+
+    os << std::endl;
+    os << "\tResult: ";
+    std::for_each(election.election_result.begin(), election.election_result.end(), [&os](std::pair<size_t, size_t> id_result) {
+        os << "[" << id_result.first << ": " << id_result.second << "]";
+    });
+    os << std::endl;
     return os;
 }

@@ -8,7 +8,7 @@
 #include "election.h"
 #include "inprocElectionboxThread.h"
 #include "replyKeyThread.h"
-#include "basicEncryptionService.h"
+#include "hillEncryptionService.h"
 #include "straightLineSyncThread.h"
 #include "straightLineDistributeThread.h"
 
@@ -24,7 +24,7 @@ public:
 
     election createElection(size_t election_id);
 
-    void vote(basicEncryptionService& encryption_service, size_t election_id = -1);
+    void vote(hillEncryptionService& encryption_service, size_t election_id = -1);
 
     void printConnections();
 
@@ -56,17 +56,17 @@ public:
 
     void updateDistributionThread(straightLineDistributeThread *p_thread);
 
-    bool eval_votes(replyKeyThread &replyThread, basicEncryptionService &encryption_service, size_t election_id = -1);
+    bool eval_votes(replyKeyThread &replyThread, hillEncryptionService &encryption_service, size_t election_id = -1);
 
-    void generate_keys(basicEncryptionService &encryption_service, size_t election_box_position = -1);
+    void generate_keys(hillEncryptionService &encryption_service, size_t election_box_position = -1);
 
     void request_keys(void *args, size_t election_box_position = -1);
 
     void reply_keys(void *args, replyKeyThread &thread);
-    void countInVotes(zmq::context_t *p_context, straightLineDistributeThread &thread, basicEncryptionService &encryption_service, size_t election_box_position = -1);
+    void countInVotes(zmq::context_t *p_context, straightLineDistributeThread &thread, hillEncryptionService &encryption_service, size_t election_box_position = -1);
     size_t selectElection();
 
-    void decrypt_vote(size_t election_id, basicEncryptionService &encryption_service);
+    void decrypt_vote(size_t election_id, hillEncryptionService &encryption_service);
 
 private:
     void calculatePositionFromTable();

@@ -10,7 +10,7 @@
 #include <set>
 #include <iostream>
 #include "electionPrototype.h"
-#include "basicEncryptionService.h"
+#include "hillEncryptionService.h"
 
 class electionBuilder;
 
@@ -34,7 +34,7 @@ public:
     election();
     const std::map<std::string, std::string> &getParticipantsVotes() const;
     const std::map<size_t, std::string> &getOptions() const;
-    int getPollId() const;
+    int getId() const;
     void setPollId(int poll_id);
     time_t getSetupDate() const;
     size_t getSequenceNumber() const;
@@ -76,7 +76,7 @@ public:
 
     void setEvaluationGroups(const std::vector<std::vector<std::string>> &evaluation_groups);
 
-    void countInVotesWithKeys(std::vector<std::string> keys, basicEncryptionService &encryption_service);
+    void countInVotesWithKeys(std::vector<std::string> keys, hillEncryptionService &encryption_service);
 
     friend std::ostream &operator<<(std::ostream &os, election &election);
 };
