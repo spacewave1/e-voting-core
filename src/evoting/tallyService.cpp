@@ -67,16 +67,11 @@ bool tallyService::prepareTally(election &chosen_election,
                                 std::map<size_t, std::queue<std::string>>& prepared_election_keys) {
     if (chosen_election.hasFreeEvaluationGroups() && !is_evaluated_votes_map[chosen_election.getId()]) { // && peer not evaluated for the election yet
         chosen_election.addToNextEvaluationGroup(peer_address);
-        //generate_keys(chosen_election, peer_address, own_election_keys, prepared_election_keys);
+        generate_keys(chosen_election, peer_address, own_election_keys, prepared_election_keys);
         //replyThread.set_election_keys_queue(prepared_election_keys);
 
         // TODO: keys need to be migrated to correct application
-        std::queue<std::string> keys;
-        keys.emplace("1");
-        keys.emplace("2");
-        keys.emplace("3");
-        keys.emplace("4");
-        prepared_election_keys.insert(std::make_pair(chosen_election.getId(), keys));
+        //prepared_election_keys.insert(std::make_pair(chosen_election.getId(), keys));
 
         _logger.log("Inside eval group");
         return true;

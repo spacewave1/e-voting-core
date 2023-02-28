@@ -251,7 +251,7 @@ bool election::hasFreeEvaluationGroups() {
     return getNumberOfPlacedVotes() / groupSize - getVotesEvaluatedTotal() / groupSize > 0;
 }
 
-const std::map <size_t, size_t> &election::getElectionResult() const {
+std::map <size_t, size_t> &election::getElectionResult() {
     return election_result;
 }
 

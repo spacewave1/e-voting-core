@@ -55,6 +55,8 @@ set(SOURCE_FILES
         src/evoting/distributionService.h
         src/evoting/tallyService.cpp
         src/evoting/tallyService.h
+        src/evoting/electionService.cpp
+        src/evoting/electionService.h
 )
 
 set(IDENTITY_SRC_FILES

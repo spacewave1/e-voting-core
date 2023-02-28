@@ -57,7 +57,7 @@ public:
 
     const std::vector<std::vector<std::string>> &getEvaluationGroups() const;
 
-    const std::map <size_t, size_t> &getElectionResult() const;
+    std::map <size_t, size_t> &getElectionResult();
     void setElectionResult(const std::map <size_t, size_t> &election_result);
     std::string getSetupDateAsString() const;
     bool hasFreeEvaluationGroups();
