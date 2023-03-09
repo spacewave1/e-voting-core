@@ -4,7 +4,7 @@
 
 #include <nlohmann/json.hpp>
 #include "distributionService.h"
-#include "electionBuilder.h"
+#include "../model/electionBuilder.h"
 
 void distributionService::sendInitialPortsSetupRequest(abstractSocket *socketUp, abstractSocket *socketDown, std::string local_address, size_t node_position,
                                                        std::string address_up, std::string address_down) {

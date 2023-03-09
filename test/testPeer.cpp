@@ -5,7 +5,7 @@
 #include <queue>
 #include "gtest/gtest.h"
 #include "../src/evoting/inprocElectionboxThread.h"
-#include "../src/evoting/electionBuilder.h"
+#include "../src/evoting/model/electionBuilder.h"
 #include "../src/evoting/peer.h"
 
 TEST(peer, generate_participant_keys) {

@@ -9,8 +9,8 @@
 #include <string>
 #include <set>
 #include <iostream>
-#include "electionPrototype.h"
-#include "hillEncryptionService.h"
+#include "../electionPrototype.h"
+#include "../service/hillEncryptionService.h"
 
 class electionBuilder;
 

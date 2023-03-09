@@ -6,7 +6,7 @@
 #define VOTE_P2P_HILLENCRYPTIONSERVICE_H
 
 #include <string>
-#include "logger.h"
+#include "../logger.h"
 
 class hillEncryptionService {
 private:

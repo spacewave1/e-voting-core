@@ -7,7 +7,7 @@
 #include "hillEncryptionService.h"
 #include <ctime>
 #include <cstring>
-#include "hillLengthException.h"
+#include "../hillLengthException.h"
 
 std::string hillEncryptionService::encrypt(std::string message_string, std::string key_string) {
     if (message_string.length() != 4 || key_string.length() != 4) {

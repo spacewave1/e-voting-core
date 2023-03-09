@@ -6,7 +6,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "MockSocket.h"
-#include "../src/evoting/electionBuilder.h"
+#include "../src/evoting/model/electionBuilder.h"
 
 using ::testing::Return;
 

@@ -4,7 +4,7 @@
 
 #include "gtest/gtest.h"
 #include "../src/evoting/inprocElectionboxThread.h"
-#include "../src/evoting/electionBuilder.h"
+#include "../src/evoting/model/electionBuilder.h"
 #include "MockSocket.h"
 
 using ::testing::Return;
@@ -34,11 +34,11 @@ TEST(InprocElectionBox, UpdateTest) {
     EXPECT_CALL(mock_inproc_subscribe_socket, connect("inproc", "update_elections", 0));
     EXPECT_CALL(mock_inproc_subscribe_socket, recv())
             .Times(5)
-            .WillOnce(Return("1"))
-            .WillOnce(Return("4"))
-            .WillOnce(Return(std::to_string(time(NULL))))
-            .WillOnce(Return(("[\"A\",\"B\",\"C\"]")))
-            .WillOnce(Return(("[[\"asd\",1],[\"yxc\",-1],[\"qwe\",-1],[\"qwy\",-1]]")));
+            .WillOnce(Return(socketMessage{"1",""}))
+            .WillOnce(Return(socketMessage{"4",""}))
+            .WillOnce(Return(socketMessage{std::to_string(time(NULL)),""}))
+            .WillOnce(Return((socketMessage{"[\"A\",\"B\",\"C\"]", ""})))
+            .WillOnce(Return((socketMessage{"[[\"asd\",1],[\"yxc\",-1],[\"qwe\",-1],[\"qwy\",-1]]", ""})));
 
     inprocElectionboxThread testee = inprocElectionboxThread(electionBox, (abstractSocket &) mock_inproc_subscribe_socket);
     testee.runElectionUpdate();
@@ -75,11 +75,11 @@ TEST(InprocElectionBox, AddNewElectionThatHasDifferentSetupDate) {
     EXPECT_CALL(mock_inproc_subscribe_socket, connect("inproc", "update_elections", 0));
     EXPECT_CALL(mock_inproc_subscribe_socket, recv())
             .Times(5)
-            .WillOnce(Return("1"))
-            .WillOnce(Return("4"))
-            .WillOnce(Return(std::to_string(time(NULL) + 1)))
-            .WillOnce(Return(("[\"A\",\"B\",\"C\"]")))
-            .WillOnce(Return(("[[\"asd\",1],[\"yxc\",-1],[\"qwe\",-1],[\"qwy\",-1]]")));
+            .WillOnce(Return(socketMessage{"1",""}))
+            .WillOnce(Return(socketMessage{"4",""}))
+            .WillOnce(Return(socketMessage{std::to_string(time(NULL) + 1),""}))
+            .WillOnce(Return((socketMessage{"[\"A\",\"B\",\"C\"]", ""})))
+            .WillOnce(Return((socketMessage{"[[\"asd\",1],[\"yxc\",-1],[\"qwe\",-1],[\"qwy\",-1]]", ""})));
 
     inprocElectionboxThread testee = inprocElectionboxThread(electionBox, (abstractSocket &) mock_inproc_subscribe_socket);
     testee.runElectionUpdate();
@@ -122,10 +122,10 @@ TEST(InprocElectionBox, AddNewElection) {
     EXPECT_CALL(mock_inproc_subscribe_socket, connect("inproc", "update_elections", 0));
     EXPECT_CALL(mock_inproc_subscribe_socket, recv())
             .Times(4)
-            .WillOnce(Return("2"))
-            .WillOnce(Return("4"))
-            .WillOnce(Return(("[\"A\",\"B\",\"C\",\"D\"]")))
-            .WillOnce(Return(("[[\"yyy\",1],[\"aaa\",-1],[\"eee\",-1],[\"bbb\",-1]]")));
+            .WillOnce(Return(socketMessage{"2",""}))
+            .WillOnce(Return(socketMessage{"4",""}))
+            .WillOnce(Return((socketMessage{"[\"A\",\"B\",\"C\"]", ""})))
+            .WillOnce(Return((socketMessage{"[[\"yyy\",1],[\"aaa\",-1],[\"eee\",-1],[\"bbb\",-1]]", ""})));
 
     inprocElectionboxThread testee = inprocElectionboxThread(electionBox, (abstractSocket &) mock_inproc_subscribe_socket);
     testee.runElectionUpdate();

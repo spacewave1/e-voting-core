@@ -8,8 +8,8 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include "peer.h"
-#include "electionBuilder.h"
-#include "hillEncryptionService.h"
+#include "model/electionBuilder.h"
+#include "service/hillEncryptionService.h"
 #include <charconv>
 
 void peer::printConnections() {

@@ -6,9 +6,9 @@
 #define E_VOTING_DISTRIBUTIONSERVICE_H
 
 
-#include "../network/abstractSocket.h"
-#include "logger.h"
-#include "election.h"
+#include "../../network/abstractSocket.h"
+#include "../logger.h"
+#include "../model/election.h"
 
 class distributionService {
 public:

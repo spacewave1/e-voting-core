@@ -3,7 +3,7 @@
 //
 
 #include "gtest/gtest.h"
-#include "../src/evoting/hillEncryptionService.h"
+#include "../src/evoting/service/hillEncryptionService.h"
 #include "../src/evoting/hillLengthException.h"
 #include <iostream>
 

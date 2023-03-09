@@ -3,8 +3,8 @@
 //
 
 #include "gtest/gtest.h"
-#include "../src/evoting/election.h"
-#include "../src/evoting/electionBuilder.h"
+#include "../src/evoting/model/election.h"
+#include "../src/evoting/model/electionBuilder.h"
 #include "../src/evoting/peer.h"
 
 TEST(electionTest, place_first_vote) {
@@ -54,7 +54,7 @@ TEST(electionTest, prepare_for_distribtion) {
 
     std::map<std::string, std::string> participant_votes;
     std::for_each(participants.begin(), participants.end(), [&participant_votes](std::string participant_identity) {
-        participant_votes[participant_identity] = -1;
+        participant_votes[participant_identity] = "-1";
     });
 
     election testee = election::create(0).withParticipants(participants);

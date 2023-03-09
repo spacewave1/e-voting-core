@@ -3,7 +3,7 @@
 //
 
 #include "inprocElectionboxThread.h"
-#include "electionBuilder.h"
+#include "model/electionBuilder.h"
 #include "interruptException.h"
 #include <zmq.hpp>
 

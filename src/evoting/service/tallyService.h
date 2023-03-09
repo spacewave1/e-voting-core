@@ -6,9 +6,9 @@
 #define E_VOTING_TALLYSERVICE_H
 
 
-#include "election.h"
+#include "../model/election.h"
 #include "hillEncryptionService.h"
-#include "../network/abstractSocket.h"
+#include "../../network/abstractSocket.h"
 
 class tallyService {
 private:

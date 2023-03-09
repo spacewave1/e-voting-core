@@ -6,7 +6,7 @@
 #define VOTE_P2P_STRAIGHTLINEDISTRIBUTETHREAD_H
 
 #include "abstractThread.h"
-#include "election.h"
+#include "model/election.h"
 #include "../network/abstractSocket.h"
 #include <nlohmann/json.hpp>
 #include <zmq.hpp>

@@ -5,10 +5,10 @@
 #include <set>
 #include <map>
 #include <queue>
-#include "election.h"
+#include "model/election.h"
 #include "inprocElectionboxThread.h"
 #include "replyKeyThread.h"
-#include "hillEncryptionService.h"
+#include "service/hillEncryptionService.h"
 #include "straightLineSyncThread.h"
 #include "straightLineDistributeThread.h"
 

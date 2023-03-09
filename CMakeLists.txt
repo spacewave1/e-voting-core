@@ -23,22 +23,22 @@ set(SOURCE_FILES
         src/evoting/abstractThread.h
         src/evoting/straightLineSyncThread.cpp
         src/evoting/straightLineSyncThread.h
-        src/evoting/election.h
-        src/evoting/election.cpp
+        src/evoting/model/election.h
+        src/evoting/model/election.cpp
         src/evoting/straightLineDistributeThread.cpp
         src/evoting/straightLineDistributeThread.h
         src/network/zmqSocketAdapter.h
         src/network/zmqSocketAdapter.cpp
-        src/evoting/electionBuilder.cpp
-        src/evoting/electionBuilder.h
+        src/evoting/model/electionBuilder.cpp
+        src/evoting/model/electionBuilder.h
         src/evoting/electionPrototype.h
         src/evoting/inprocElectionboxThread.cpp
         src/evoting/inprocElectionboxThread.h
         src/evoting/logger.h
         src/evoting/replyKeyThread.cpp
         src/evoting/replyKeyThread.h
-        src/evoting/basicEncryptionService.cpp
-        src/evoting/hillEncryptionService.h
+        src/evoting/service/hillEncryptionService.cpp
+        src/evoting/service/hillEncryptionService.h
         src/evoting/hillLengthException.h
         src/evoting/interruptException.h
         src/network/abstractSocket.h
@@ -51,13 +51,37 @@ set(SOURCE_FILES
         src/identity/identityGraph.h
         src/network/syncService.cpp
         src/network/syncService.h
-        src/evoting/distributionService.cpp
-        src/evoting/distributionService.h
-        src/evoting/tallyService.cpp
-        src/evoting/tallyService.h
-        src/evoting/electionService.cpp
-        src/evoting/electionService.h
-)
+        src/evoting/service/distributionService.cpp
+        src/evoting/service/distributionService.h
+        src/evoting/service/tallyService.cpp
+        src/evoting/service/tallyService.h
+        src/evoting/service/electionService.cpp
+        src/evoting/service/electionService.h
+        src/evoting/model/decentralElection.cpp
+        src/evoting/model/decentralElection.h
+        src/evoting/model/decentralNode.h
+        src/evoting/service/hashService.cpp
+        src/evoting/service/hashService.h
+        src/crypt/sha.h
+        src/crypt/sha224-256.c
+        src/crypt/sha-private.h
+        src/crypt/sha1.c
+        src/crypt/usha.c
+        src/crypt/hmac.c
+        src/crypt/hkdf.c
+        src/crypt/sha384-512.c
+        )
+
+set(CRYPT_SRC_FILES
+        src/crypt/sha.h
+        src/crypt/sha224-256.c
+        src/crypt/sha-private.h
+        src/crypt/sha1.c
+        src/crypt/usha.c
+        src/crypt/hmac.c
+        src/crypt/hkdf.c
+        src/crypt/sha384-512.c
+        )
 
 set(IDENTITY_SRC_FILES
         ngraph/ngraph.hpp
@@ -65,13 +89,17 @@ set(IDENTITY_SRC_FILES
         src/identity/identityGraph.cpp
         src/identity/identityGraph.h
         src/identity/identityService.cpp
-        src/identity/identityService.h)
+        src/identity/identityService.h
+        ../did-pvote/src/didPVoteResolver.cpp
+        ../did-pvote/src/didPVoteResolver.h
+        )
 
 enable_testing()
 
-add_executable(vote_app  ${SOURCE_FILES})
+add_executable(vote_app ${SOURCE_FILES})
 add_executable(identity_test ${IDENTITY_SRC_FILES})
 add_library(vote_core SHARED ${SOURCE_FILES})
+add_library(crypt STATIC ${CRYPT_SRC_FILES})
 
 add_subdirectory(test)
 

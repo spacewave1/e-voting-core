@@ -4,12 +4,9 @@
 
 #include "election.h"
 #include "electionBuilder.h"
-#include "sodium/utils.h"
-#include "hillEncryptionService.h"
 #include <iostream>
 #include <string>
 #include <vector>
-#include <chrono>
 
 election::election(const int id) : prototype(
         electionPrototype(id)) {

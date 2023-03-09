@@ -6,9 +6,9 @@
 #define E_VOTING_ELECTIONSERVICE_H
 
 
-#include "logger.h"
+#include "../logger.h"
 #include "hillEncryptionService.h"
-#include "election.h"
+#include "../model/election.h"
 
 class electionService {
 private:
