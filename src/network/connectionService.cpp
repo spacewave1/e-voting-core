@@ -9,6 +9,7 @@
 #include <regex>
 #include <utility>
 #include "pthread.h"
+#include "zmqSocketAdapter.h"
 
 void connectionService::exportPeerConnections(std::string exportPath, std::map<std::string, std::string> connection_table, std::string exportFile) {
     std::ofstream exportStream;
@@ -80,17 +81,9 @@ std::set<std::string>& connectionService::importPeersList(std::set<std::string> 
     return peer_addresses;
 }
 
-void connectionService::connect(abstractSocket& socket, const std::string& input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table) {
+void connectionService::connect(abstractSocket& socket, const std::string& input) {
     socket.connect("tcp", input, 5555);
     //socket.send(input);
-}
-
-std::string connectionService::createNetworkRegistrationRequest(std::string connectToAddress) {
-    return connectToAddress;
-}
-
-std::string connectionService::createOnBoardingReply(std::string connectFromAddress) {
-    return connectFromAddress;
 }
 
 void connectionService::connect(std::string &input, void *abstractContext, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string& peer_address) {
@@ -98,18 +91,14 @@ void connectionService::connect(std::string &input, void *abstractContext, std::
     const std::string delimiter = " ";
     size_t position_of_whitespace = input.find(delimiter);
     auto address = input.substr(position_of_whitespace + delimiter.size(), input.size() - position_of_whitespace);
-
     zmq::context_t *zmq_context = (zmq::context_t *) abstractContext;
     zmq::socket_t sock(*zmq_context, zmq::socket_type::req);
-
-    sock.connect("tcp://" + std::string(address) + ":5555");
-
-    sock.send(zmq::message_t(address), zmq::send_flags::none);
-
-    zmq::message_t reply;
-    sock.recv(reply, zmq::recv_flags::none);
-
-    computeConnectionReply(socketMessage{reply.to_string(), reply.gets("Peer-Address")},known_peer_addresses,connection_table,input);
+    zmqSocketAdapter socketAdapter{sock};
+    
+    socketAdapter.connect("tcp", std::string(address), 5555);
+    socketAdapter.send(address);
+    
+    computeConnectionReply(socketAdapter, known_peer_addresses, connection_table, input);
 }
 
 void connectionService::receive(void *abstractContext, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table) {
@@ -175,7 +164,7 @@ void connectionService::printMetaData(zmq::message_t &msg) {
 }
 
 void connectionService::changeToListenState(abstractSocket& socket) {
-    socket.recvAlt();
+    socket.listen();
 }
 
 void connectionService::sendConnectionRequest(abstractSocket& socket, std::string &input) {
@@ -184,8 +173,7 @@ void connectionService::sendConnectionRequest(abstractSocket& socket, std::strin
 
 void connectionService::receiveConnectionReply(abstractSocket& socket, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
     changeToListenState(socket);
-    const socketMessage &message = socket.recv();
-    computeConnectionReply(message, known_peer_addresses, connection_table, std::move(peer_address));
+    computeConnectionReply(socket, known_peer_addresses, connection_table, std::move(peer_address));
 }
 
 int connectionService::receiveConnectionRequest(abstractSocket& socket, std::string &input, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string peer_address) {
@@ -214,7 +202,8 @@ int connectionService::computeConnectionRequest(socketMessage socket_message, st
     return -1;
 }
 
-void connectionService::computeConnectionReply(const socketMessage& message, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string own_address){
+void connectionService::computeConnectionReply(abstractSocket& socket, std::set<std::string>& known_peer_addresses, std::map<std::string, std::string>& connection_table, std::string own_address){
+    socketMessage message = socket.recv();
     if (!message.payload.empty()) {
         _logger.log("has replied: " + message.payload, message.addressFrom);
         if (std::regex_match(message.addressFrom,std::regex("[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}"))) {

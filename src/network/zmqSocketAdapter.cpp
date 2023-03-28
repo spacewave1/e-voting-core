@@ -111,7 +111,7 @@ void zmqSocketAdapter::printOptions() {
 
 }
 
-void zmqSocketAdapter::recvAlt() {
+void zmqSocketAdapter::listen() {
     // TODO:
 }
 

@@ -9,7 +9,7 @@
 #include "evoting/peer.h"
 #include "evoting/replyKeyThread.h"
 #include "network/connectionService.h"
-#include "identity/identityService.h"
+#include "identity/graphService.h"
 
 std::map<std::string, size_t> current_poll;
 std::string first_peer;
@@ -43,14 +43,14 @@ int main(int argc, char **argv) {
     std::string input;
 
     connectionService connection_service;
-    identityService identity_service;
+    graphService graph_service;
 
     peer local_peer;
 
     std::set<std::string> imported_peer_list;
     std::map<std::string, std::string> imported_peer_connections;
 
-    local_peer.setIdentity(identity_service.importPeerIdentity());
+    local_peer.setIdentity(graph_service.importPeerIdentity());
     std::set<std::string>& addresses = connection_service.importPeersList(imported_peer_list);
     local_peer.setKnownPeerAddresses(addresses);
 

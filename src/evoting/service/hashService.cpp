@@ -3,7 +3,6 @@
 //
 
 extern "C" {
-// Get declaration for f(int i, char c, float x)
     #include "../../crypt/sha.h"
 }
 

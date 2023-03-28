@@ -8,7 +8,7 @@
 
 #include <string>
 
-class decentralNode {
+struct decentralNode {
     std::string node_address;
     std::string nonce;
     std::string timestamp;

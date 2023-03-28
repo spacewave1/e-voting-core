@@ -24,7 +24,7 @@ public:
     zmq::context_t context;
     void send(std::string payload) override;
     socketMessage recv() override;
-    void recvAlt() override;
+    void listen() override;
     socketMessage interruptableRecv(bool &is_interrupt) override;
     void disconnect(std::string protocol, std::string address, size_t port = 0) override;
     void connect(std::string protocol, std::string address, size_t port = 0) override;

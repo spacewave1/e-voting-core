@@ -53,10 +53,10 @@ void syncService::sendSyncReply(abstractSocket* socket){
     _logger.log("Sync operation complete");
 }
 
-void syncService::forwardConnectSync(abstractSocket* socket, const std::string& next_address) {
+void syncService::forwardConnectSync(abstractSocket* socket, const std::string& next_address, int port) {
     _logger.log("forward sync to " + next_address);
 
-    socket->connect("tcp",std::string(next_address),5556);
+    socket->connect("tcp",std::string(next_address), port);
 }
 
 void syncService::forwardSyncRequestUp(abstractSocket* socket,
@@ -144,6 +144,29 @@ void syncService::returnSyncRequestDown(abstractSocket *socket,
                   [socket, &send_json, this](const std::string& peer_address) {
                       this->_logger.log("send data to " + peer_address);
                       socket->connect("tcp",peer_address, 5557);
+                  });
+}
+
+void syncService::returnSyncRequestDownSendData(abstractSocket *socket,
+                                        std::set<std::string> &peers,
+                                        std::map<std::string, std::string> &connection_table,
+                                        std::string local_address) {
+
+    std::map<std::string, std::set<std::string>> reversed_connection_table;
+    std::for_each(connection_table.begin(), connection_table.end(),
+                  [&reversed_connection_table](std::pair<std::string, std::string> pair) {
+                      reversed_connection_table[pair.second].insert(pair.first);
+                  });
+
+    nlohmann::json send_json;
+    send_json["nodes"] = nlohmann::ordered_json(peers);
+    send_json["connections"] = nlohmann::ordered_json(connection_table);
+
+    _logger.log("sending json: " + send_json.dump());
+
+    std::for_each(reversed_connection_table[local_address].begin(), reversed_connection_table[local_address].end(),
+                  [socket, &send_json, this](const std::string& peer_address) {
                       socket->send(send_json.dump());
                   });
 }
+

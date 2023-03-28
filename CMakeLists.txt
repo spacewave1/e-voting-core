@@ -62,6 +62,8 @@ set(SOURCE_FILES
         src/evoting/model/decentralNode.h
         src/evoting/service/hashService.cpp
         src/evoting/service/hashService.h
+        src/datasource/inMemoryStorage.h
+        src/datasource/inMemoryStorage.cpp
         src/crypt/sha.h
         src/crypt/sha224-256.c
         src/crypt/sha-private.h
@@ -85,20 +87,25 @@ set(CRYPT_SRC_FILES
 
 set(IDENTITY_SRC_FILES
         ngraph/ngraph.hpp
-        src/identity/identityTest.cpp
         src/identity/identityGraph.cpp
         src/identity/identityGraph.h
         src/identity/identityService.cpp
         src/identity/identityService.h
-        ../did-pvote/src/didPVoteResolver.cpp
-        ../did-pvote/src/didPVoteResolver.h
+        ../did/src/didPVoteResolver.cpp
+        ../did/src/didPVoteResolver.h
+        src/identity/graphService.h
+        src/identity/graphService.cpp
+        src/identity/didConnectionService.cpp
+        src/identity/didConnectionService.h
+        src/identity/didSyncService.cpp
+        src/identity/didSyncService.h
         )
 
 enable_testing()
 
-add_executable(vote_app ${SOURCE_FILES})
-add_executable(identity_test ${IDENTITY_SRC_FILES})
-add_library(vote_core SHARED ${SOURCE_FILES})
+add_executable(vote_app ${SOURCE_FILES} ${IDENTITY_SRC_FILES})
+add_executable(identity_test ${IDENTITY_SRC_FILES} src/identity/identityTest.cpp)
+add_library(vote_core SHARED ${SOURCE_FILES} ${IDENTITY_SRC_FILES})
 add_library(crypt STATIC ${CRYPT_SRC_FILES})
 
 add_subdirectory(test)

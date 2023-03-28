@@ -8,15 +8,17 @@
 
 #include <string>
 #include "../evoting/logger.h"
-#include "ngraph.hpp"
-#include "identityGraph.h"
+#include "../../../did/src/did.h"
+#include "../evoting/service/hashService.h"
+#include "../../../did/src/didDocument.h"
 
 class identityService {
 public:
-    std::string importPeerIdentity(std::string importPath = "./");
-    void addClaimToIdentityGraph(std::string claim, identityGraph& graph, size_t& counter);
-    void exportIdentityGraph(identityGraph graph, std::string exportPath  = "./");
+    did createLocalDid(time_t timestamp, std::string node_address, std::string nonce);
+    didDocument createDidDocument(did identifier, did controller);
+    didDocument deserializeString(std::string document_string);
 private:
+    hashService hash_service;
     logger _logger = logger::Instance();
 };
 
