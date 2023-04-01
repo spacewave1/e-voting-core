@@ -74,6 +74,32 @@ std::vector<did> inMemoryStorage::findAddressMatch(std::string address_hash) {
     return did_matches;
 }
 
-std::map<did, did> inMemoryStorage::getDIDControllerChain() {
-    return std::map<did, did>();
+std::map<did, did> inMemoryStorage::getDIDChainDown() {
+    std::map<did, did> did_chain;
+    std::for_each(didStorage.begin(), didStorage.end(),[&did_chain](std::pair<did, didDocument> entry){
+        if(entry.second.controller != entry.first){
+            did_chain[entry.second.controller] = entry.first;
+        }
+    });
+    return did_chain;
+}
+
+std::map<did, did> inMemoryStorage::getDIDChainUp(const did &origin_id) {
+    did controller = origin_id;
+    std::map<did, did> did_chain;
+    while(!didStorage[controller].controller.method.empty() && didStorage[controller].controller != controller) {
+        did_chain[controller] = didStorage[controller].controller;
+        controller = didStorage[controller].controller;
+    }
+    return did_chain;
+}
+
+bool inMemoryStorage::hasIdDown(did id) {
+    bool idDownExists = false;
+    std::for_each(didStorage.begin(), didStorage.end(),[&id, &idDownExists](std::pair<did, didDocument> entry){
+        if(entry.second.controller == id && entry.second.controller != entry.first){
+            idDownExists = true;
+        }
+    });
+    return idDownExists;
 }

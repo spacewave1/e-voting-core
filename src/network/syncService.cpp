@@ -36,6 +36,7 @@ bool syncService::receiveSyncRequest(abstractSocket& socket, std::set<std::strin
 
     std::for_each(received_connections.begin(), received_connections.end(),
                   [&connection_table, this](const std::pair<std::string, std::string> pair) {
+                      _logger.log("check");
                       if (!connection_table.contains(pair.first)) {
                           _logger.log("add");
                           _logger.log(pair.first + "->" + pair.second);

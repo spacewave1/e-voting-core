@@ -22,6 +22,7 @@ did identityService::createLocalDid(time_t timestamp, std::string node_address, 
 didDocument identityService::createDidDocument(did identifier, did controller) {
     didDocument document;
     document.controllers = std::set<did>{ controller };
+    document.controller = controller;
     document.id = std::move(identifier);
     return document;
 }
@@ -45,7 +46,7 @@ didDocument identityService::deserializeString(std::string document_string) {
         } catch(std::exception ex) { std::cout << ex.what() << std::endl;}
     }
 
-    //doc.controller = did(json["controller"].dump());
+    doc.controller = did(json["controller"].dump());
 
     nlohmann::json controllers = json["controllers"];
 

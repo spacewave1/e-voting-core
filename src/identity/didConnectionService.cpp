@@ -9,6 +9,8 @@
 void didConnectionService::computeConnectionReply(abstractSocket& socket, inMemoryStorage& storage, did own_id) {
     socketMessage message = socket.recv();
     did attemptConnection = did(message.payload);
+    _logger.log("doc controller: " + attemptConnection.str());
+    _logger.log("doc id: " + own_id.str());
 
     if (storage.existDID(attemptConnection)) {
         // Maybe check authentication

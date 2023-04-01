@@ -25,7 +25,10 @@ public:
 
     std::vector<did> findAddressMatch(std::string address_hash);
 
-    std::map<did, did> getDIDControllerChain();
+    std::map<did, did> getDIDChainDown();
+    std::map<did, did> getDIDChainUp(const did &origin_id);
+
+    bool hasIdDown(did id);
 };
 
 

@@ -86,6 +86,94 @@ TEST(inMemoryStorage, findAddressMatch) {
     ASSERT_TRUE(result_vector.size() == 1);
 }
 
+TEST(inMemoryStorage, testGetChainUp) {
+    inMemoryStorage storage;
+    identityService id_service;
+    
+    did id_1{"pvote","abcd"};
+    did id_2{"pvote","cdef"};
+    
+    const didDocument &document_a = id_service.createDidDocument(id_1, id_2);
+    storage.addDocument(id_1, document_a);
+    did id_3{"pvote","efgh"};
+    
+    const didDocument &document_b = id_service.createDidDocument(id_2, id_3);
+    storage.addDocument(id_2, document_b);
+    did id_4{"pvote","ghij"};
+    
+    const didDocument &document_c = id_service.createDidDocument(id_3, id_4);
+    storage.addDocument(id_3, document_c);
+
+    const std::map<did, did> &result_map = storage.getDIDChainUp(id_1);
+    ASSERT_EQ(result_map.size(), 3);
+}
+
+TEST(inMemoryStorage, getChainDown) {
+    inMemoryStorage storage;
+    identityService id_service;
+
+    did id_1{"did:pvote:1239QRzRBIvDe6ZdLpnYeYca4ZJ4fOWjROmNeu/e+U6Og0=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+    did id_2{"did:pvote:123IyM3iW5Ue6RJoNIBmA+X+Cvl0/R8qAqtX0XmhZkUEnA=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+    did id_3{"did:pvote:123p1IcVjNmLrf2nz5yxTsNH2vDCjGC82CxV3i6s0yZWYw=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+
+    const didDocument &document_a = id_service.createDidDocument(id_1, id_2);
+    const didDocument &document_b = id_service.createDidDocument(id_2, id_3);
+    const didDocument &document_c = id_service.createDidDocument(id_3, id_3);
+
+    storage.addDocument(id_1, document_a);
+    storage.addDocument(id_2, document_b);
+    storage.addDocument(id_3, document_c);
+
+    const std::map<did, did> &result_map = storage.getDIDChainDown();
+    ASSERT_EQ(result_map.size(), 2);
+    ASSERT_TRUE(result_map.at(id_3) == id_2);
+    ASSERT_TRUE(result_map.at(id_2) == id_1);
+}
+
+TEST(inMemoryStorage, hasIdDown) {
+    inMemoryStorage storage;
+    identityService id_service;
+
+    did id_1{"did:pvote:1239QRzRBIvDe6ZdLpnYeYca4ZJ4fOWjROmNeu/e+U6Og0=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+    did id_2{"did:pvote:123IyM3iW5Ue6RJoNIBmA+X+Cvl0/R8qAqtX0XmhZkUEnA=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+    did id_3{"did:pvote:123p1IcVjNmLrf2nz5yxTsNH2vDCjGC82CxV3i6s0yZWYw=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+
+    const didDocument &document_a = id_service.createDidDocument(id_1, id_2);
+    const didDocument &document_b = id_service.createDidDocument(id_2, id_3);
+    const didDocument &document_c = id_service.createDidDocument(id_3, id_3);
+
+    storage.addDocument(id_1, document_a);
+    storage.addDocument(id_2, document_b);
+    storage.addDocument(id_3, document_c);
+
+    bool result1 = storage.hasIdDown(id_1);
+    ASSERT_FALSE(result1);
+    bool result2 = storage.hasIdDown(id_2);
+    ASSERT_TRUE(result2);
+    bool result3 = storage.hasIdDown(id_3);
+    ASSERT_TRUE(result3);
+}
+
+TEST(inMemoryStorage, getChain_with_circle) {
+    inMemoryStorage storage;
+    identityService id_service;
+
+    did id_1{"did:pvote:1239QRzRBIvDe6ZdLpnYeYca4ZJ4fOWjROmNeu/e+U6Og0=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+    did id_2{"did:pvote:123IyM3iW5Ue6RJoNIBmA+X+Cvl0/R8qAqtX0XmhZkUEnA=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+    did id_3{"did:pvote:123p1IcVjNmLrf2nz5yxTsNH2vDCjGC82CxV3i6s0yZWYw=y9xrFMC8qIuI6zmJAAWl2B1Zm0/g0t2h/PXy6TnJrng=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="};
+
+    const didDocument &document_a = id_service.createDidDocument(id_1, id_2);
+    const didDocument &document_b = id_service.createDidDocument(id_2, id_3);
+    const didDocument &document_c = id_service.createDidDocument(id_3, id_3);
+
+    storage.addDocument(id_1, document_a);
+    storage.addDocument(id_2, document_b);
+    storage.addDocument(id_3, document_c);
+
+    const std::map<did, did> &result_map = storage.getDIDChainUp(id_1);
+    ASSERT_EQ(result_map.size(), 2);
+}
+
 //TEST(inMemoryStorage, addResource) {
 //    ASSERT_TRUE(storage.fetchResource(did{"pvote","abcAddress123Timestamp123Nonce123"}) == "12.12.12.12");
 //}

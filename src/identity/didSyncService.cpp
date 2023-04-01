@@ -63,26 +63,29 @@ void
 didSyncService::returnSyncRequestDown(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
                                       did own_id) {
     
-    std::map<did, did> didChain = storage.getDIDControllerChain();
-    std::map<did, std::set<did>> reversed_did_chain;
-    
-    std::for_each(didChain.begin(), didChain.end(),
-                  [&reversed_did_chain](std::pair<did, did> pair) {
-                      reversed_did_chain[pair.second].insert(pair.first);
-                  });
+    std::map<did, did> didChain = storage.getDIDChainDown();
+
+    _logger.log("didChain size: " + std::to_string(didChain.size()));
 
     nlohmann::json send_json;
     send_json["didDocuments"] = nlohmann::ordered_json(storage.getDidStorage());
     send_json["didResources"] = nlohmann::ordered_json(storage.getDidResources());
 
-    _logger.log("sending json: " + send_json.dump());
+    _logger.log("sending return json: " + send_json.dump());
 
-    std::for_each(reversed_did_chain[own_id].begin(), reversed_did_chain[own_id].end(),
-                  [socket, &send_json, this, &storage](const did& id) {
+    did connect_id = didChain[own_id];
+    const std::string &address = storage.fetchResource(connect_id);
+    this->_logger.log("send data to " + address);
+    socket->connect("tcp",address, 5557);
+
+    //TODO: When having hirarchy instead of chain
+    /*std::for_each(didChain[own_id].begin(), didChain[own_id].end(),
+                  [socket, this, &storage](const did& id) {
                       const std::string &address = storage.fetchResource(id);
                               this->_logger.log("send data to " + address);
                       socket->connect("tcp",address, 5557);
                   });
+    */
 }
 
 
@@ -90,26 +93,29 @@ void
 didSyncService::returnSyncRequestDownData(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
                                       did own_id) {
 
-    std::map<did, did> didChain = storage.getDIDControllerChain();
-    std::map<did, std::set<did>> reversed_did_chain;
+    std::map<did, did> didChain = storage.getDIDChainDown();
 
-    std::for_each(didChain.begin(), didChain.end(),
-                  [&reversed_did_chain](std::pair<did, did> pair) {
-                      reversed_did_chain[pair.second].insert(pair.first);
-                  });
+    _logger.log("didChain size: " + std::to_string(didChain.size()));
 
     nlohmann::json send_json;
     send_json["didDocuments"] = nlohmann::ordered_json(storage.getDidStorage());
     send_json["didResources"] = nlohmann::ordered_json(storage.getDidResources());
 
-    _logger.log("sending json: " + send_json.dump());
+    _logger.log("sending return json: " + send_json.dump());
 
-    std::for_each(reversed_did_chain[own_id].begin(), reversed_did_chain[own_id].end(),
-                  [socket, &send_json, this, &storage](const did& id) {
+    did connect_id = didChain[own_id];
+    const std::string &address = storage.fetchResource(connect_id);
+    this->_logger.log("send data to " + address);
+    socket->send(send_json.dump());
+
+    //TODO: When having hirarchy instead of chain
+    /*std::for_each(didChain[own_id].begin(), didChain[own_id].end(),
+                  [socket, this, &storage](const did& id) {
                       const std::string &address = storage.fetchResource(id);
-                      this->_logger.log("send data to " + address);
-                      socket->send(send_json.dump());
+                              this->_logger.log("send data to " + address);
+                      socket->send("tcp",address, 5557);
                   });
+    */
 }
 
 void didSyncService::forwardConnectSync(abstractSocket *socket, did next_did, inMemoryStorage& storage) {
