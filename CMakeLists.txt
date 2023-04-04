@@ -99,6 +99,8 @@ set(IDENTITY_SRC_FILES
         src/identity/didConnectionService.h
         src/identity/didSyncService.cpp
         src/identity/didSyncService.h
+        src/identity/didDistributionService.cpp
+        src/identity/didDistributionService.h
         )
 
 enable_testing()

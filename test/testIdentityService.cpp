@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include "gtest/gtest.h"
 #include "../src/identity/identityService.h"
+#include "../src/identity/didConnectionService.h"
 
 TEST(identiyService, test_create_did){
     identityService service;
@@ -67,8 +68,4 @@ TEST(identityService, deserializeIntoDocument2) {
     std::string received_json = "{\"didDocuments\":{\"did:pvote:123BUZBLWG6V/FAy8ViyB7YP7G4quJrV7sawA1e3ceYrA8=AgzMxeuGQxo9dIiv5GVnVmK3KlLHpkQ16l0iiW3dZzw=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q=\":\"{\\\"id\\\":\\\"did:pvote:1239QRzRBIvDe6ZdLpnYeYca4ZJ4fOWjROmNeu/e+U6Og0=AgzMxeuGQxo9dIiv5GVnVmK3KlLHpkQ16l0iiW3dZzw=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q=\\\",\\\"controllers\\\":[\\\"did:pvote:123BUZBLWG6V/FAy8ViyB7YP7G4quJrV7sawA1e3ceYrA8=AgzMxeuGQxo9dIiv5GVnVmK3KlLHpkQ16l0iiW3dZzw=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q=\\\"],\\\"authentication\\\":{},\\\"verificationMethod\\\":[]}\"},\"didResources\":{\"did:pvote:1239QRzRBIvDe6ZdLpnYeYca4ZJ4fOWjROmNeu/e+U6Og0=AgzMxeuGQxo9dIiv5GVnVmK3KlLHpkQ16l0iiW3dZzw=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q=\":\"\",\"did:pvote:123BUZBLWG6V/FAy8ViyB7YP7G4quJrV7sawA1e3ceYrA8=AgzMxeuGQxo9dIiv5GVnVmK3KlLHpkQ16l0iiW3dZzw=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q=\":\"10.0.0.5\"},\"receiverAddress\":\"\"}";
     nlohmann::json receive_data = nlohmann::json::parse(received_json);
     std::cout << receive_data["didDocuments"].dump() << std::endl;
-}
-
-TEST(identityService, testDeserialize) {
-
 }

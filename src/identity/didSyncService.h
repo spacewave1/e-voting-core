@@ -24,8 +24,7 @@ public:
     bool receiveSyncRequest(abstractSocket &socket, inMemoryStorage &storage);
     void sendSyncReply(abstractSocket* socket);
 
-    void
-    returnSyncRequestDownData(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
+    void returnSyncRequestDownData(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
                               did own_id);
 
 private:

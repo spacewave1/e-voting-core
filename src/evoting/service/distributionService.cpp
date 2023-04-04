@@ -283,11 +283,6 @@ distributionService::sendInitialDistributionRequestDirection(abstractSocket *soc
 
 std::string distributionService::sendForwardistributionRequestDirection(abstractSocket *socket_up,
                                                                         abstractSocket *socket_down,
-                                                                        std::string address_up,
-                                                                        std::string address_down,
-                                                                        size_t current_number_of_hops,
-                                                                        size_t network_size,
-                                                                        size_t node_position,
                                                                         std::string directionTo) {
     if(directionTo.find("up") != -1) {
         socket_up->send("up");

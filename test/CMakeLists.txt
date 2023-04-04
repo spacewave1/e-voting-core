@@ -11,7 +11,10 @@ set(SOURCE_FILES
         testHill.cpp
         testDecentralNode.cpp
         testHashService.cpp
-        testStorage.cpp testIdentityService.cpp)
+        testStorage.cpp
+        testIdentityService.cpp
+        testDidConnectionService.cpp
+        testDidSyncService.cpp)
 
 set(name test_p2p_vote)
 

@@ -38,12 +38,12 @@ didDocument identityService::deserializeString(std::string document_string) {
         try {
             authentication.id = did(json["authentication"].at("id").dump());
             try { authentication.type = json["authentication"].at("type").dump(); }
-                catch(std::exception ex) { std::cout << ex.what() << std::endl;}
+                catch(std::exception ex) { std::cout << ex.what() << ": cannot get authentication type" << std::endl;}
             try { authentication.controller = did(json["authentication"].at("controller").dump());}
-                catch(std::exception ex) { std::cout << ex.what() << std::endl;}
+                catch(std::exception ex) { std::cout << ex.what() << ": cannot get authentication controller" << std::endl;}
             try { authentication.publicKeyMultibase = json["authentication"].at("publicKeyMultibase").dump(); }
-                catch(std::exception ex) { std::cout << ex.what() << std::endl;}
-        } catch(std::exception ex) { std::cout << ex.what() << std::endl;}
+                catch(std::exception ex) { std::cout << ex.what() << ": cannot get authentication publicKeyMultibase" << std::endl;}
+        } catch(std::exception ex) { std::cout << ex.what() << ": cannot get authentication id" << std::endl;}
     }
 
     doc.controller = did(json["controller"].dump());

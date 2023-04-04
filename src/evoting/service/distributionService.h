@@ -39,11 +39,7 @@ public:
     void sendElection(abstractSocket *socket, election &election_snapshot, size_t publish_port);
 
     std::string
-    sendForwardistributionRequestDirection(abstractSocket *socket_up, abstractSocket *socket_down,
-                                            std::string address_up,
-                                            std::string address_down, size_t current_number_of_hops,
-                                            size_t network_size,
-                                            size_t node_position, std::string directionTo);
+    sendForwardistributionRequestDirection(abstractSocket *socket_up, abstractSocket *socket_down, std::string directionTo);
 
     std::map<std::string, std::string> getReversedConnectionTable(std::map<std::string, std::string> &connection_table);
 

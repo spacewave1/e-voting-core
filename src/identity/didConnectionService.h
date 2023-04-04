@@ -22,7 +22,11 @@ public:
     void sendConnectionSuccess(abstractSocket& socket, did controller);
     void computeConnectionReply(abstractSocket& socket, inMemoryStorage& storage, did own_id);
     void connect(abstractSocket& socket, const std::string& input, std::set<std::string>& known_peer_addresses, inMemoryStorage& storage);
-    void exportDidRegistry(std::string directory, inMemoryStorage storage, std::string file);
+    void exportDidRegistry(std::string directory, const inMemoryStorage& storage, std::string file);
+    void exportDidResources(const std::string directory, const inMemoryStorage& storage, std::string file);
+
+    void importDidRegistry(inMemoryStorage& storage, std::string path, std::string file = "didRegistry.json");
+    void importDidResources(inMemoryStorage& storage, std::string path, std::string file = "didResources.json");
 
 private:
     identityService identitiy_service;

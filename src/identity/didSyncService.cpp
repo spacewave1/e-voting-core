@@ -144,6 +144,9 @@ didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &stor
     std::for_each(received_did_documents.begin(), received_did_documents.end(), [&received_did_storage, this](std::pair<std::string, std::string> entry){
         nlohmann::json json = nlohmann::json::parse(entry.second);
         const didDocument &document = identity_service.deserializeString(entry.second);
+        std::stringstream sstream;
+        sstream << document;
+        _logger.log(did(entry.first).str() + "->" + sstream.str());
         received_did_storage[did(entry.first)] = document;
     });
 

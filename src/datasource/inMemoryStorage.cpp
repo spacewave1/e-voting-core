@@ -25,8 +25,8 @@ std::set<did> inMemoryStorage::getAllDIDs() {
     return dids;
 }
 
-std::map<std::string, std::string> inMemoryStorage::getDidResources() {
-    std::map<did, std::string> &map = resources;
+std::map<std::string, std::string> inMemoryStorage::getDidResources() const {
+    std::map<did, std::string> map = resources;
     std::map<std::string, std::string> serialized;
     std::for_each(map.begin(), map.end(), [&serialized](std::pair<did, std::string> entry) {
         std::stringstream didStream;
@@ -36,8 +36,8 @@ std::map<std::string, std::string> inMemoryStorage::getDidResources() {
     return serialized;
 }
 
-std::map<std::string, std::string> inMemoryStorage::getDidStorage() {
-    std::map<did, didDocument> &map = didStorage;
+std::map<std::string, std::string> inMemoryStorage::getDidStorage() const {
+    std::map<did, didDocument> map = didStorage;
     std::map<std::string, std::string> serialized;
     std::for_each(map.begin(), map.end(), [&serialized](std::pair<did, didDocument> entry) {
         std::stringstream didStream;
@@ -49,8 +49,8 @@ std::map<std::string, std::string> inMemoryStorage::getDidStorage() {
     return serialized;
 }
 
-std::string inMemoryStorage::fetchResource(did inputId) {
-    return resources[inputId];
+std::string inMemoryStorage::fetchResource(did input_id) const {
+    return resources.at(input_id);
 }
 
 bool inMemoryStorage::addResource(did id, std::string input) {
@@ -67,14 +67,14 @@ std::vector<did> inMemoryStorage::findAddressMatch(std::string address_hash) {
     std::vector<did> did_matches;
 
     std::for_each(did_set.begin(), did_set.end(), [&did_matches, address_hash](did id){
-        if(id.methodSpecifierIdentier.find(address_hash)){
+        if(id.methodSpecifierIdentier.find(address_hash) != std::string::npos){
             did_matches.push_back(id);
         }
     });
     return did_matches;
 }
 
-std::map<did, did> inMemoryStorage::getDIDChainDown() {
+std::map<did, did> inMemoryStorage::getDIDChainDown() const {
     std::map<did, did> did_chain;
     std::for_each(didStorage.begin(), didStorage.end(),[&did_chain](std::pair<did, didDocument> entry){
         if(entry.second.controller != entry.first){
@@ -84,12 +84,12 @@ std::map<did, did> inMemoryStorage::getDIDChainDown() {
     return did_chain;
 }
 
-std::map<did, did> inMemoryStorage::getDIDChainUp(const did &origin_id) {
+std::map<did, did> inMemoryStorage::getDIDChainUp(const did &origin_id) const {
     did controller = origin_id;
     std::map<did, did> did_chain;
-    while(!didStorage[controller].controller.method.empty() && didStorage[controller].controller != controller) {
-        did_chain[controller] = didStorage[controller].controller;
-        controller = didStorage[controller].controller;
+    while(!didStorage.at(controller).controller.method.empty() && didStorage.at(controller).controller != controller) {
+        did_chain[controller] = didStorage.at(controller).controller;
+        controller = didStorage.at(controller).controller;
     }
     return did_chain;
 }
@@ -102,4 +102,16 @@ bool inMemoryStorage::hasIdDown(did id) {
         }
     });
     return idDownExists;
+}
+
+didDocument inMemoryStorage::getDocument(did id) const {
+    return didStorage.at(id);
+}
+
+std::shared_ptr<inMemoryStorage> inMemoryStorage::getPtr() {
+    return _ptr;
+}
+
+bool inMemoryStorage::existsResource(did id) {
+    return resources.contains(id);
 }
