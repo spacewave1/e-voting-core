@@ -14,7 +14,6 @@ class inMemoryStorage {
 private:
     std::map<did, didDocument> didStorage;
     std::map<did, std::string> resources;
-    std::shared_ptr<inMemoryStorage> _ptr = std::make_shared<inMemoryStorage>(*this);
 public:
     int addDocument(did id, didDocument doc);
     bool existDID(did id);
@@ -27,13 +26,20 @@ public:
 
     std::vector<did> findAddressMatch(std::string address_hash);
     std::map<did, did> getDIDChainDown() const;
+    std::map<did, did> getReversedDIDChainDown() const;
     std::map<did, did> getDIDChainUp(const did &origin_id) const;
 
     bool hasIdDown(did id);
 
     std::shared_ptr<inMemoryStorage> getPtr();
 
-    bool existsResource(did id);
+    bool existsResource(did id) const;
+
+    bool existDIDInAnyVersion(did id);
+
+    std::set<did> findAllDIDVersions(const did &id) const;
+
+    did getLatest(const did& id) const;
 };
 
 

@@ -14,6 +14,24 @@ int inMemoryStorage::addDocument(did id, didDocument doc) {
     return -1;
 }
 
+std::set<did> inMemoryStorage::findAllDIDVersions(const did& id) const {
+    std::set<did> all_did_versions;
+    std::for_each(didStorage.begin(), didStorage.end(),[&id, &all_did_versions](std::pair<did, didDocument> entry){
+        if(entry.first.withoutVersion() == id.withoutVersion()) {
+            all_did_versions.insert(entry.first);
+        }
+    });
+    return all_did_versions;
+}
+
+bool inMemoryStorage::existDIDInAnyVersion(did id) {
+    std::set<did> version_agnostic_dids;
+    std::transform(didStorage.begin(), didStorage.end(),std::inserter(version_agnostic_dids,version_agnostic_dids.begin()),[](std::pair<did, didDocument> entry){
+        return entry.first.withoutVersion();
+    });
+    return version_agnostic_dids.contains(id.withoutVersion());
+}
+
 bool inMemoryStorage::existDID(did id) {
     return didStorage.contains(id);
 }
@@ -77,19 +95,29 @@ std::vector<did> inMemoryStorage::findAddressMatch(std::string address_hash) {
 std::map<did, did> inMemoryStorage::getDIDChainDown() const {
     std::map<did, did> did_chain;
     std::for_each(didStorage.begin(), didStorage.end(),[&did_chain](std::pair<did, didDocument> entry){
-        if(entry.second.controller != entry.first){
-            did_chain[entry.second.controller] = entry.first;
+        if(entry.second.controller != entry.first.withoutVersion()){
+            did_chain[entry.second.controller] = entry.first.withoutVersion();
         }
     });
     return did_chain;
 }
 
+std::map<did, did> inMemoryStorage::getReversedDIDChainDown() const {
+    const std::map<did, did> &map = getDIDChainDown();
+    std::map<did, did> reversed_map;
+    std::for_each(map.begin(), map.end(),[&reversed_map](std::pair<did, did> entry){
+        reversed_map[entry.second] = entry.first;
+    });
+    return reversed_map;
+}
+
 std::map<did, did> inMemoryStorage::getDIDChainUp(const did &origin_id) const {
-    did controller = origin_id;
+    did controller = origin_id.withoutVersion();
     std::map<did, did> did_chain;
+
     while(!didStorage.at(controller).controller.method.empty() && didStorage.at(controller).controller != controller) {
-        did_chain[controller] = didStorage.at(controller).controller;
-        controller = didStorage.at(controller).controller;
+        did_chain[controller.withoutVersion()] = didStorage.at(controller).controller;
+        controller = didStorage.at(this->getLatest(controller)).controller;
     }
     return did_chain;
 }
@@ -108,10 +136,20 @@ didDocument inMemoryStorage::getDocument(did id) const {
     return didStorage.at(id);
 }
 
-std::shared_ptr<inMemoryStorage> inMemoryStorage::getPtr() {
-    return _ptr;
+bool inMemoryStorage::existsResource(did id) const {
+    return resources.contains(id);
 }
 
-bool inMemoryStorage::existsResource(did id) {
-    return resources.contains(id);
+did inMemoryStorage::getLatest(const did& id) const {
+    std::set<size_t> versions;
+    std::set<did> dids = findAllDIDVersions(id);
+    std::transform(dids.begin(), dids.end(), std::inserter(versions,versions.begin()), [](did id){
+        return id.getVersion();
+    });
+
+    if(!versions.empty()) {
+        size_t max_version = *versions.rbegin();
+        return did{id.method, id.methodSpecifierIdentier}.withVersion(max_version);
+    }
+    throw std::invalid_argument( "versions empty, did does not exist" );
 }

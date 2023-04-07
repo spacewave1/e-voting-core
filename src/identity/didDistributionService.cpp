@@ -8,9 +8,8 @@
 
 void didDistributionService::getDistributionParams(const inMemoryStorage& storage, const did id, std::string &address_up,
                                                    std::string &address_down) {
-    const didDocument &document = storage.getDocument(id);
-
-    if (!document.controller.empty()) {
+    const didDocument &document = storage.getDocument(storage.getLatest(id));
+    if (!document.controller.empty()  && storage.existsResource(document.controller) && document.controller != document.id.withoutVersion()) {
         address_up = storage.fetchResource(document.controller);
     }
 
@@ -22,18 +21,27 @@ void didDistributionService::getDistributionParams(const inMemoryStorage& storag
 
 unsigned long didDistributionService::calculatePosition(const inMemoryStorage &storage, const did id) {
     std::map<std::string, std::string> reversed_connection_table;
+    std::cout << "get chain down"  << std::endl;
     auto did_chain_down = storage.getDIDChainDown();
-    auto did_chain_up = storage.getDIDChainUp(id);
-
+    std::cout << "get chain up"  << std::endl;
     did root_did;
+    std::cout << "search for root did"  << std::endl;
 
-    std::for_each(storage.getDIDChainDown().begin(), storage.getDIDChainDown().end(),[&did_chain_down, &root_did](std::pair<did, did> entry){
-        if(!did_chain_down.contains(entry.second)){
+    auto did_chain_up = storage.getReversedDIDChainDown();
+
+    std::for_each(did_chain_up.begin(), did_chain_up.end(),[&did_chain_up, &root_did](const std::pair<did, did> &entry){
+        if(!did_chain_up.contains(entry.second)){
             root_did = entry.second;
+            std::cout << "set root did"  << std::endl;
+        } else {
+            std::cout << "contained entry second"  << std::endl;
         }
     });
 
-    size_t pos = getAndIncrement(id, root_did, did_chain_down, 0);
+    std::cout << "found root did: " << root_did << std::endl;
+
+
+    size_t pos = getAndIncrement(id.withoutVersion(), root_did, did_chain_down, 0);
 
     std::stringstream sstream;
     sstream << "Calculated position for " << id << " is " << std::to_string(pos);
@@ -184,13 +192,13 @@ void didDistributionService::updateElectionBox(election election_update, std::ve
     }
 }
 
-size_t didDistributionService::getAndIncrement(const did own_id, did current_id, std::map<did, did> did_chain_down,
+size_t didDistributionService::getAndIncrement(const did& own_id, did current_id, std::map<did, did> did_chain_down,
                                                size_t position) {
     std::stringstream sstream;
     sstream << "current id: " << current_id << ",\n self_address: " << own_id;
     _logger.log(sstream.str());
 
-    if (current_id == own_id || !did_chain_down.contains(current_id)) {
+    if (current_id == own_id || current_id.empty()) {
         return position;
     } else {
         position++;

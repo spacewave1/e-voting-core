@@ -15,13 +15,13 @@ void didConnectionService::computeConnectionReply(abstractSocket& socket, inMemo
     if (storage.existDID(attemptConnection)) {
         // Maybe check authentication
     } else {
-        didDocument connectorDoc = identitiy_service.createDidDocument(own_id, attemptConnection);
-        storage.addDocument(own_id, connectorDoc);
+        didDocument connectorDoc = identitiy_service.createDidDocument(own_id.withVersion(2), attemptConnection);
+        storage.addDocument(own_id.withVersion(2), connectorDoc);
         storage.addResource(attemptConnection, message.addressFrom);
     }
 }
 
-int didConnectionService::computeConnectionRequest(socketMessage message, inMemoryStorage& storage, did own_id) {
+int didConnectionService::computeConnectionRequest(socketMessage message, inMemoryStorage& storage, did& own_id) {
     if (!message.payload.empty()) {
         did attemptConnection = did(message.payload);
 
@@ -30,17 +30,19 @@ int didConnectionService::computeConnectionRequest(socketMessage message, inMemo
             // Maybe check authentication
         } else {
             didDocument own_doc;
-            if(storage.existDID(own_id)) {
+            if(storage.existDID(own_id.withVersion(1))) {
                 own_doc = storage.getDocument(own_id);
                 own_doc.controllers.insert(attemptConnection);
             } else {
-                own_doc = identitiy_service.createDidDocument(own_id, own_id);
+                own_doc = identitiy_service.createDidDocument(own_id.withVersion(1), own_id);
             }
-            didDocument connectorDoc = identitiy_service.createDidDocument(attemptConnection, own_id);
+            didDocument connectorDoc = identitiy_service.createDidDocument(attemptConnection.withVersion(2), own_id);
 
-            storage.addDocument(own_id, own_doc);
-            storage.addDocument(attemptConnection, connectorDoc);
-            storage.addResource(attemptConnection, message.addressFrom);
+            if(!storage.existDIDInAnyVersion(own_id)) {
+                storage.addDocument(own_id.withVersion(1), own_doc);
+            }
+            storage.addDocument(attemptConnection.withVersion(2), connectorDoc);
+            storage.addResource(attemptConnection.withoutVersion(), message.addressFrom);
             _logger.log("add did");
             return 0;
         }
@@ -57,13 +59,12 @@ void didConnectionService::sendConnectionRequest(abstractSocket &socket, std::st
 
 int didConnectionService::receiveConnectionRequest(abstractSocket &socket,
                                                    inMemoryStorage& storage,
-                                                   did own_id) {
+                                                   did& own_id) {
     const socketMessage &socketMessage = socket.recv();
     return computeConnectionRequest(socketMessage, storage, own_id);
 }
 
-void didConnectionService::connect(abstractSocket &socket, const std::string &input,
-                                   std::set<std::string> &known_peer_addresses, inMemoryStorage &storage) {
+void didConnectionService::connect(abstractSocket &socket, const std::string &input) {
     socket.connect("tcp", input, 5555);
 }
 

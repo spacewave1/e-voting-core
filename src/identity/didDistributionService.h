@@ -43,7 +43,7 @@ public:
 
     void updateElectionBox(election election_update, std::vector<election> election_box);
 
-    size_t getAndIncrement(const did own_id, did current_id, std::map<did, did> did_chain_down, size_t position);
+    size_t getAndIncrement(const did& own_id, did current_id, std::map<did, did> did_chain_down, size_t position);
 
 private:
     logger _logger = logger::Instance();

@@ -18,13 +18,13 @@ public:
     void initSync(abstractSocket* socket, did initial_receiver_id, inMemoryStorage& storage);
     void sendInitialSyncRequest(abstractSocket* socket, did initial_receiver_id, inMemoryStorage& storage);
     void forwardSyncRequestUp(abstractSocket* socket, inMemoryStorage& storage, did next_did, std::string from_address);
-    void returnSyncRequestDown(abstractSocket* socket, std::set<std::string>& peers, inMemoryStorage& storage, did own_id);
+    void returnSyncRequestDown(abstractSocket* socket, inMemoryStorage& storage, did own_id);
     void forwardConnectSync(abstractSocket *socket, did next_did, inMemoryStorage& storage);
 
     bool receiveSyncRequest(abstractSocket &socket, inMemoryStorage &storage);
     void sendSyncReply(abstractSocket* socket);
 
-    void returnSyncRequestDownData(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
+    void returnSyncRequestDownData(abstractSocket *socket, inMemoryStorage &storage,
                               did own_id);
 
 private:

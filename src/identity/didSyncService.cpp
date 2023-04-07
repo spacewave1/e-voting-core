@@ -60,7 +60,7 @@ didSyncService::forwardSyncRequestUp(abstractSocket *socket, inMemoryStorage &st
 }
 
 void
-didSyncService::returnSyncRequestDown(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
+didSyncService::returnSyncRequestDown(abstractSocket *socket, inMemoryStorage &storage,
                                       did own_id) {
     
     std::map<did, did> didChain = storage.getDIDChainDown();
@@ -74,7 +74,8 @@ didSyncService::returnSyncRequestDown(abstractSocket *socket, std::set<std::stri
     _logger.log("sending return json: " + send_json.dump());
 
     did connect_id = didChain[own_id];
-    const std::string &address = storage.fetchResource(connect_id);
+
+    const std::string &address = storage.fetchResource(connect_id.withoutVersion());
     this->_logger.log("send data to " + address);
     socket->connect("tcp",address, 5557);
 
@@ -90,7 +91,7 @@ didSyncService::returnSyncRequestDown(abstractSocket *socket, std::set<std::stri
 
 
 void
-didSyncService::returnSyncRequestDownData(abstractSocket *socket, std::set<std::string> &peers, inMemoryStorage &storage,
+didSyncService::returnSyncRequestDownData(abstractSocket *socket, inMemoryStorage &storage,
                                       did own_id) {
 
     std::map<did, did> didChain = storage.getDIDChainDown();
@@ -161,7 +162,12 @@ didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &stor
 
     std::for_each(received_did_storage.begin(), received_did_storage.end(),
                   [&storage, this](const std::pair<did, didDocument> pair) {
-                      if (!storage.existDID(pair.first)) {
+                      if (storage.existDIDInAnyVersion(pair.first)) {
+                          did most_recent_did = storage.getLatest(pair.first);
+                          if(most_recent_did.getVersion() == 1 && pair.first.getVersion() > 1){
+                              storage.addDocument(pair.first, pair.second);
+                          }
+                      } else {
                           _logger.log("add resource");
                           std::stringstream sstringstream;
                           sstringstream << pair.first << "->" << pair.second;

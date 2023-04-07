@@ -16,12 +16,12 @@
 
 class didConnectionService {
 public:
-    int computeConnectionRequest(socketMessage message, inMemoryStorage& storage, did own_id);
-    int receiveConnectionRequest(abstractSocket& socket, inMemoryStorage& storage, did own_id);
+    int computeConnectionRequest(socketMessage message, inMemoryStorage& storage, did& own_id);
+    int receiveConnectionRequest(abstractSocket& socket, inMemoryStorage& storage, did& own_id);
     void sendConnectionRequest(abstractSocket& socket, std::string &input);
     void sendConnectionSuccess(abstractSocket& socket, did controller);
     void computeConnectionReply(abstractSocket& socket, inMemoryStorage& storage, did own_id);
-    void connect(abstractSocket& socket, const std::string& input, std::set<std::string>& known_peer_addresses, inMemoryStorage& storage);
+    void connect(abstractSocket& socket, const std::string& input);
     void exportDidRegistry(std::string directory, const inMemoryStorage& storage, std::string file);
     void exportDidResources(const std::string directory, const inMemoryStorage& storage, std::string file);
 

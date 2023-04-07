@@ -47,6 +47,22 @@ TEST(inMemoryStorage, didExists) {
     ASSERT_TRUE(storage.existDID(did{"pvote","abcAddress123Timestamp123Nonce123"}));
 }
 
+TEST(inMemoryStorage, didExistsVersionAgnostic) {
+    inMemoryStorage storage;
+    identityService id_service;
+
+    did id_1 = did{"pvote","abcAddress123Timestamp123Nonce123"};
+    did id_2 = did{"pvote","bcdAddress123Timestamp123Nonce123"};
+    did id_3 = did{"pvote","qweAddress123Timestamp123Nonce123"};
+
+    didDocument didDocument = id_service.createDidDocument(id_1, id_2);
+
+    int result_2 = storage.addDocument(id_1.withVersion(2), didDocument);
+
+    ASSERT_TRUE(storage.existDIDInAnyVersion(id_1));
+    ASSERT_FALSE(storage.existDIDInAnyVersion(id_2));
+}
+
 TEST(inMemoryStorage, addResource) {
     inMemoryStorage storage;
     identityService id_service;
@@ -172,6 +188,62 @@ TEST(inMemoryStorage, getChain_with_circle) {
 
     const std::map<did, did> &result_map = storage.getDIDChainUp(id_1);
     ASSERT_EQ(result_map.size(), 2);
+}
+
+TEST(inMemoryStorage, getAllDidVersions) {
+    inMemoryStorage storage;
+    identityService id_service;
+    did id_base{"did:pvote:123"};
+
+    did id_1 = id_base.withVersion(1);
+    did id_2 = id_base.withVersion(2);
+    did id_3 = id_base.withVersion(3);
+    did id_other{"did:pvote:2222"};
+
+    const didDocument &document_1 = id_service.createDidDocument(id_1, id_1);
+    const didDocument &document_2 = id_service.createDidDocument(id_2, id_2);
+    const didDocument &document_3 = id_service.createDidDocument(id_3, id_3);
+    const didDocument &document_other = id_service.createDidDocument(id_other, id_other);
+
+    storage.addDocument(id_1, document_1);
+    storage.addDocument(id_2, document_2);
+    storage.addDocument(id_3, document_3);
+    storage.addDocument(id_other, document_other);
+
+    const std::set<did> result_1 = storage.findAllDIDVersions(id_1);
+    const std::set<did> result_2 = storage.findAllDIDVersions(id_2);
+    const std::set<did> result_base = storage.findAllDIDVersions(id_base);
+    const std::set<did> result_other = storage.findAllDIDVersions(id_other);
+    const std::set<did> result_empty = storage.findAllDIDVersions({"pvote","ascy"});
+
+    ASSERT_EQ(result_base.size(), 3);
+    ASSERT_EQ(result_1.size(), 3);
+    ASSERT_EQ(result_2.size(), 3);
+    ASSERT_EQ(result_other.size(), 1);
+    ASSERT_TRUE(result_empty.empty());
+}
+
+TEST(inMemoryStorage, getMaxVersion) {
+    inMemoryStorage storage;
+    identityService id_service;
+    did id_base{"did:pvote:123"};
+
+    did id_1 = id_base.withVersion(1);
+    did id_2 = id_base.withVersion(2);
+
+    const didDocument &document_1 = id_service.createDidDocument(id_1, id_1);
+    const didDocument &document_2 = id_service.createDidDocument(id_2, id_2);
+
+    storage.addDocument(id_1, document_1);
+    storage.addDocument(id_2, document_2);
+
+    const did result = storage.getLatest(id_base);
+
+    ASSERT_EQ(result, id_2);
+    try {
+        did invalid_did{"pvote","bla"};
+        ASSERT_THROW(storage.getLatest(invalid_did), std::invalid_argument);
+    } catch(std::exception ex){};
 }
 
 //TEST(inMemoryStorage, addResource) {
