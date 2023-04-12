@@ -13,7 +13,7 @@ void didDistributionService::getDistributionParams(const inMemoryStorage& storag
         address_up = storage.fetchResource(document.controller);
     }
 
-    did id_down = storage.getDIDChainDown()[id];
+    did id_down = storage.getDIDChainDown()[id.withoutVersion()];
     if (!id_down.empty()) {
         address_down = storage.fetchResource(id_down);
     }
@@ -58,6 +58,7 @@ didDistributionService::sendInitialDistributionRequestDirection(abstractSocket &
                                                                 std::string local_address, std::string address_up,
                                                                 std::string address_down, size_t network_size,
                                                                 size_t position) {
+    std::cout << "is the issue here" << std::endl;
     if (address_down.empty() && !address_up.empty()) {
         socket_up.setupSocket(local_address, 5049);
         socket_up.connect("tcp", address_up, 5049);
@@ -106,8 +107,8 @@ void didDistributionService::sendSuccessResponse(abstractSocket &socket) {
     socket.send("accept");
 }
 
-election didDistributionService::receiveElection(abstractSocket &socket) {
-    _logger.log("receive from up", "localhost", "distribute");
+election didDistributionService::receiveElection(abstractSocket &socket, std::string& address) {
+    _logger.log("receive from up", address, "distribute");
     //_logger.log("subscribe to " + address + ":" + std::to_string(subscribe_port), "localhost", "distribute");
 
     const std::string &election_id_string = socket.recv().payload;
@@ -136,6 +137,7 @@ election didDistributionService::receiveElection(abstractSocket &socket) {
     _logger.log("received " + election_votes_json.dump(), "localhost", "distribute");
 
     std::string jsonGroups = socket.recv().payload;
+    _logger.log("received " + jsonGroups, "localhost", "distribute");
     nlohmann::json election_json_groups = nlohmann::json::parse(jsonGroups);
     _logger.log("received " + election_json_groups.dump(), "localhost", "distribute");
 
@@ -165,7 +167,7 @@ std::string didDistributionService::invertDirection(std::string input_direction)
     }
 }
 
-void didDistributionService::updateElectionBox(election election_update, std::vector<election> election_box) {
+void didDistributionService::updateElectionBox(election election_update, std::vector<election>& election_box) {
     auto p_function = [election_update](const election &_election) {
         return _election.getId() == election_update.getId() && _election.getSetupDate() == election_update.getSetupDate();
     };
@@ -208,30 +210,44 @@ size_t didDistributionService::getAndIncrement(const did& own_id, did current_id
 
 void didDistributionService::sendElection(abstractSocket &socket, election &election_update, int port) {
 
+    std::stringstream send_stream;
+
     _logger.log("send on port: " + std::to_string(port));
 
-    socket.send(std::to_string(election_update.getId()));
-    _logger.log("send: " + std::to_string(election_update.getId()));
-    socket.send(std::to_string(election_update.getSequenceNumber() + 1));
-    _logger.log("send: " + std::to_string(election_update.getSequenceNumber() + 1));
-    socket.send(std::to_string(election_update.getSetupDate()));
-    _logger.log("send: " + election_update.getSetupDateAsString());
-    socket.send(election_update.getElectionOptionsJson().dump());
-    _logger.log("send: " + std::string(election_update.getElectionOptionsJson().dump()));
-    socket.send(election_update.participantVotesAsJson().dump(4, ' ', true));
-    _logger.log("send: " + std::string(election_update.participantVotesAsJson().dump(4, ' ', true)));
-    socket.send(election_update.getEvaluationGroupsAsJson().dump());
-    _logger.log("send: " + std::string(election_update.getEvaluationGroupsAsJson().dump()));
-    socket.send(election_update.getElectionResultAsJson().dump());
-    _logger.log("send: " + std::string(election_update.getElectionResultAsJson().dump()));
+    send_stream << election_update.getId() << ((char) 11);
+    send_stream << std::to_string(election_update.getSequenceNumber() + 1) << ((char) 11);
+    send_stream << std::to_string(election_update.getSetupDate()) << ((char) 11);
+    send_stream << election_update.getElectionOptionsJson().dump() << ((char) 11);
+    send_stream << election_update.participantVotesAsJson().dump(4, ' ', true) << ((char) 11);
+    send_stream << election_update.getEvaluationGroupsAsJson().dump() << ((char) 11);
+    send_stream << election_update.getElectionResultAsJson().dump();
 
+    socket.send(send_stream.str());
+    std::cout << send_stream.str() << std::endl;
     _logger.log("finished broadcasting");
+}
+
+void didDistributionService::sendInitialPortsSetupRequest(abstractSocket &socket,
+                                                              std::string local_address,
+                                                              size_t position,
+                                                              std::string address) {
+    nlohmann::json sendJson;
+    sendJson["originPosition"] = position;
+    sendJson["origin_publish_port"] = 5050;
+
+    if (!address.empty()) {
+        std::cout << "setup" << std::endl;
+        socket.setupSocket(local_address, 5049);
+        std::cout << "connect" << std::endl;
+        socket.connect("tcp", address, 5049);
+        std::cout << "send" << std::endl;
+        socket.send(sendJson.dump());
+    }
 }
 
 void didDistributionService::sendInitialPortsSetupRequest(abstractSocket &socket_up, abstractSocket &socket_down,
                                                           std::string local_address, size_t position,
                                                           std::string address_up, std::string address_down) {
-    int subscribe_port = 5051;
     int publish_port = 5050;
 
     nlohmann::json sendJson;

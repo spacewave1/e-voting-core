@@ -246,6 +246,27 @@ TEST(inMemoryStorage, getMaxVersion) {
     } catch(std::exception ex){};
 }
 
+TEST(inMemoryStorage, getLatestDids) {
+    inMemoryStorage storage;
+    identityService id_service;
+
+    did id_1 = did{"pvote","abcAddress123Timestamp123Nonce123"}.withVersion(1);
+    did id_2 = did{"pvote","abcAddress123Timestamp123Nonce123"}.withVersion(2);
+
+    didDocument didDocument_1 = id_service.createDidDocument(id_1, id_1);
+    didDocument didDocument_2 = id_service.createDidDocument(id_2, id_2);
+
+    int result_1 = storage.addDocument(id_1, didDocument_1);
+    int result_2 = storage.addDocument(id_2, didDocument_2);
+    const std::set<did> &all_set = storage.getAllDIDs();
+    const std::set<did> &result_set = storage.getLastestDids();
+
+    ASSERT_EQ(result_1, 0);
+    ASSERT_EQ(result_2, 0);
+    ASSERT_EQ(all_set.size(), 2);
+    ASSERT_EQ(result_set.size(), 1);
+}
+
 //TEST(inMemoryStorage, addResource) {
 //    ASSERT_TRUE(storage.fetchResource(did{"pvote","abcAddress123Timestamp123Nonce123"}) == "12.12.12.12");
 //}

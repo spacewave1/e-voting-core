@@ -36,11 +36,24 @@ bool inMemoryStorage::existDID(did id) {
     return didStorage.contains(id);
 }
 
-std::set<did> inMemoryStorage::getAllDIDs() {
+std::set<did> inMemoryStorage::getAllDIDs() const {
     std::set<did> dids;
     std::for_each(didStorage.begin(), didStorage.end(),
                   [&dids](const std::pair<did, didDocument> &pair) { dids.emplace(pair.first); });
     return dids;
+}
+
+std::set<did> inMemoryStorage::getLastestDids() const {
+    std::set<did> filtered_dids;
+    const std::set<did>& all_dids = getAllDIDs();
+    std::copy_if(all_dids.begin(), all_dids.end(), std::inserter(filtered_dids, filtered_dids.begin()), [&all_dids, this](did id){
+        if(id.getVersion() == 1 && all_dids.contains(id.withVersion(2))) {
+            return false;
+        } else {
+            return true;
+        }
+    });
+    return filtered_dids;
 }
 
 std::map<std::string, std::string> inMemoryStorage::getDidResources() const {

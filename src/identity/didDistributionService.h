@@ -30,6 +30,11 @@ public:
                                                         std::string local_address, std::string address_up,
                                                         std::string address_down, size_t network_size, size_t position);
 
+    void sendInitialPortsSetupRequest(abstractSocket &socket,
+                                          std::string local_address,
+                                          size_t position,
+                                          std::string address);
+
     std::string
     sendForwardistributionRequestDirection(abstractSocket &socket_up, abstractSocket &socket_down, std::string direction);
 
@@ -39,14 +44,17 @@ public:
 
     std::string invertDirection(std::string input_direction);
 
-    election receiveElection(abstractSocket &socket);
+    election receiveElection(abstractSocket &socket, std::string& address);
 
-    void updateElectionBox(election election_update, std::vector<election> election_box);
+    void updateElectionBox(election election_update, std::vector<election>& election_box);
 
     size_t getAndIncrement(const did& own_id, did current_id, std::map<did, did> did_chain_down, size_t position);
 
 private:
     logger _logger = logger::Instance();
+
+    void sendInitialPortsSetupRequestDown(abstractSocket &socket_down, std::string local_address, size_t position,
+                                          std::string address_down);
 };
 
 

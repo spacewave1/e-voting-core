@@ -18,7 +18,8 @@ public:
     int addDocument(did id, didDocument doc);
     bool existDID(did id);
     bool addResource(did id, std::string input);
-    std::set<did> getAllDIDs();
+    std::set<did> getAllDIDs() const;
+    std::set<did> getLastestDids() const;
     didDocument getDocument(did id) const;
     std::map<std::string, std::string> getDidStorage() const;
     std::map<std::string, std::string> getDidResources() const;
