@@ -65,6 +65,7 @@ bool tallyService::prepareTally(election &chosen_election,
                                 std::map<size_t, bool> is_evaluated_votes_map,
                                 std::string peer_address, std::map<size_t, std::string>& own_election_keys,
                                 std::map<size_t, std::queue<std::string>>& prepared_election_keys) {
+
     if (chosen_election.hasFreeEvaluationGroups() && !is_evaluated_votes_map[chosen_election.getId()]) { // && peer not evaluated for the election yet
         chosen_election.addToNextEvaluationGroup(peer_address);
         generate_keys(chosen_election, peer_address, own_election_keys, prepared_election_keys);
@@ -107,11 +108,16 @@ void tallyService::generate_keys(election &chosen_election, std::string peer_ide
                         return identityToVote.second;
                     });
             std::string cipher = chosen_election.getVotes().at(peer_identity);
+            std::cout << "cipher: " << cipher << std::endl;
             std::string fake_key;
+            _logger.log("now generate fake key");
             encryption_service.generateFakeKeyWithLGS(ciphers, fake_key, wish_code);
 
+            _logger.log("now display fake key");
             _logger.displayData(fake_key, "Key: ");
+            _logger.log("place key at " + chosen_election.getId());
             prepared_election_keys[chosen_election.getId()].push(fake_key);
+            _logger.log("has placed key");
         }
     }
     _logger.log("Keys generated");

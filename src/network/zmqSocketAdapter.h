@@ -31,7 +31,6 @@ public:
     void bind(std::string protocol, std::string address, size_t port = 0) override;
     void unbind(std::string protocol, std::string address, size_t port = 0) override;
     void close() override;
-    bool isBound() override;
     void printOptions();
 
     void setupSocket(std::string localAddress, size_t port) override;

@@ -14,7 +14,6 @@ void syncService::initSync(abstractSocket* socket, const std::string& initial_re
 
 void syncService::sendInitialSyncRequest(abstractSocket* socket, const std::string& initial_receiver_address, std::set<std::string>& peers, std::map<std::string, std::string>& connection_table){
     nlohmann::json send_json = nlohmann::json();
-    send_json["receiverAddress"] = initial_receiver_address;
     send_json["nodes"] = nlohmann::ordered_json(peers);
     send_json["connections"] = nlohmann::ordered_json(connection_table);
 
@@ -89,7 +88,6 @@ void syncService::forwardSyncRequestUp(abstractSocket* socket,
         nlohmann::json send_json;
         send_json["nodes"] = nlohmann::ordered_json(peers);
         send_json["connections"] = nlohmann::ordered_json(connection_table);
-        send_json["receiverAddress"] = next_receiver_address;
 
         _logger.log("send: " + send_json.dump());
 
@@ -156,6 +154,7 @@ void syncService::returnSyncRequestDownSendData(abstractSocket *socket,
     std::map<std::string, std::set<std::string>> reversed_connection_table;
     std::for_each(connection_table.begin(), connection_table.end(),
                   [&reversed_connection_table](std::pair<std::string, std::string> pair) {
+
                       reversed_connection_table[pair.second].insert(pair.first);
                   });
 
@@ -163,10 +162,12 @@ void syncService::returnSyncRequestDownSendData(abstractSocket *socket,
     send_json["nodes"] = nlohmann::ordered_json(peers);
     send_json["connections"] = nlohmann::ordered_json(connection_table);
 
-    _logger.log("sending json: " + send_json.dump());
+    _logger.log("sending json: " + send_json.dump(), local_address);
+    std::cout << "size: " << reversed_connection_table[local_address].size() << std::endl;
 
     std::for_each(reversed_connection_table[local_address].begin(), reversed_connection_table[local_address].end(),
                   [socket, &send_json, this](const std::string& peer_address) {
+                      _logger.log("send to: " + peer_address);
                       socket->send(send_json.dump());
                   });
 }

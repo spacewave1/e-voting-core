@@ -60,11 +60,13 @@ didDistributionService::sendInitialDistributionRequestDirection(abstractSocket &
                                                                 size_t position) {
     std::cout << "is the issue here" << std::endl;
     if (address_down.empty() && !address_up.empty()) {
+        std::cout << "send up" << std::endl;
         socket_up.setupSocket(local_address, 5049);
         socket_up.connect("tcp", address_up, 5049);
         socket_up.send("up");
         return "up";
     } else if (!address_down.empty() && address_up.empty()) {
+        std::cout << "send down" << std::endl;
         socket_down.setupSocket(local_address, 5049);
         socket_down.connect("tcp", address_down, 5049);
         socket_down.send("down");
@@ -72,11 +74,13 @@ didDistributionService::sendInitialDistributionRequestDirection(abstractSocket &
     } else if (!address_down.empty() && !address_up.empty()) {
         // Send to the closest extreme
         if (position < network_size / 2) {
+            std::cout << "send up" << std::endl;
             socket_up.setupSocket(local_address, 5049);
             socket_up.connect("tcp", address_up, 5049);
             socket_up.send("up");
             return "up";
         } else {
+            std::cout << "send down" << std::endl;
             socket_down.setupSocket(local_address, 5049);
             socket_down.connect("tcp", address_down, 5049);
             socket_down.send("down");

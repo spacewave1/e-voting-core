@@ -53,11 +53,15 @@ std::string hillEncryptionService::decrypt(std::string cipher_string, std::strin
         codeNumbers[2] = ((cipher[2] * inverseKey[0] + cipher[3] * inverseKey[2]) % 26);
         codeNumbers[3] = ((cipher[2] * inverseKey[1] + cipher[3] * inverseKey[3]) % 26);
 
+        std::cout << "set code" << std::endl;
+
+
         code[0] = (char) (codeNumbers[0] + 65);
         code[1] = (char) (codeNumbers[1] + 65);
         code[2] = (char) (codeNumbers[2] + 65);
         code[3] = (char) (codeNumbers[3] + 65);
     }
+    std::cout << "code: " << code << std::endl;
     return code;
 }
 
@@ -74,6 +78,8 @@ int hillEncryptionService::mapCharToInt(char character) const {
         return character - 65;
     } else if (character >= 97 && character <= 122) {
         return character - 97;
+    } else {
+        return 66;
     }
 }
 
@@ -99,11 +105,11 @@ bool hillEncryptionService::findInverseKeyCombination(std::string& key, std::vec
     int c_offset = std::rand() % 26;
     int d_offset = std::rand() % 26;
 
-    _logger.displayData(std::to_string(a_offset), "rand: ");
-    _logger.displayData(std::to_string(b_offset), "rand: ");
-    _logger.displayData(std::to_string(c_offset), "rand: ");
-    _logger.displayData(std::to_string(d_offset), "rand: ");
+    std::cout << "offset: " << a_offset << " " << b_offset << " " << c_offset << " " << d_offset << std::endl;
 
+    std::for_each(ciphers.begin(), ciphers.end(), [](std::string cipher){
+        std::cout << cipher << std::endl;
+    });
 
     for (int a = 0; a < 26; a++) {
         for (int b = 0; b < 26; b++) {
@@ -119,6 +125,8 @@ bool hillEncryptionService::findInverseKeyCombination(std::string& key, std::vec
                         keyFromNumbers[2] = (char) ((c + c_offset) % 26 + 65);
                         keyFromNumbers[3] = (char) ((d + d_offset) % 26 + 65);
 
+                        std::cout << "key: " << keyFromNumbers[0] << " " << keyFromNumbers[1] << " " << keyFromNumbers[2] << " " << keyFromNumbers[3] << std::endl;
+
                         std::transform(ciphers.begin(), ciphers.end(), std::back_inserter(conditions), [this, keyFromNumbers](const std::string& cipher){
                             return mapCharToInt(decrypt(cipher, keyFromNumbers)[0]) > 10 &&
                                         mapCharToInt(decrypt(cipher, keyFromNumbers)[1]) < 26 &&
@@ -132,7 +140,6 @@ bool hillEncryptionService::findInverseKeyCombination(std::string& key, std::vec
                             key[1] = keyFromNumbers[1];
                             key[2] = keyFromNumbers[2];
                             key[3] = keyFromNumbers[3];
-
                             return true;
                         }
 
@@ -200,6 +207,7 @@ bool hillEncryptionService::generateFakeKeyWithLGS(std::vector<std::string> ciph
             _logger.log("Shuffles left: " + std::to_string(shuffleKey--));
         }
     }
+    std::cout << key << std::endl;
 
     std::string newKeyString = "0000";
     newKeyString[0] = key[0];
@@ -295,6 +303,7 @@ bool hillEncryptionService::hasInverseMatrixZeros(std::vector<int> numbers) {
 // Function for extended Euclidean Algorithm
 int hillEncryptionService::gcdExtended(int a, int b, int *x, int *y) const {
     // Base Case
+
     if (a == 0) {
         *x = 0;
         *y = 1;

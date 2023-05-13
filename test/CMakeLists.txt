@@ -14,7 +14,7 @@ set(SOURCE_FILES
         testStorage.cpp
         testIdentityService.cpp
         testDidConnectionService.cpp
-        testDidSyncService.cpp)
+        testDidSyncService.cpp testDistribution.cpp)
 
 set(name test_p2p_vote)
 

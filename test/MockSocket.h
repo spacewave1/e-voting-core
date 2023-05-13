@@ -19,7 +19,6 @@ public :
     MOCK_METHOD(void, connect, (std::string protocol, std::string address, size_t port), (override));
     MOCK_METHOD(void, setupSocket, (std::string localAddress, size_t port), (override));
     MOCK_METHOD(void, close, (), (override));
-    MOCK_METHOD(bool, isBound, (), (override));
 
     mockSocket() = default;
 };

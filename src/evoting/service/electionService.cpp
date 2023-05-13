@@ -22,6 +22,7 @@ bool electionService::placeEncryptedVote(std::string input, election &chosen_ele
         _logger.log("Cipher: " + cipher);
         _logger.log("Key: " + key);
         _logger.log("Encrypted Vote: " + encrypted);
+        _logger.log("id: " + peer_identity);
 
         chosen_election.placeVote(peer_identity, encrypted);
         return true;

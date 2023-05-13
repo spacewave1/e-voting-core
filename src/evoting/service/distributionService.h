@@ -46,9 +46,11 @@ public:
     void updateElectionBox(election el, std::vector<election>& election_box);
 
     std::string invertDirection(std::string direction);
+    void setLogAddress(std::string address);
 
 private:
     logger _logger = logger::Instance();
+    std::string log_adress = "localhost";
 
     size_t getAndIncrement(std::string self_address, std::string current_address,
                            std::map<std::string, std::string> &connection_table, size_t current_position);

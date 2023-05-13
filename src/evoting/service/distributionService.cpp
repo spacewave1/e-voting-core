@@ -65,10 +65,10 @@ void distributionService::sendDirectionRequest(abstractSocket *forward_request_s
     int publish_port;
 
     if (originPosition < node_position) {
-        _logger.log("Set subscribe socket for upwards", "localhost", "distribute");
+        _logger.log("Set subscribe socket for upwards", log_adress, "distribute");
 
         if (!address_down.empty()) {
-            _logger.log("Forward port number to subscribers", "localhost", "distribute");
+            _logger.log("Forward port number to subscribers", log_adress, "distribute");
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
 
             sendJson["origin_publish_port"] = publish_port;
@@ -77,10 +77,10 @@ void distributionService::sendDirectionRequest(abstractSocket *forward_request_s
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
         }
     } else if (originPosition > node_position) {
-        _logger.log("Set subscribe socket for downwards", "localhost", "distribute");
+        _logger.log("Set subscribe socket for downwards", log_adress, "distribute");
 
         if (!address_up.empty()) {
-            _logger.log("Forward port number to subscribers", "localhost", "distribute");
+            _logger.log("Forward port number to subscribers", log_adress, "distribute");
             publish_port = (subscribe_port - 5050 + 1) % 2 + 5050;
 
             sendJson["origin_publish_port"] = publish_port;
@@ -194,8 +194,10 @@ election distributionService::receiveElection(abstractSocket *socket) {
     _logger.log("received " + election_votes_json.dump(), "localhost", "distribute");
 
     std::string jsonGroups = socket->recv().payload;
+    _logger.log("received " + jsonGroups, "localhost", "distribute");
     nlohmann::json election_json_groups = nlohmann::json::parse(jsonGroups);
     _logger.log("received " + election_json_groups.dump(), "localhost", "distribute");
+
 
     std::string jsonResult = socket->recv().payload;
     nlohmann::json election_json_result = nlohmann::json::parse(jsonResult);
@@ -220,24 +222,20 @@ void distributionService::sendDirectionRequestNumberOfHops(abstractSocket *socke
 }
 
 void distributionService::sendElection(abstractSocket *socket, election &election_snapshot, size_t publish_port) {
+    std::stringstream send_stream;
 
     _logger.log("send on port: " + std::to_string(publish_port));
 
-    socket->send(std::to_string(election_snapshot.getId()));
-    _logger.log("send: " + std::to_string(election_snapshot.getId()));
-    socket->send(std::to_string(election_snapshot.getSequenceNumber() + 1));
-    _logger.log("send: " + std::to_string(election_snapshot.getSequenceNumber() + 1));
-    socket->send(std::to_string(election_snapshot.getSetupDate()));
-    _logger.log("send: " + election_snapshot.getSetupDateAsString());
-    socket->send(election_snapshot.getElectionOptionsJson().dump());
-    _logger.log("send: " + std::string(election_snapshot.getElectionOptionsJson().dump()));
-    socket->send(election_snapshot.participantVotesAsJson().dump(4, ' ', true));
-    _logger.log("send: " + std::string(election_snapshot.participantVotesAsJson().dump(4, ' ', true)));
-    socket->send(election_snapshot.getEvaluationGroupsAsJson().dump());
-    _logger.log("send: " + std::string(election_snapshot.getEvaluationGroupsAsJson().dump()));
-    socket->send(election_snapshot.getElectionResultAsJson().dump());
-    _logger.log("send: " + std::string(election_snapshot.getElectionResultAsJson().dump()));
+    send_stream << election_snapshot.getId() << ((char) 11);
+    send_stream << std::to_string(election_snapshot.getSequenceNumber() + 1) << ((char) 11);
+    send_stream << std::to_string(election_snapshot.getSetupDate()) << ((char) 11);
+    send_stream << election_snapshot.getElectionOptionsJson().dump() << ((char) 11);
+    send_stream << election_snapshot.participantVotesAsJson().dump(4, ' ', true) << ((char) 11);
+    send_stream << election_snapshot.getEvaluationGroupsAsJson().dump() << ((char) 11);
+    send_stream << election_snapshot.getElectionResultAsJson().dump();
 
+    socket->send(send_stream.str());
+    std::cout << send_stream.str() << std::endl;
     _logger.log("finished broadcasting");
 }
 
@@ -330,6 +328,10 @@ std::string distributionService::invertDirection(std::string direction) {
     } else {
         return "up";
     }
+}
+
+void distributionService::setLogAddress(std::string address) {
+    log_adress = address;
 }
 
 

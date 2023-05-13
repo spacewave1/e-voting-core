@@ -10,7 +10,6 @@ void didSyncService::sendInitialSyncRequest(abstractSocket *socket, did initial_
     nlohmann::json send_json = nlohmann::json();
     std::string initial_receiver_address = storage.fetchResource(initial_receiver_id);
 
-    send_json["receiverAddress"] = initial_receiver_address;
     send_json["didDocuments"] = nlohmann::ordered_json(storage.getDidStorage());
     send_json["didResources"] = nlohmann::ordered_json(storage.getDidResources());
 
@@ -42,7 +41,6 @@ didSyncService::forwardSyncRequestUp(abstractSocket *socket, inMemoryStorage &st
         //socket->connect("tcp://", std::string(next_receiver_address), 5556);
 
         nlohmann::json send_json;
-        send_json["receiverAddress"] = next_address;
         send_json["didDocuments"] = nlohmann::ordered_json(storage.getDidStorage());
         send_json["didResources"] = nlohmann::ordered_json(storage.getDidResources());
 
@@ -175,6 +173,12 @@ didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &stor
                           storage.addDocument(pair.first, pair.second);
                       }
                   });
+
+    std::for_each(received_did_resources.begin(), received_did_resources.end(), [&storage, this](std::pair<did, std::string> entry){
+       if(!storage.existsResource(entry.first.withoutVersion())){
+           storage.addResource(entry.first.withoutVersion(), entry.second);
+       }
+    });
     _logger.log("now return true");
     return true;
 }

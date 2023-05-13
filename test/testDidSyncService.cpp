@@ -24,7 +24,6 @@ TEST(didSyncService, receiveSyncRequest) {
     nlohmann::json send_json = nlohmann::json();
     std::string initial_receiver_address = input_storage.fetchResource(did{"pvote","123IyM3iW5Ue6RJoNIBmA+X+Cvl0/R8qAqtX0XmhZkUEnA=XgIBCx702Zw/pleBglU5cZwe9XohUx5JimZgs3CaSmU=k4B0rGVAHowi6ga12b3MnERQsxGwgMkpruMuBHY/a/Q="});
 
-    send_json["receiverAddress"] = initial_receiver_address;
     send_json["didDocuments"] = nlohmann::ordered_json(input_storage.getDidStorage());
     send_json["didResources"] = nlohmann::ordered_json(input_storage.getDidResources());
 

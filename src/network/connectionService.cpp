@@ -36,16 +36,14 @@ std::map<std::string, std::string>& connectionService::importPeerConnections(std
     _logger.log("is importing connections file from " + importPath + "connections.json");
 
     // File Open in the Read Mode
-    importStream.open(importPath + "connections.json");
+    importStream.open("connections.json");
 
     if (importStream.is_open()) {
         if (getline(importStream, line)) {
-
             nlohmann::json connectionsJson = nlohmann::json::parse(line);
             _logger.log("File contents: ");
             _logger.displayData(connectionsJson.dump());
             connection_table = connectionsJson["connections"].get<std::map<std::string, std::string>>();
-
         };
         // File Close
         importStream.close();
@@ -53,6 +51,7 @@ std::map<std::string, std::string>& connectionService::importPeerConnections(std
     } else {
         _logger.error("Unable to open the file!");
     }
+    return connection_table;
 }
 
 std::set<std::string>& connectionService::importPeersList(std::set<std::string> &peer_addresses, std::string importPath) {
@@ -62,7 +61,7 @@ std::set<std::string>& connectionService::importPeersList(std::set<std::string> 
      _logger.log("is importing peers file from " + importPath + "peers.json");
 
     // File Open in the Read Mode
-    importStream.open(importPath + "peers.json");
+    importStream.open("peers.json");
 
     if (importStream.is_open()) {
         if (getline(importStream, line)) {
@@ -168,6 +167,7 @@ void connectionService::changeToListenState(abstractSocket& socket) {
 }
 
 void connectionService::sendConnectionRequest(abstractSocket& socket, std::string &input) {
+    std::cout << "send input:" << input << std::endl;
     socket.send(input);
 }
 

@@ -24,7 +24,12 @@ TEST(decentralNode, create) {
 
     decentralNode{ "10.0.0.1", "abcde", std::to_string(now)};
     hashService hash;
+    std::string hashed_address = hash.hashMessage("10.0.0.1");
+    std::string hashed_nonce = hash.hashMessage("abcde");
+    std::string hashed_timestamp = hash.hashMessage(std::to_string(now));
+
     std::cout << hash.hashMessage("10.0.0.1") << std::endl;
     std::cout << hash.hashMessage("abcde") << std::endl;
     std::cout << hash.hashMessage(std::to_string(now)) << std::endl;
+    std::cout << did("pvote", hashed_address + hashed_nonce + hashed_timestamp) << std::endl;
 }
