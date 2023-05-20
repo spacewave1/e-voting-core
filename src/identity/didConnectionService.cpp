@@ -9,13 +9,14 @@
 void didConnectionService::computeConnectionReply(abstractSocket& socket, inMemoryStorage& storage, did own_id) {
     socketMessage message = socket.recv();
     did attemptConnection = did(message.payload);
-    _logger.log("doc controller: " + attemptConnection.str());
-    _logger.log("doc id: " + own_id.str());
 
     if (storage.existDID(attemptConnection)) {
         // Maybe check authentication
     } else {
         didDocument connectorDoc = identitiy_service.createDidDocument(own_id.withVersion(2), attemptConnection);
+        did deprecated_id = own_id.withVersion(1);
+        std::cout << "remove deprecated id" << std::endl;
+        storage.removeDocument(deprecated_id);
         storage.addDocument(own_id.withVersion(2), connectorDoc);
         storage.addResource(attemptConnection, message.addressFrom);
     }
@@ -40,9 +41,10 @@ int didConnectionService::computeConnectionRequest(socketMessage message, inMemo
 
             if(!storage.existDIDInAnyVersion(own_id)) {
                 storage.addDocument(own_id.withVersion(1), own_doc);
+            } else {
+                storage.addDocument(attemptConnection.withVersion(2), connectorDoc);
+                storage.addResource(attemptConnection.withoutVersion(), message.addressFrom);    
             }
-            storage.addDocument(attemptConnection.withVersion(2), connectorDoc);
-            storage.addResource(attemptConnection.withoutVersion(), message.addressFrom);
             _logger.log("add did");
             return 0;
         }

@@ -153,6 +153,10 @@ bool inMemoryStorage::existsResource(did id) const {
     return resources.contains(id);
 }
 
+size_t inMemoryStorage::removeDocument(did& id)  {
+    return didStorage.erase(id);
+}
+
 did inMemoryStorage::getLatest(const did& id) const {
     std::set<size_t> versions;
     std::set<did> dids = findAllDIDVersions(id);

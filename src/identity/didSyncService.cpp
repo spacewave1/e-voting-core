@@ -75,7 +75,7 @@ didSyncService::returnSyncRequestDown(abstractSocket *socket, inMemoryStorage &s
 
     const std::string &address = storage.fetchResource(connect_id.withoutVersion());
     this->_logger.log("send data to " + address);
-    socket->connect("tcp",address, 5557);
+    socket->connect("tcp", address, 5557);
 
     //TODO: When having hirarchy instead of chain
     /*std::for_each(didChain[own_id].begin(), didChain[own_id].end(),
@@ -127,11 +127,11 @@ bool
 didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &storage) {
     socketMessage socketMessage = socket.recv();
     std::string receive_json = socketMessage.payload;
-    _logger.log(socketMessage.payload);
-    _logger.log("received json");
-    _logger.log(receive_json);
+    _logger.log(socketMessage.payload, log_adress);
+    _logger.log("received json", log_adress);
+    _logger.log(receive_json, log_adress);
     nlohmann::json receive_data = nlohmann::json::parse(receive_json);
-    _logger.log("parsed json");
+    _logger.log("parsed json", log_adress);
 
     nlohmann::json send_json;
     send_json["didDocuments"] = nlohmann::ordered_json(storage.getDidStorage());
@@ -145,7 +145,7 @@ didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &stor
         const didDocument &document = identity_service.deserializeString(entry.second);
         std::stringstream sstream;
         sstream << document;
-        _logger.log(did(entry.first).str() + "->" + sstream.str());
+        _logger.log(did(entry.first).str() + "->" + sstream.str(), log_adress);
         received_did_storage[did(entry.first)] = document;
     });
 
@@ -156,17 +156,21 @@ didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &stor
         received_did_resources[did(entry.first)] = entry.second;
     });
 
-    _logger.log("received sync response");
+    _logger.log("received sync response", log_adress);
 
     std::for_each(received_did_storage.begin(), received_did_storage.end(),
                   [&storage, this](const std::pair<did, didDocument> pair) {
                       if (storage.existDIDInAnyVersion(pair.first)) {
                           did most_recent_did = storage.getLatest(pair.first);
                           if(most_recent_did.getVersion() == 1 && pair.first.getVersion() > 1){
+                              _logger.log("update document", log_adress);
+                              storage.removeDocument(most_recent_did);
                               storage.addDocument(pair.first, pair.second);
+                          } else {
+                              _logger.log("do not update document", log_adress);
                           }
                       } else {
-                          _logger.log("add resource");
+                          _logger.log("did does not exist in any version", log_adress);
                           std::stringstream sstringstream;
                           sstringstream << pair.first << "->" << pair.second;
                           _logger.log(sstringstream.str());
@@ -185,4 +189,8 @@ didSyncService::receiveSyncRequest(abstractSocket &socket, inMemoryStorage &stor
 
 void didSyncService::sendSyncReply(abstractSocket *socket) {
     socket->send("accepted");
+}
+
+void didSyncService::setLogAdress(const std::string &logAdress) {
+    log_adress = logAdress;
 }

@@ -32,8 +32,6 @@ public:
 
     bool hasIdDown(did id);
 
-    std::shared_ptr<inMemoryStorage> getPtr();
-
     bool existsResource(did id) const;
 
     bool existDIDInAnyVersion(did id);
@@ -41,6 +39,8 @@ public:
     std::set<did> findAllDIDVersions(const did &id) const;
 
     did getLatest(const did& id) const;
+
+    size_t removeDocument(did& id);
 };
 
 

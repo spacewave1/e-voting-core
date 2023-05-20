@@ -27,8 +27,11 @@ public:
     void returnSyncRequestDownData(abstractSocket *socket, inMemoryStorage &storage,
                               did own_id);
 
+    void setLogAdress(const std::string &logAdress);
+
 private:
     logger _logger = logger::Instance();
+    std::string log_adress = "localhost";
     hashService hash_service;
     identityService identity_service;
 
